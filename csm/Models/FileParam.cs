@@ -1,13 +1,12 @@
 ﻿
 using System;
-using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace csm.Models; 
+namespace csm.Models;
 [Serializable]
 public class FileParam : Param {
     private string unParsedVal;

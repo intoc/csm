@@ -67,17 +67,16 @@ public partial class FileList : Form {
     }
 
 
-    protected override bool ProcessCmdKey(ref Message m, Keys keyData) {
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData) {
         if (keyData == Keys.Escape) {
             Hide();
             return true;
         }
-        return base.ProcessCmdKey(ref m, keyData);
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 
     private void RemoveFiles(object sender, EventArgs e) {
         foreach (DataGridViewRow row in files.SelectedRows) {
-            //files.Rows.Remove(row);
             (row.DataBoundItem as ImageData).Include = false;
         }
         UpdateStatus();
@@ -94,8 +93,7 @@ public partial class FileList : Form {
     }
 
     private void Files_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {
-        Models.ImageData concreteSelectedRowItem = this.files.Rows[e.RowIndex].DataBoundItem as ImageData;
-        if (null != concreteSelectedRowItem && !concreteSelectedRowItem.Include) {
+        if (files.Rows[e.RowIndex].DataBoundItem is ImageData concreteSelectedRowItem && !concreteSelectedRowItem.Include) {
             files.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.LightGray;
         }
     }

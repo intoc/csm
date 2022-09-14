@@ -1,10 +1,11 @@
 ﻿using csm.Logic;
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
-namespace csm; 
-class Program {
+namespace csm;
+static class Program {
 
     [STAThread]
     static void Main(string[] args) {
@@ -18,13 +19,11 @@ class Program {
         bool noPathGiven = true;
 
         // Search all arguments for a path, use the first one that shows up
-        string path = "./";
-        foreach (string s in args) {
-            if (Directory.Exists(s)) {
-                path = s;
-                noPathGiven = false;
-                break;
-            }
+        var path = args.FirstOrDefault(a => Directory.Exists(a));
+        if (path != null) {
+            noPathGiven = false;
+        } else {
+            path = "./";
         }
 
         cs.SourceDirectory = path;
@@ -39,7 +38,7 @@ class Program {
             // Load default settings
             string settingsPath = Application.ExecutablePath;
             settingsPath = settingsPath[..settingsPath.LastIndexOf(@"\")];
-            cs.SettingsFile = @settingsPath + @"\default.xml";
+            cs.SettingsFile = Path.Combine(settingsPath, "default.xml");
             cs.LoadSettings(cs.SettingsFile);
             cs.Load(args);
 
@@ -57,15 +56,14 @@ class Program {
                 }
             }
 
-            // Show a gui for parameter customization
+            // Show a GUI for parameter customization
             Application.EnableVisualStyles();
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Controls.CsmGui gui = new(cs);
             gui.ShowDialog();
             gui.Activate();
         } else {
-            // Parameters are as they were entered
-            // Just go
+            // Parameters are as they were entered, just go
             if (!cs.Run()) {
                 Application.Exit();
             }

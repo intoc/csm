@@ -80,11 +80,11 @@ public partial class CsmGui : Form {
 
     public void UpdateDrawProgress(DrawProgressEventArgs args) {
         drawProgressBar.Value = args.Percentage;
-        elapsedTime.Text = string.Format("{0:00}:{1:00}", args.Time.Minutes, args.Time.Seconds);
+        elapsedTime.Text = $"{args.Time.Minutes:00}:{args.Time.Seconds:00}";
         if (args.Percentage < 100) {
-            drawStatus.Text = string.Format("Drawing {0}%", args.Percentage);
+            drawStatus.Text = $"Drawing {args.Percentage}%";
         } else {
-            drawStatus.Text = string.Format("Drawing Finished!");
+            drawStatus.Text = "Drawing Finished!";
             // Open the folder
             if (cs.OpenOutputDir) {
                 System.Diagnostics.Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", Path.GetDirectoryName(cs.OutFilePath));
