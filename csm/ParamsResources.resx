@@ -1,0 +1,285 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="border_desc" xml:space="preserve">
+    <value>Image Border Width</value>
+  </data>
+  <data name="border_note" xml:space="preserve">
+    <value>The border width around an image. The border will be black.</value>
+  </data>
+  <data name="cfile_desc" xml:space="preserve">
+    <value>Cover File</value>
+  </data>
+  <data name="cfile_note" xml:space="preserve">
+    <value>The path to the file to use as the cover. This is not loaded from settings files. (Changing this option reloads the file list)</value>
+  </data>
+  <data name="cfill_desc" xml:space="preserve">
+    <value>Attempt to Fill Cover Gaps</value>
+  </data>
+  <data name="cfill_note" xml:space="preserve">
+    <value>Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.</value>
+  </data>
+  <data name="cols_desc" xml:space="preserve">
+    <value>Maximum Images per Row</value>
+  </data>
+  <data name="cols_note" xml:space="preserve">
+    <value>The maximum number of images per row. Rows with mixed aspect ratios will probably have fewer images.</value>
+  </data>
+  <data name="cover_desc" xml:space="preserve">
+    <value>Show Cover</value>
+  </data>
+  <data name="cover_note" xml:space="preserve">
+    <value>Show a cover at the top of the sheet. (Changing this option reloads the file list)</value>
+  </data>
+  <data name="cregx_desc" xml:space="preserve">
+    <value>Cover Pattern</value>
+  </data>
+  <data name="cregx_note" xml:space="preserve">
+    <value>The primary regular expression used to match cover files. (Changing this option reloads the file list).</value>
+  </data>
+  <data name="exit_desc" xml:space="preserve">
+    <value>Exit on Complete</value>
+  </data>
+  <data name="exit_note" xml:space="preserve">
+    <value>Close the GUI when the sheet is finished. Doesn't apply to the command-line.</value>
+  </data>
+  <data name="filetype_desc" xml:space="preserve">
+    <value>File Type</value>
+  </data>
+  <data name="filetype_note" xml:space="preserve">
+    <value>The extension of the image file type you want to use.</value>
+  </data>
+  <data name="hbold_desc" xml:space="preserve">
+    <value>Bold Header</value>
+  </data>
+  <data name="hbold_note" xml:space="preserve">
+    <value>Makes the header text bold</value>
+  </data>
+  <data name="header_desc" xml:space="preserve">
+    <value>Show Header</value>
+  </data>
+  <data name="header_note" xml:space="preserve">
+    <value>Shows the title of the sheet and other info at the top of the sheet.</value>
+  </data>
+  <data name="hsize_desc" xml:space="preserve">
+    <value>Header Font Size</value>
+  </data>
+  <data name="hsize_note" xml:space="preserve">
+    <value>The font size of the header text</value>
+  </data>
+  <data name="hstats_desc" xml:space="preserve">
+    <value>Show Statistics</value>
+  </data>
+  <data name="hstats_note" xml:space="preserve">
+    <value>Show statistics about the images, e.g. "(x100) max 1200x600px"</value>
+  </data>
+  <data name="htitle_desc" xml:space="preserve">
+    <value>Header Title</value>
+  </data>
+  <data name="htitle_note" xml:space="preserve">
+    <value>The name of the image set. This is not loaded from settings files.</value>
+  </data>
+  <data name="htstats_note" xml:space="preserve">
+    <value>The image count and maximum image dimensions.</value>
+  </data>
+  <data name="interp_desc" xml:space="preserve">
+    <value>Use High Quality Interpolation</value>
+  </data>
+  <data name="interp_note" xml:space="preserve">
+    <value>Nicer looking thumbnails, but more taxing on processing. May be slow.</value>
+  </data>
+  <data name="labels_desc" xml:space="preserve">
+    <value>Show Image Labels</value>
+  </data>
+  <data name="labels_note" xml:space="preserve">
+    <value>Shows the filename for each image.</value>
+  </data>
+  <data name="lgfile_desc" xml:space="preserve">
+    <value>Logo File</value>
+  </data>
+  <data name="lgfile_note" xml:space="preserve">
+    <value>The file to use as the logo. (Changing this option reloads the file list).</value>
+  </data>
+  <data name="lsize_desc" xml:space="preserve">
+    <value>Image Label Font Size</value>
+  </data>
+  <data name="lsize_note" xml:space="preserve">
+    <value>The font size of the image label text</value>
+  </data>
+  <data name="mindiminput_desc" xml:space="preserve">
+    <value>Minimum Input Dimension (Height and Width)</value>
+  </data>
+  <data name="mindiminput_note" xml:space="preserve">
+    <value>The minimum width and height for input images to be included in the output sheet. (Changing this option reloads the file list)</value>
+  </data>
+  <data name="mindim_desc" xml:space="preserve">
+    <value>Minimum Thumbnail Dimension (Height and Width)</value>
+  </data>
+  <data name="mindim_note" xml:space="preserve">
+    <value>All thumbnails' widths and heights will be at least this value.</value>
+  </data>
+  <data name="nogui_desc" xml:space="preserve">
+    <value>Don't Launch GUI</value>
+  </data>
+  <data name="nogui_note" xml:space="preserve">
+    <value>Prevents the GUI (Graphical User Interface) from being launched.</value>
+  </data>
+  <data name="openoutdir_desc" xml:space="preserve">
+    <value>Open Output Directory on Complete</value>
+  </data>
+  <data name="openoutdir_note" xml:space="preserve">
+    <value>Open the output directory in Windows Explorer when completed (GUI mode only).</value>
+  </data>
+  <data name="outfile_desc" xml:space="preserve">
+    <value>Output File</value>
+  </data>
+  <data name="outfile_note" xml:space="preserve">
+    <value>File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list)</value>
+  </data>
+  <data name="preview_desc" xml:space="preserve">
+    <value>Preview Layout Only</value>
+  </data>
+  <data name="preview_note" xml:space="preserve">
+    <value>Only draw the layout, not the images. Near instantaneous.</value>
+  </data>
+  <data name="qual_desc" xml:space="preserve">
+    <value>Image Quality</value>
+  </data>
+  <data name="qual_note" xml:space="preserve">
+    <value>The Jpeg compression quality of the output image.</value>
+  </data>
+  <data name="thread_desc" xml:space="preserve">
+    <value>Use Multi-Threading</value>
+  </data>
+  <data name="thread_note" xml:space="preserve">
+    <value>Decreases draw time, may cause unresponsiveness.</value>
+  </data>
+  <data name="tmax_desc" xml:space="preserve">
+    <value>Maximum Threads</value>
+  </data>
+  <data name="tmax_note" xml:space="preserve">
+    <value>The maximum number of concurrent thumbnail-drawing threads. Decrease if multi-threading is locking up your system, increase if it isn't and you want to go faster.</value>
+  </data>
+  <data name="width_desc" xml:space="preserve">
+    <value>Width of Contact Sheet</value>
+  </data>
+  <data name="width_note" xml:space="preserve">
+    <value>The width of the contact sheet in pixels.</value>
+  </data>
+</root>
