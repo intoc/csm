@@ -87,7 +87,7 @@ public partial class CsmGui : Form {
             drawStatus.Text = "Drawing Finished!";
             // Open the folder
             if (cs.OpenOutputDir) {
-                System.Diagnostics.Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", Path.GetDirectoryName(cs.OutFilePath));
+                System.Diagnostics.Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", Path.GetDirectoryName(cs.OutFilePath(0)));
             }
         }
     }

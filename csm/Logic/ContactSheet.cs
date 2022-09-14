@@ -102,13 +102,18 @@ public class ContactSheet {
         }
     }
 
-    public string OutFilePath {
-        get {
-            if (Path.IsPathRooted(outputFilePath.Val)) {
-                return outputFilePath.Val;
-            }
-            return Path.GetFullPath(Path.Combine(SourceDirectory, outputFilePath.Val));
+    public string OutFilePath(int suffix = 0) {
+        string path = outputFilePath.Val;
+
+        if (suffix > 0) {
+            path = path.Replace(".jpg", $"_{suffix}.jpg");
         }
+
+        if (Path.IsPathRooted(path)) {
+            return path;
+        }
+        return Path.GetFullPath(Path.Combine(SourceDirectory, path));
+        
     }
 
     public bool GuiEnabled => !noGui.Val;
@@ -799,7 +804,7 @@ public class ContactSheet {
         // Save the sheet with the given Jpeg quality
         ImageCodecInfo jpgEncoder = ImageCodecInfo.GetImageDecoders().SingleOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
         EncoderParameters myEncoderParameters = new(1);
-        myEncoderParameters.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, quality.Val);
+        myEncoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, quality.Val);
 
 
         DateTime endTime = DateTime.Now;
@@ -819,9 +824,22 @@ public class ContactSheet {
         Console.WriteLine("---------------------------------------------------------------------------");
 
         try {
-            Console.Write("Saving to {0}... ", OutFilePath);
-            sheet.Save(OutFilePath, jpgEncoder, myEncoderParameters);
-            Console.WriteLine("Saved. Size: {0:.00}Mb", new FileInfo(OutFilePath).Length / (1024f * 1024f));
+            int suffix = 0;
+            Console.WriteLine("Saving to {0}... ", OutFilePath(suffix));
+            if (System.IO.File.Exists(OutFilePath(suffix))) {
+                Console.WriteLine("File exists. Attempting to delete...");
+                try {
+                    System.IO.File.Delete(OutFilePath(suffix));
+                } catch (System.IO.IOException ioEx) {
+                    Console.Error.WriteLine("Can't delete: {0}", ioEx.Message);
+                    Console.WriteLine("Trying a new output file name.");
+                    while (System.IO.File.Exists(OutFilePath(suffix))) {
+                        suffix++;
+                    }
+                }
+            }
+            sheet.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
+            Console.WriteLine("Saved. Size: {0:.00}Mb", new FileInfo(OutFilePath(suffix)).Length / (1024f * 1024f));
         } catch (System.Runtime.InteropServices.ExternalException e) {
             Exception ex = new(string.Format("Can't Save Sheet: {0}", e.Message), e);
             Console.Error.WriteLine(ex.Message);
@@ -841,7 +859,6 @@ public class ContactSheet {
 
         #endregion
     }
-
 
     /// <summary>
     /// Monitors the RAM used by the draw threads, recording to drawRam
