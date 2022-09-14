@@ -378,6 +378,9 @@ public class ContactSheet {
     }
 
     public void RefreshImageList(Param p) {
+        if (!ImageList.Any()) {
+            return;
+        }
         Console.WriteLine("Refreshing image list due to change in {0}", p.Arg);
         RefreshImageList();
     }
