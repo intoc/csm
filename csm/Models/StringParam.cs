@@ -34,8 +34,11 @@ public class StringParam : Param {
 
     protected override void Load(Param other) {
         if (other is StringParam otherString) {
+            string orig = Val;
             Val = otherString.Val;
-            Changed();
+            if (Val != orig) {
+                Changed();
+            }
             LoadSubs(other);
         }
     }

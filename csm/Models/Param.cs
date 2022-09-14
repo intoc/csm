@@ -20,6 +20,8 @@ public abstract class Param {
 
     public event ParamChangedEventHandler ParamChanged;
 
+    private static string[] skipArgs = new[] { "-cfile", "-htitle" };
+
     [XmlAttribute]
     public string Arg { get; set; }
 
@@ -50,6 +52,9 @@ public abstract class Param {
     public abstract string Value();
 
     public void Load(IEnumerable<Param> fromList) {
+        if (skipArgs.Contains(Arg)) {
+            return;
+        }
         var p = fromList.FirstOrDefault(prm => prm.Arg == Arg);
         if (p != null) {
             Load(p);
@@ -78,7 +83,12 @@ public abstract class Param {
             ParseVal(argAndValue[(argAndValue.IndexOf('=') + 1)..]);
             return true;
         }
-        return SubParams.FirstOrDefault(p => p.Parse(argAndValue)) != null;
+        foreach (Param p in SubParams) {
+            if (p.Parse(argAndValue)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>

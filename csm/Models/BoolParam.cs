@@ -26,7 +26,7 @@ public class BoolParam : Param {
     }
 
     public override void ParseVal(string value) {
-        var orig = Val;
+        bool orig = Val;
         Val = !falses.Contains(value.ToLower());
         if (Val != orig) {
             Changed();

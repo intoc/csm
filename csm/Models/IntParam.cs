@@ -50,8 +50,11 @@ public class IntParam : Param {
 
     protected override void Load(Param other) {
         if (other is IntParam otherInt) {
+            int orig = Val;
             Val = otherInt.Val;
-            Changed();
+            if (Val != orig) {
+                Changed();
+            }
             LoadSubs(other);
         }
     }

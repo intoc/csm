@@ -61,7 +61,6 @@ public class ContactSheet {
 
     public List<ImageData> ImageList { get; set; }
 
-    private bool LoadingImageList;
     private readonly string[] coverNames = { "cover", "folder", "square", "front" };
     private static readonly string[] helpStrings = { "--help", "-help", "/?", "-?" };
 
@@ -234,12 +233,14 @@ public class ContactSheet {
         #endregion
 
         // Setup all instances where a file list reload is required
-        var reloadFileListHandler = new ParamChangedEventHandler(LoadFileList);
-        fileType.ParamChanged += reloadFileListHandler;
-        cover.ParamChanged += reloadFileListHandler;
-        coverFile.ParamChanged += reloadFileListHandler;
-        minDimInput.ParamChanged += reloadFileListHandler;
-        outputFilePath.ParamChanged += reloadFileListHandler;
+        fileType.ParamChanged += new ParamChangedEventHandler(LoadFileList);
+
+        // Setup all instances where a image list refresh is required without a full reload
+        var refreshImageListHandler = new ParamChangedEventHandler(RefreshImageList);
+        cover.ParamChanged += refreshImageListHandler;
+        coverFile.ParamChanged += refreshImageListHandler;
+        minDimInput.ParamChanged += refreshImageListHandler;
+        outputFilePath.ParamChanged += refreshImageListHandler;
 
         coverPattern.ParamChanged += (param) => GuessCover(true);
 
@@ -253,7 +254,6 @@ public class ContactSheet {
         };
 
         ImageList = new List<ImageData>();
-        LoadingImageList = false;
 
         drawnCount = 0;
 
@@ -283,16 +283,10 @@ public class ContactSheet {
             SettingsFile = filename;
 
             Console.WriteLine("Loading Params from {0}", SettingsFile);
-
-            var headerTitleOrig = headerTitle.Val;
-            var coverFileOrig = coverFile.Val;
-
+            
             foreach (var param in Params) {
                 param.Load(deserializedList);
             }
-
-            headerTitle.Val = headerTitleOrig;
-            coverFile.Val = coverFileOrig;
 
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(SettingsFile, "Loaded", true));
 
@@ -320,18 +314,12 @@ public class ContactSheet {
         }
     }
 
-    public bool Load(string[] args) {
+    public void Load(string[] args) {
 
         // Get any command line arguments
         foreach (string a in args) {
             foreach (Param p in Params) {
-                try {
-                    p.Parse(a);
-                } catch (ArgumentOutOfRangeException e) {
-                    // Die on any bad params
-                    Console.Error.WriteLine("Error Parsing Argument {0}: {1}", a, e.Message);
-                    return false;
-                }
+                p.Parse(a);
             }
         }
 
@@ -339,8 +327,6 @@ public class ContactSheet {
         if (GuiEnabled && Params.Contains(noGui)) {
             Params.Remove(noGui);
         }
-
-        return true;
     }
 
     private bool GuessFile(FileParam fileParam, string[] patterns, bool force) {
@@ -358,153 +344,153 @@ public class ContactSheet {
     private void GuessCover(bool force) => GuessFile(coverFile, !string.IsNullOrEmpty(coverPattern.Val) ? new string[] { coverPattern.Val } : coverNames, force);
 
     public void LoadFileList(Param p) {
-        Debug.WriteLine("Reloading file list due to change in {0}", p.Arg);
+        Console.WriteLine("Reloading file list due to change in {0}", p.Arg);
         LoadFileList();
     }
 
     public void LoadFileList() {
-
-        LoadingImageList = true;
-
-        new Thread(delegate () {
-            var toRemove = new List<string>();
-            // Remove the cover from the list if it's being displayed full size
-            if (cover.Val) {
-                toRemove.Add(coverFile.Path);
-            }
+        if (sourceDir == null) {
+            return;
+        }
+        lock (ImageList) {
 
             // Get a list of all the images in the directory, 
             // Don't include hidden files
-            IEnumerable<string> files = 
+            IEnumerable<string> files =
                 from file in sourceDir.GetFiles()
                 where file.Extension.ToLower().Contains(fileType.Val.ToLower())
                 where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
                 select file.FullName;
 
             // Load Image data into list
-            Monitor.Enter(ImageList);
             ImageList.Clear();
 
-            // Don't include images smaller than minDimInput
-            var tooSmall = (BitmapFrame bmpFrame) => bmpFrame.PixelWidth < minDimInput.Val && bmpFrame.PixelHeight < minDimInput.Val;
-            // Don't include a previously generated contact sheet if we can avoid it
-            var isOldSheet = (string path) => System.IO.Path.GetFileName(path).Equals(System.IO.Path.GetFileName(outputFilePath.Val));
-            // Don't include cover file
-            var inToRemove = (string path) => toRemove.Contains(path);
-
             foreach (string path in files) {
-                
                 // Load image info without actually loading the image
                 var imageUri = new Uri(path);
                 var bmpFrame = BitmapFrame.Create(imageUri, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
                 var image = new ImageData(new Size(bmpFrame.PixelWidth, bmpFrame.PixelHeight), path);
-
-                if (tooSmall(bmpFrame) || isOldSheet(path) || inToRemove(path)) {
-                    image.Include = false;
-                }
-
                 ImageList.Add(image);
             }
-            Monitor.Exit(ImageList);
-            ImageListChanged?.Invoke(new ImageListChangedEventArgs());
-            LoadingImageList = false;
-        }).Start();
+
+            RefreshImageList();
+        }
+    }
+
+    public void RefreshImageList(Param p) {
+        Console.WriteLine("Refreshing image list due to change in {0}", p.Arg);
+        RefreshImageList();
+    }
+
+    private void RefreshImageList() {
+        // Don't include images smaller than minDimInput
+        var isTooSmall = (ImageData image) => image.Width < minDimInput.Val && image.Height < minDimInput.Val;
+        // Don't include a previously generated contact sheet if we can avoid it
+        var isOldSheet = (string path) => path.Equals(System.IO.Path.GetFileName(outputFilePath.Val));
+        // Don't include cover file
+        var isCover = (string fileName) => fileName.Equals(coverFile.File?.Name);
+
+        foreach (ImageData image in ImageList) {
+            image.Include = !(isTooSmall(image) || isOldSheet(image.FileName) || isCover(image.FileName));
+        }
+
+        ImageListChanged?.Invoke(new ImageListChangedEventArgs());
     }
 
     public bool Run() {
-        while (LoadingImageList) {
-            Thread.Sleep(200);
-        }
 
-        var images = ImageList.Where(i => i.Include);
-
-        activeDrawThreads = 0;
-        if (!images.Any()) {
-            ExceptionOccurred?.Invoke(new Exception(string.Format("No valid/selected {0} Images in {1}!", fileType.Val, SourceDirectory)));
-            return true; // Don't exit
-        }
-
-        // Avoid stupidness
-        if (!cover.Val || coverFile.File == null) {
-            cover.Val = false;
-            fillCoverGap.Val = false;
-        }
-
-        // Mark the start time
-        startTime = DateTime.Now;
-
-        #region Cover Setup
-
-        // Draw the cover
-        Image coverImage = null;
-        Rectangle coverBounds = new();
-        if (cover.Val) {
-            coverImage = Image.FromFile(coverFile.File.FullName);
-
-            if (coverImage.Width > sheetWidth.Val) {
-                coverBounds.Width = sheetWidth.Val;
-                coverBounds.Height = (int)Math.Round(coverImage.Height * (double)sheetWidth.Val / coverImage.Width);
-                coverBounds.X = 0;
-
-                // Since there is no gap, no sense in trying to fill it
-                fillCoverGap.Val = false;
-            } else {
-                coverBounds.Width = coverImage.Width;
-                coverBounds.Height = coverImage.Height;
-
-                if (fillCoverGap.Val && (sheetWidth.Val - coverBounds.Width) >= (sheetWidth.Val / columns.Val)) {
-                    // Shift cover to the left to set up the gap to fill
-                    coverBounds.X = 0;
-                } else {
-                    // Not enough room for gap filling, center the cover
-                    if (fillCoverGap.Val) {
-                        double scale = 0.7;
-                        Console.WriteLine("Reducing cover size by a factor of {0} to create gap.", scale);
-                        coverBounds.Width = (int)(coverBounds.Width * scale);
-                        coverBounds.Height = (int)(coverBounds.Height * scale);
-                    } else {
-                        coverBounds.X = (sheetWidth.Val / 2) - (coverBounds.Width / 2);
-                    }
-                }
-            }
-
-        }
-
-        #endregion
-
-        #region Analyses
-
-        // Begin image analysis
-        imageCount = images.Count();
-        Console.WriteLine("Analyzing {0} files (Pass 1)", imageCount);
-
+        IEnumerable<ImageData> images = null;
         List<List<ImageData>> analyses = new() {
             new List<ImageData>()
         };
-
+        Rectangle coverBounds = new();
+        Image coverImage = null;
         int rowIndex = 0;
         int maxRowHeight = 0;
         int rowHeight;
         int fileIndex = 1;
 
-        // First pass, add the same number of images to each row,
-        // scale to width, record maximum row height
-        foreach (ImageData data in images) {
-            // Add image to row
-            analyses[rowIndex].Add(data);
+        lock (ImageList) {
 
-            if (analyses[rowIndex].Count == columns.Val || fileIndex == images.Count()) {
-                // Scale the row to fit the sheetwidth
-                rowHeight = ScaleRow(analyses[rowIndex], sheetWidth.Val);
+            images = ImageList.Where(i => i.Include);
 
-                // Record max row height
-                if (analyses[rowIndex].Count == columns.Val) {
-                    maxRowHeight = Math.Max(maxRowHeight, rowHeight);
-                }
-                ++rowIndex;
-                analyses.Add(new List<ImageData>());
+            activeDrawThreads = 0;
+            if (!images.Any()) {
+                ExceptionOccurred?.Invoke(new Exception(string.Format("No valid/selected {0} Images in {1}!", fileType.Val, SourceDirectory)));
+                return true; // Don't exit
             }
-            ++fileIndex;
+
+            // Avoid stupidness
+            if (!cover.Val || coverFile.File == null) {
+                cover.Val = false;
+                fillCoverGap.Val = false;
+            }
+
+            // Mark the start time
+            startTime = DateTime.Now;
+
+            #region Cover Setup
+
+            // Draw the cover
+            if (cover.Val) {
+                coverImage = Image.FromFile(coverFile.File.FullName);
+
+                if (coverImage.Width > sheetWidth.Val) {
+                    coverBounds.Width = sheetWidth.Val;
+                    coverBounds.Height = (int)Math.Round(coverImage.Height * (double)sheetWidth.Val / coverImage.Width);
+                    coverBounds.X = 0;
+
+                    // Since there is no gap, no sense in trying to fill it
+                    fillCoverGap.Val = false;
+                } else {
+                    coverBounds.Width = coverImage.Width;
+                    coverBounds.Height = coverImage.Height;
+
+                    if (fillCoverGap.Val && (sheetWidth.Val - coverBounds.Width) >= (sheetWidth.Val / columns.Val)) {
+                        // Shift cover to the left to set up the gap to fill
+                        coverBounds.X = 0;
+                    } else {
+                        // Not enough room for gap filling, center the cover
+                        if (fillCoverGap.Val) {
+                            double scale = 0.7;
+                            Console.WriteLine("Reducing cover size by a factor of {0} to create gap.", scale);
+                            coverBounds.Width = (int)(coverBounds.Width * scale);
+                            coverBounds.Height = (int)(coverBounds.Height * scale);
+                        } else {
+                            coverBounds.X = (sheetWidth.Val / 2) - (coverBounds.Width / 2);
+                        }
+                    }
+                }
+
+            }
+
+            #endregion
+
+            #region Analyses
+
+            // Begin image analysis
+            imageCount = images.Count();
+            Console.WriteLine("Analyzing {0} files (Pass 1)", imageCount);
+
+            // First pass, add the same number of images to each row,
+            // scale to width, record maximum row height
+            foreach (ImageData data in images) {
+                // Add image to row
+                analyses[rowIndex].Add(data);
+
+                if (analyses[rowIndex].Count == columns.Val || fileIndex == imageCount) {
+                    // Scale the row to fit the sheetwidth
+                    rowHeight = ScaleRow(analyses[rowIndex], sheetWidth.Val);
+
+                    // Record max row height
+                    if (analyses[rowIndex].Count == columns.Val) {
+                        maxRowHeight = Math.Max(maxRowHeight, rowHeight);
+                    }
+                    ++rowIndex;
+                    analyses.Add(new List<ImageData>());
+                }
+                ++fileIndex;
+            }
         }
 
         Console.WriteLine("Analyzing {0} Rows (Pass 2), maxRowHeight: {1}", analyses.Count, maxRowHeight);
@@ -664,8 +650,8 @@ public class ContactSheet {
         #region Drawing
         // Detemermine the maximum image dimensions
         Size maxSize = (from row in analyses
-             where row.Count > 0
-             select row.OrderBy(im => im.OriginalSize.Height).Last())
+                        where row.Count > 0
+                        select row.OrderBy(im => im.OriginalSize.Height).Last())
                   .OrderBy(im => im.OriginalSize.Height).Last().OriginalSize;
 
         // Set up the header
@@ -677,7 +663,7 @@ public class ContactSheet {
             SolidBrush br = new(Color.White);
             string headerText = headerTitle.Val;
             if (headerStats.Val) {
-                headerText += string.Format("\n(x{0}) max {1}x{2}px", images.Count(), maxSize.Width, maxSize.Height);
+                headerText += string.Format("\n(x{0}) max {1}x{2}px", imageCount, maxSize.Width, maxSize.Height);
             }
 
             Font headerFont = new("Arial", headerFontSize.Val, headerBold.Val ? FontStyle.Bold : FontStyle.Regular);
@@ -761,7 +747,7 @@ public class ContactSheet {
                     Image = col,
                     Index = index,
                     File = col.File,
-                    ImageTotal = images.Count(),
+                    ImageTotal = imageCount,
                     G = g,
                     FontSize = labels.Val ? labelFontSize.Val : 0,
                     BorderWidth = borders.Val
@@ -1044,8 +1030,12 @@ public class ContactSheet {
             foreach (Param p in Params) {
                 Console.WriteLine(p.GetHelp(markDown));
             }
+
+            string sfile = markDown ? "`-sfile`" : "-sfile:";
+            Console.WriteLine("{0} Specify a settings file path.", sfile);
             string help = markDown ? "`--help`" : "--help:";
             Console.WriteLine("{0} View this help message.", help);
+            
             return true;
         }
         return false;

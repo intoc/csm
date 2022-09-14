@@ -100,13 +100,10 @@ public class FileParam : Param {
         // the path is not (supposedly) in the current directory,
         // and the current directory exists
         unParsedVal = value;
-
-        if (value != null && !value.Contains('\\') && Directory != null) {
-            File = null;
-            FileInfo[] files = Directory.GetFiles($"*{Ext}");
-            File = files.FirstOrDefault(f => value.Length > 0 &&
-                    (f.ToString() == value ||
-                     f.ToString().ToLower().Contains(value.ToLower())));
+        if (!string.IsNullOrEmpty(value) && !value.Contains('\\') && Directory != null) {
+            var files = Directory.GetFiles($"*{Ext}");
+            File = files.FirstOrDefault(f =>
+                   f.ToString() == value || f.ToString().ToLower().Contains(value.ToLower()));
         } else {
             // Try a full-path parse
             if (System.IO.File.Exists(value)) {
@@ -117,7 +114,10 @@ public class FileParam : Param {
                 File = null;
             }
         }
-        Changed();
+        
+        if (unParsedVal != Val) {
+            Changed();
+        }
     }
 
     public override string Value() {
@@ -126,10 +126,8 @@ public class FileParam : Param {
 
     protected override void Load(Param other) {
         if (other is FileParam otherFile) {
-            Val = otherFile.Val ?? Val;
-            Path = otherFile.Path ?? Path;
+            ParseVal(otherFile.Val);
             Ext = otherFile.Ext ?? Ext;
-            Changed();
             LoadSubs(other);
         }
     }

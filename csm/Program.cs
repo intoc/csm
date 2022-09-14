@@ -1,5 +1,4 @@
-﻿using csm.Logic;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -10,56 +9,52 @@ static class Program {
     [STAThread]
     static void Main(string[] args) {
 
-        ContactSheet cs = new();
+        Logic.ContactSheet cs = new();
 
         if (cs.CheckPrintHelp(args)) {
             return;
         }
 
-        bool noPathGiven = true;
+        // Get a settings file if path is provided
+        const string sFileArg = "-sfile";
+        var settingsPath = args.FirstOrDefault(a => a.ToLower().StartsWith($"{sFileArg}="));
+        if (settingsPath != null) {
+            settingsPath = Path.GetFullPath(settingsPath[(settingsPath.IndexOf("=") + 1)..]);
+            cs.LoadSettings(settingsPath);
+        }
 
         // Search all arguments for a path, use the first one that shows up
+        bool noPathGiven = true;
         var path = args.FirstOrDefault(a => Directory.Exists(a));
         if (path != null) {
             noPathGiven = false;
         } else {
             path = "./";
         }
-
         cs.SourceDirectory = path;
 
-        // Load command line arguments, exit if load failed.
-        if (!cs.Load(args)) {
-            return;
-        }
+        // Load command line arguments
+        cs.Load(args);
 
         // Prompt for arguments graphically
         if (cs.GuiEnabled) {
             // Load default settings
-            string settingsPath = Application.ExecutablePath;
-            settingsPath = settingsPath[..settingsPath.LastIndexOf(@"\")];
-            cs.SettingsFile = Path.Combine(settingsPath, "default.xml");
-            cs.LoadSettings(cs.SettingsFile);
-            cs.Load(args);
+            if (settingsPath == null) {
+                settingsPath = Application.ExecutablePath;
+                settingsPath = Path.Combine(settingsPath[..settingsPath.LastIndexOf(@"\")], "default.xml");
+                cs.LoadSettings(settingsPath);
+                cs.Load(args);
+            }
+            Controls.CsmGui gui = new(cs);
 
             // Launch a directory chooser if no path was entered
-            if (noPathGiven) {
-                FolderBrowserDialog folder = new() {
-                    Description = "Select the folder containing the images:",
-                    SelectedPath = Directory.GetParent("./").ToString()
-                };
-                if (folder.ShowDialog() == DialogResult.OK) {
-                    cs.SourceDirectory = folder.SelectedPath;
-                } else {
-                    // Canceled
-                    return;
-                }
+            if (noPathGiven && !gui.ChangeDirectory()) {
+                return;
             }
 
             // Show a GUI for parameter customization
             Application.EnableVisualStyles();
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
-            Controls.CsmGui gui = new(cs);
             gui.ShowDialog();
             gui.Activate();
         } else {
@@ -69,4 +64,5 @@ static class Program {
             }
         }
     }
+
 }

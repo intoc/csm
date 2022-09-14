@@ -59,22 +59,23 @@ Parameters may be in any order, and they don't all have to be used.
 `-exit` **Exit on Complete** *[true/false, Default=False]*. Close the GUI when the sheet is finished. Doesn't apply to the command-line.\
 `-openoutdir` **Open Output Directory on Complete** *[true/false, Default=True]*. Open the output directory in Windows Explorer when completed (GUI mode only).\
 `-preview` **Preview Layout Only** *[true/false, Default=False]*. Only draw the layout, not the images. Near instantaneous.\
-`-outfile` **Output File** *[File Path, Default=ContactSheet.jpg]*. File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list)\
+`-outfile` **Output File** *[File Path, Default=ContactSheet.jpg]*. File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list)
 
 `-header` **Show Header** *[true/false, Default=False]*. Shows the title of the sheet and other info at the top of the sheet.\
 `-hsize` **Header Font Size** *[pt, Default=12]*. The font size of the header text\
 `-hbold` **Bold Header** *[true/false, Default=False]*. Makes the header text bold\
 `-htitle` **Header Title** *[Words, Default=Title]*. The name of the image set. This is not loaded from settings files.\
-`-hstats` **Show Statistics** *[true/false, Default=False]*. Show statistics about the images, e.g. "(x100) max 1200x600px"\
+`-hstats` **Show Statistics** *[true/false, Default=False]*. Show statistics about the images, e.g. "(x100) max 1200x600px"
 
 `-labels` **Show Image Labels** *[true/false, Default=False]*. Shows the filename for each image.\
-`-lsize` **Image Label Font Size** *[pt, Default=8]*. The font size of the image label text\
+`-lsize` **Image Label Font Size** *[pt, Default=8]*. The font size of the image label text
 
 `-cover` **Show Cover** *[true/false, Default=False]*. Show a cover at the top of the sheet. (Changing this option reloads the file list)\
 `-cregx` **Cover Pattern** *[Regex, Default=]*. The primary regular expression used to match cover files. (Changing this option reloads the file list).\
 `-cfile` **Cover File** *[file, Default=[empty]]*. The path to the file to use as the cover. This is not loaded from settings files. (Changing this option reloads the file list)\
-`-cfill` **Attempt to Fill Cover Gaps** *[true/false, Default=False]*. Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.\
+`-cfill` **Attempt to Fill Cover Gaps** *[true/false, Default=False]*. Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.
 
+`-sfile` Specify a settings file path.\
 `--help` View this help message.
 
 ## Tips

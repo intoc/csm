@@ -111,14 +111,20 @@ public partial class CsmGui : Form {
         }
     }
 
-    private void ChangeDirectory(object sender, EventArgs e) {
+    public bool ChangeDirectory() {
         FolderBrowserDialog folder = new() {
             Description = "Select the folder containing the images:",
             SelectedPath = cs.SourceDirectory
         };
         if (folder.ShowDialog() == DialogResult.OK) {
             cs.SourceDirectory = folder.SelectedPath;
+            return true;
         }
+        return false;
+    }
+
+    private void ChangeDirectory(object sender, EventArgs e) {
+        ChangeDirectory();
     }
 
     private void LoadSettings(object sender, EventArgs e) {
