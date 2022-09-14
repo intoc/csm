@@ -127,7 +127,7 @@
     <value>Cover File</value>
   </data>
   <data name="cfile_note" xml:space="preserve">
-    <value>The path to the file to use as the cover. This is not loaded from settings files. (Changing this option reloads the file list)</value>
+    <value>The path to the file to use as the cover. (Changing this option reloads the file list).</value>
   </data>
   <data name="cfill_desc" xml:space="preserve">
     <value>Attempt to Fill Cover Gaps</value>
@@ -145,7 +145,7 @@
     <value>Show Cover</value>
   </data>
   <data name="cover_note" xml:space="preserve">
-    <value>Show a cover at the top of the sheet. (Changing this option reloads the file list)</value>
+    <value>Show a cover at the top of the sheet. (Changing this option reloads the file list).</value>
   </data>
   <data name="cregx_desc" xml:space="preserve">
     <value>Cover Pattern</value>
@@ -169,7 +169,7 @@
     <value>Bold Header</value>
   </data>
   <data name="hbold_note" xml:space="preserve">
-    <value>Makes the header text bold</value>
+    <value>Makes the header text bold.</value>
   </data>
   <data name="header_desc" xml:space="preserve">
     <value>Show Header</value>
@@ -181,19 +181,19 @@
     <value>Header Font Size</value>
   </data>
   <data name="hsize_note" xml:space="preserve">
-    <value>The font size of the header text</value>
+    <value>The font size of the header text.</value>
   </data>
   <data name="hstats_desc" xml:space="preserve">
     <value>Show Statistics</value>
   </data>
   <data name="hstats_note" xml:space="preserve">
-    <value>Show statistics about the images, e.g. "(x100) max 1200x600px"</value>
+    <value>Show statistics about the images, e.g. "(x100) max 1200x600px".</value>
   </data>
   <data name="htitle_desc" xml:space="preserve">
     <value>Header Title</value>
   </data>
   <data name="htitle_note" xml:space="preserve">
-    <value>The name of the image set. This is not loaded from settings files.</value>
+    <value>The name of the image set.</value>
   </data>
   <data name="htstats_note" xml:space="preserve">
     <value>The image count and maximum image dimensions.</value>
@@ -214,13 +214,13 @@
     <value>Image Label Font Size</value>
   </data>
   <data name="lsize_note" xml:space="preserve">
-    <value>The font size of the image label text</value>
+    <value>The font size of the image label text.</value>
   </data>
   <data name="mindiminput_desc" xml:space="preserve">
     <value>Minimum Input Dimension (Height and Width)</value>
   </data>
   <data name="mindiminput_note" xml:space="preserve">
-    <value>The minimum width and height for input images to be included in the output sheet. (Changing this option reloads the file list)</value>
+    <value>The minimum width and height for input images to be included in the output sheet. (Changing this option reloads the file list).</value>
   </data>
   <data name="mindim_desc" xml:space="preserve">
     <value>Minimum Thumbnail Dimension (Height and Width)</value>
@@ -244,7 +244,7 @@
     <value>Output File</value>
   </data>
   <data name="outfile_note" xml:space="preserve">
-    <value>File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list)</value>
+    <value>File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list).</value>
   </data>
   <data name="preview_desc" xml:space="preserve">
     <value>Preview Layout Only</value>

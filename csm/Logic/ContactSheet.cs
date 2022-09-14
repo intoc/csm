@@ -213,7 +213,8 @@ public class ContactSheet {
         };
         headerBold = new BoolParam("-hbold", false);
         headerTitle = new StringParam("-htitle", "Title", "Words") {
-            MaxChars = 20
+            MaxChars = 20,
+            ExcludeFromLoading = true
         };
         headerStats = new BoolParam("-hstats", false);
         header.AddSubParam(headerFontSize);
@@ -229,7 +230,9 @@ public class ContactSheet {
         coverPattern = new StringParam("-cregx", string.Empty, "Regex") {
             MaxChars = 20
         };
-        coverFile = new FileParam("-cfile", null);
+        coverFile = new FileParam("-cfile", null) {
+            ExcludeFromLoading = true
+        };
         cover.AddSubParam(coverPattern);
         cover.AddSubParam(coverFile);
         fillCoverGap = new BoolParam("-cfill", false);

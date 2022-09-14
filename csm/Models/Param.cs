@@ -20,13 +20,14 @@ public abstract class Param {
 
     public event ParamChangedEventHandler ParamChanged;
 
-    private static string[] skipArgs = new[] { "-cfile", "-htitle" };
-
     [XmlAttribute]
     public string Arg { get; set; }
 
     [XmlIgnore]
     public string Units { get; set; }
+
+    [XmlIgnore]
+    public bool ExcludeFromLoading { get; set; }
 
     [XmlElement("Param")]
     public List<Param> SubParams { get; set; }
@@ -52,7 +53,7 @@ public abstract class Param {
     public abstract string Value();
 
     public void Load(IEnumerable<Param> fromList) {
-        if (skipArgs.Contains(Arg)) {
+        if (ExcludeFromLoading) {
             return;
         }
         var p = fromList.FirstOrDefault(prm => prm.Arg == Arg);
@@ -83,12 +84,7 @@ public abstract class Param {
             ParseVal(argAndValue[(argAndValue.IndexOf('=') + 1)..]);
             return true;
         }
-        foreach (Param p in SubParams) {
-            if (p.Parse(argAndValue)) {
-                return true;
-            }
-        }
-        return false;
+        return SubParams.Any(p => p.Parse(argAndValue));
     }
 
     /// <summary>
@@ -97,7 +93,7 @@ public abstract class Param {
     /// <returns>The help message</returns>
     public string GetHelp(bool markDown) {
         string arg = markDown ? $"`{Arg}`" : $"{Arg}:";
-        string unitsDefaults = $"[{Units}, Default={Value() ?? "[empty]"}]";
+        string unitsDefaults = $"[{Units}, Default={Value() ?? "[empty]"}, {(ExcludeFromLoading ? "Not loaded from settings" : string.Empty)}]";
         var desc = Desc;
         string newLine = string.Empty;
         if (markDown) {
