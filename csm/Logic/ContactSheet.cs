@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows.Media.Imaging;
 using System.Xml;
 using System.Xml.Serialization;
+using Path = System.IO.Path;
 
 namespace csm.Logic;
 
@@ -73,7 +74,7 @@ public class ContactSheet {
     readonly bool canAnalyzeRam = false;
     private readonly PerformanceCounter workingSetCounter;
     private readonly PerformanceCounter availableRamCounter;
-    private float ramUsageAtStart, drawRam;
+    private float drawRam;
 
     private bool drawThreadsRunning;
     private DateTime startTime;
@@ -117,11 +118,11 @@ public class ContactSheet {
 
     public ContactSheet() {
 
+        // Set parameter fields and defaults
+
         noGui = new BoolParam("-nogui", false);
 
-       
-
-        // Set parameter fields and defaults
+        #region General
 
         fileType = new StringParam("-filetype", ".jpg", "Extension") {
             MaxChars = 4
@@ -186,12 +187,20 @@ public class ContactSheet {
         generalParams.AddSubParam(preview);
         generalParams.AddSubParam(outputFilePath);
 
+        #endregion
+
+        #region Labels
+
         labels = new BoolParam("-labels", false);
         labelFontSize = new IntParam("-lsize", 8, "pt") {
             MinVal = 0,
             MaxVal = 136
         };
         labels.AddSubParam(labelFontSize);
+
+        #endregion
+
+        #region Header
 
         header = new BoolParam("-header", false);
         headerFontSize = new IntParam("-hsize", 12, "pt") {
@@ -208,6 +217,10 @@ public class ContactSheet {
         header.AddSubParam(headerTitle);
         header.AddSubParam(headerStats);
 
+        #endregion
+
+        #region Cover
+
         cover = new BoolParam("-cover", false);
         coverPattern = new StringParam("-cregx", string.Empty, "Regex") {
             MaxChars = 20
@@ -217,6 +230,8 @@ public class ContactSheet {
         cover.AddSubParam(coverFile);
         fillCoverGap = new BoolParam("-cfill", false);
         cover.AddSubParam(fillCoverGap);
+
+        #endregion
 
         // Setup all instances where a file list reload is required
         var reloadFileListHandler = new ParamChangedEventHandler(LoadFileList);
@@ -340,7 +355,7 @@ public class ContactSheet {
         return changed;
     }
 
-    private bool GuessCover(bool force) => GuessFile(coverFile, !string.IsNullOrEmpty(coverPattern.Val) ? new string[] { coverPattern.Val } : coverNames, force);
+    private void GuessCover(bool force) => GuessFile(coverFile, !string.IsNullOrEmpty(coverPattern.Val) ? new string[] { coverPattern.Val } : coverNames, force);
 
     public void LoadFileList(Param p) {
         Debug.WriteLine("Reloading file list due to change in {0}", p.Arg);
@@ -370,6 +385,14 @@ public class ContactSheet {
             // Load Image data into list
             Monitor.Enter(ImageList);
             ImageList.Clear();
+
+            // Don't include images smaller than minDimInput
+            var tooSmall = (BitmapFrame bmpFrame) => bmpFrame.PixelWidth < minDimInput.Val && bmpFrame.PixelHeight < minDimInput.Val;
+            // Don't include a previously generated contact sheet if we can avoid it
+            var isOldSheet = (string path) => System.IO.Path.GetFileName(path).Equals(System.IO.Path.GetFileName(outputFilePath.Val));
+            // Don't include cover or logo files  
+            var inToRemove = (string path) => toRemove.Contains(path);
+
             foreach (string path in files) {
                 
                 // Load image info without actually loading the image
@@ -377,16 +400,7 @@ public class ContactSheet {
                 var bmpFrame = BitmapFrame.Create(imageUri, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
                 var image = new ImageData(new Size(bmpFrame.PixelWidth, bmpFrame.PixelHeight), path);
 
-                // Don't include images smaller than minDimInput
-                if (bmpFrame.PixelWidth < minDimInput.Val && bmpFrame.PixelHeight < minDimInput.Val) {
-                    image.Include = false;
-                } else
-                // Don't include a previously generated contact sheet if we can avoid it
-                if (Path.GetFileName(path).Equals(Path.GetFileName(outputFilePath.Val))) {
-                    image.Include = false;
-                } else
-                // Don't include cover or logo files    
-                if (toRemove.Contains(path)) {
+                if (tooSmall(bmpFrame) || isOldSheet(path) || inToRemove(path)) {
                     image.Include = false;
                 }
 
@@ -448,8 +462,6 @@ public class ContactSheet {
                     if (fillCoverGap.Val) {
                         double scale = 0.7;
                         Console.WriteLine("Reducing cover size by a factor of {0} to create gap.", scale);
-                        //fillCoverGap.Val = false;
-
                         coverBounds.Width = (int)(coverBounds.Width * scale);
                         coverBounds.Height = (int)(coverBounds.Height * scale);
                     } else {
@@ -573,7 +585,6 @@ public class ContactSheet {
                     double w2 = rowWidth;
 
                     double f1 = (h2 * sheetWidth.Val) / ((h1 * w2) + (h2 * w1));
-                    //double f2 = f1 * h1 / h2;
 
                     coverBounds.Width = (int)Math.Round(coverBounds.Width * f1);
                     coverBounds.Height = (int)Math.Round(coverBounds.Height * f1);
@@ -654,8 +665,7 @@ public class ContactSheet {
 
         #region Drawing
         // Detemermine the maximum image dimensions
-        Size maxSize =
-            (from row in analyses
+        Size maxSize = (from row in analyses
              where row.Count > 0
              select row.OrderBy(im => im.OriginalSize.Height).Last())
                   .OrderBy(im => im.OriginalSize.Height).Last().OriginalSize;
@@ -663,7 +673,6 @@ public class ContactSheet {
         // Set up the header
         Image headerImage = null;
         int headerHeight = 0;
-        double headerWidth = 0;
         if (header.Val) {
             headerImage = new Bitmap(sheetWidth.Val, sheetWidth.Val);
             Graphics headerG = Graphics.FromImage(headerImage);
@@ -676,7 +685,6 @@ public class ContactSheet {
             Font headerFont = new("Arial", headerFontSize.Val, headerBold.Val ? FontStyle.Bold : FontStyle.Regular);
             SizeF headerSize = headerG.MeasureString(headerText, headerFont, sheetWidth.Val);
             headerHeight = (int)Math.Ceiling(headerSize.Height);
-            headerWidth = headerSize.Width;
             Rectangle headerRegion = new(0, 0, sheetWidth.Val, headerHeight);
             headerG.DrawString(headerText, headerFont, br, headerRegion);
             headerG.Dispose();
@@ -853,7 +861,7 @@ public class ContactSheet {
     /// </summary>
     private void MonitorRunningMemory() {
         // Record the available RAM
-        ramUsageAtStart = workingSetCounter.NextValue();
+        float ramUsageAtStart = workingSetCounter.NextValue();
         drawRam = 0;
         float ram;
         DateTime start = DateTime.Now;
@@ -901,9 +909,6 @@ public class ContactSheet {
         } else {
             thumbG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Low;
         }
-
-        // Smooth the image. This doesn't hurt much.
-        //thumbG.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
         if (preview.Val) {
             thumbG.FillRectangle(Brushes.White, thumb);
@@ -1009,7 +1014,7 @@ public class ContactSheet {
             }
 
             // Calculate the row height based on the factor needed to scale the row to the sheet width
-            rowHeight = Math.Round((double)maxImageHeight * (width / (double)rowWidth));
+            rowHeight = Math.Round(maxImageHeight * (width / (double)rowWidth));
 
             // Scale images to calculated height
             foreach (ImageData id in list) {

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Resources;
+using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -28,18 +29,18 @@ public abstract class Param {
     [XmlElement("Param")]
     public List<Param> SubParams { get; set; }
 
-    private ResourceSet Resources => ParamsResources.ResourceManager.GetResourceSet(System.Threading.Thread.CurrentThread.CurrentCulture, true, true);
-    public string Desc => Resources.GetString($"{Arg.Substring(1)}_desc");
-    public string Note => Resources.GetString($"{Arg.Substring(1)}_note");
+    private static ResourceSet Resources => ParamsResources.ResourceManager.GetResourceSet(System.Threading.Thread.CurrentThread.CurrentCulture, true, true);
+    public string Desc => Resources.GetString($"{Arg[1..]}_desc");
+    public string Note => Resources.GetString($"{Arg[1..]}_note");
 
     [XmlIgnore]
     public bool PreventEvents { get; set; }
 
-    public Param() {
+    protected Param() {
         SubParams = new List<Param>();
     }
 
-    public Param(string arg, string units = null) : this() {
+    protected Param(string arg, string units = null) : this() {
         Arg = arg;
         Units = units;
     }
@@ -74,15 +75,10 @@ public abstract class Param {
     /// <returns>True if the command matched</returns>
     public bool Parse(string argAndValue) {
         if (argAndValue.StartsWith($"{Arg}=")) {
-            ParseVal(argAndValue.Substring(argAndValue.IndexOf('=') + 1));
+            ParseVal(argAndValue[(argAndValue.IndexOf('=') + 1)..]);
             return true;
         }
-        foreach (Param p in SubParams) {
-            if (p.Parse(argAndValue)) {
-                return true;
-            }
-        }
-        return false;
+        return SubParams.FirstOrDefault(p => p.Parse(argAndValue)) != null;
     }
 
     /// <summary>
@@ -99,16 +95,17 @@ public abstract class Param {
             desc = $"**{Desc}**";
             newLine = @"\";
         }
-        string help = Arg == "null" ? string.Empty : $"{arg} {desc} {unitsDefaults}. {Note}{newLine}\n";
+        StringBuilder help = new();
+        help.AppendLine(Arg == "null" ? string.Empty : $"{arg} {desc} {unitsDefaults}. {Note}{newLine}");
         foreach (Param p in SubParams) {
-            help += $"{p.GetHelp(markDown)}";
+            help.Append($"{p.GetHelp(markDown)}");
         }
-        return help;
+        return help.ToString();
     }
 
     public override string ToString() {
-        var value = Value() ?? "[none]";
-        if (value.Equals(string.Empty)) {
+        var value = Value();
+        if (string.IsNullOrEmpty(value)) {
             value = "[empty]";
         }
         return $"{Desc}: {value} ({Units})";
