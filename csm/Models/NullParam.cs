@@ -4,6 +4,7 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace csm.Models; 
+
 [Serializable]
 public class NullParam : Param {
 

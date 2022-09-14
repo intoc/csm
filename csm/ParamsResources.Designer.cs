@@ -339,23 +339,6 @@ internal class ParamsResources {
         }
     }
     
-    /// <summary>
-    ///   Looks up a localized string similar to Logo File.
-    /// </summary>
-    internal static string lgfile_desc {
-        get {
-            return ResourceManager.GetString("lgfile_desc", resourceCulture);
-        }
-    }
-    
-    /// <summary>
-    ///   Looks up a localized string similar to The file to use as the logo. (Changing this option reloads the file list)..
-    /// </summary>
-    internal static string lgfile_note {
-        get {
-            return ResourceManager.GetString("lgfile_note", resourceCulture);
-        }
-    }
     
     /// <summary>
     ///   Looks up a localized string similar to Image Label Font Size.

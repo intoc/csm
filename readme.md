@@ -78,7 +78,7 @@ Parameters may be in any order, and they don't all have to be used.
 `--help` View this help message.
 
 ## Tips
-iCSM will not recognize image files with the `Hidden` attribute. It will recognize them for covers and logos.
+iCSM will not recognize image files with the `Hidden` attribute. It will recognize them for covers.
 To create a shortcut that you can drag folders onto with your preferred parameters, first create a
 shortcut to csm.exe, then right-click the shortcut and select Properties. Once there, add your
 parameters to the end of the `Target` field, or just use the Settings file feature to create different

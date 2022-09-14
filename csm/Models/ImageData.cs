@@ -4,9 +4,6 @@ using System.Linq;
 
 namespace csm.Models; 
 public class ImageData {
-
-    public bool Include = true;
-
     public int Width { get; set; }
     public int Height { get; set; }
     public double Ratio { get; private set; }
@@ -14,6 +11,8 @@ public class ImageData {
     public int X { get; set; }
     public int Y { get; set; }
     public string File { get; set; }
+    public Size OriginalSize { get; private set; }
+    public bool Include { get; set; } = true;
 
     public Rectangle Bounds {
         get {
@@ -31,8 +30,6 @@ public class ImageData {
             return File.Split('\\').Last();
         }
     }
-    public Size OriginalSize { get; private set; }
-    public bool IsLogo { get; set; }
 
     public ImageData(Size s, string filename) {
         Width = s.Width;
@@ -41,7 +38,6 @@ public class ImageData {
         Ratio = Width / (double)Height;
         IsLandscape = Ratio > 1.0;
         File = filename;
-        IsLogo = false;
     }
 
     /// <summary>
@@ -55,7 +51,7 @@ public class ImageData {
         Height = (int)height;
 
         if (Width < 0 || Height < 0) {
-            throw new Exception(string.Format("Bad Scale! Factor: {0}, OriginalSize: {1}, Width: {2}, Height: {3}", factor, OriginalSize, Width, Height));
+            throw new InvalidOperationException(string.Format("Bad Scale! Factor: {0}, OriginalSize: {1}, Width: {2}, Height: {3}", factor, OriginalSize, Width, Height));
         }
         return factor;
     }

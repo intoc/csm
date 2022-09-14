@@ -366,9 +366,9 @@ public class ContactSheet {
 
         LoadingImageList = true;
 
-        Thread t = new(delegate () {
+        new Thread(delegate () {
             var toRemove = new List<string>();
-            // Remove the cover/logo from the list if it's being displayed full size
+            // Remove the cover from the list if it's being displayed full size
             if (cover.Val) {
                 toRemove.Add(coverFile.Path);
             }
@@ -377,7 +377,6 @@ public class ContactSheet {
             // Don't include hidden files
             IEnumerable<string> files = 
                 from file in sourceDir.GetFiles()
-                //where !toRemove.Contains(file.FullName)
                 where file.Extension.ToLower().Contains(fileType.Val.ToLower())
                 where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
                 select file.FullName;
@@ -390,7 +389,7 @@ public class ContactSheet {
             var tooSmall = (BitmapFrame bmpFrame) => bmpFrame.PixelWidth < minDimInput.Val && bmpFrame.PixelHeight < minDimInput.Val;
             // Don't include a previously generated contact sheet if we can avoid it
             var isOldSheet = (string path) => System.IO.Path.GetFileName(path).Equals(System.IO.Path.GetFileName(outputFilePath.Val));
-            // Don't include cover or logo files  
+            // Don't include cover file
             var inToRemove = (string path) => toRemove.Contains(path);
 
             foreach (string path in files) {
@@ -409,8 +408,7 @@ public class ContactSheet {
             Monitor.Exit(ImageList);
             ImageListChanged?.Invoke(new ImageListChangedEventArgs());
             LoadingImageList = false;
-        });
-        t.Start();
+        }).Start();
     }
 
     public bool Run() {
@@ -913,14 +911,6 @@ public class ContactSheet {
         if (preview.Val) {
             thumbG.FillRectangle(Brushes.White, thumb);
             thumbG.DrawRectangle(Pens.LightGreen, thumb);
-            if (data.Image.IsLogo) {
-                thumbG.DrawString(
-                    "LOGO", new
-                        Font("Times New Roman", 14, FontStyle.Bold),
-                        Brushes.Black,
-                        thumb.X + thumb.Width / 2,
-                        thumb.Y + thumb.Height / 2);
-            }
         } else {
             thumbG.DrawImage(i, thumb);
         }
@@ -929,7 +919,7 @@ public class ContactSheet {
         }
 
         // Draw image name labels
-        if (data.FontSize > 0 && !data.Image.IsLogo) {
+        if (data.FontSize > 0) {
             // Set label to file name, no extension
             string label = data.File.Split('\\').Last();
             label = label[..label.LastIndexOf(".")];

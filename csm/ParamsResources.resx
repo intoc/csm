@@ -210,12 +210,6 @@
   <data name="labels_note" xml:space="preserve">
     <value>Shows the filename for each image.</value>
   </data>
-  <data name="lgfile_desc" xml:space="preserve">
-    <value>Logo File</value>
-  </data>
-  <data name="lgfile_note" xml:space="preserve">
-    <value>The file to use as the logo. (Changing this option reloads the file list).</value>
-  </data>
   <data name="lsize_desc" xml:space="preserve">
     <value>Image Label Font Size</value>
   </data>

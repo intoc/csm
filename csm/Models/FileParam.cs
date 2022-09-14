@@ -96,24 +96,22 @@ public class FileParam : Param {
         return changed;
     }
 
-    public override void ParseVal(string path) {
+    public override void ParseVal(string value) {
         // Use the current directory if the path is not null,
         // the path is not (supposedly) in the current directory,
         // and the current directory exists
-        unParsedVal = path;
+        unParsedVal = value;
 
-        if (path != null && !path.Contains(@"\") && Directory != null) {
+        if (value != null && !value.Contains('\\') && Directory != null) {
             File = null;
-
             FileInfo[] files = Directory.GetFiles($"*{Ext}");
-            //Console.WriteLine("Parsing on {0}, dir={1}", path, Directory);
-            File = files.FirstOrDefault(f => path.Length > 0 &&
-                    (f.ToString() == path ||
-                     f.ToString().ToLower().Contains(path.ToLower())));
+            File = files.FirstOrDefault(f => value.Length > 0 &&
+                    (f.ToString() == value ||
+                     f.ToString().ToLower().Contains(value.ToLower())));
         } else {
             // Try a full-path parse
-            if (System.IO.File.Exists(path)) {
-                File = new FileInfo(path);
+            if (System.IO.File.Exists(value)) {
+                File = new FileInfo(value);
                 Directory = File.Directory;
             } else {
                 // No file
