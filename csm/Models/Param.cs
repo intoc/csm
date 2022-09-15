@@ -80,13 +80,13 @@ public abstract class Param {
     /// <returns>True if the command matched</returns>
     public bool Parse(string argAndValue) {
         if (argAndValue.StartsWith($"{Arg}=")) {
-            ParseVal(GetValueFromArg(Arg, argAndValue));
+            ParseVal(GetValueFromArg(argAndValue));
             return true;
         }
         return SubParams.Any(p => p.Parse(argAndValue));
     }
 
-    public static string GetValueFromArg(string arg, string argAndValue) {
+    public static string GetValueFromArg(string argAndValue) {
         return argAndValue[(argAndValue.IndexOf('=') + 1)..];
     }
 
@@ -95,20 +95,21 @@ public abstract class Param {
     /// </summary>
     /// <returns>The help message</returns>
     public string GetHelp(bool markDown) {
-        string unitsDefaults = $"[{Units}, Default={Value() ?? "[empty]"}, {(ExcludeFromLoading ? "Not loaded from settings" : string.Empty)}]";
-        
         StringBuilder help = new();
-        if (this is not NullParam) {
-            if (markDown) {
-                help.AppendLine($"| {Arg} | {Desc} | {Units} | {Value() ?? "[none]"} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
-            } else {
-                help.AppendLine(Arg == "null" ? string.Empty : $"{Arg}: {Desc} {unitsDefaults}. {Note}");
-            }
-        }
+        AppendHelpString(help, markDown);
         foreach (Param p in SubParams) {
             help.Append($"{p.GetHelp(markDown)}");
         }
         return help.ToString();
+    }
+
+    protected virtual void AppendHelpString(StringBuilder help, bool isMarkDown) {
+        if (isMarkDown) {
+            help.AppendLine($"| `{Arg}` | {Desc} | {Units} | {Value() ?? "[none]"} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
+        } else {
+            string unitsDefaults = $"[{Units}, Default={Value() ?? "[empty]"}, {(ExcludeFromLoading ? "Not loaded from settings" : string.Empty)}]";
+            help.AppendLine(Arg == "null" ? string.Empty : $"{Arg}: {Desc} {unitsDefaults}. {Note}");
+        }
     }
 
     public override string ToString() {

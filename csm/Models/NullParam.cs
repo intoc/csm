@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System.Text;
+using System.Xml;
 using System.Xml.Serialization;
 
 namespace csm.Models;
@@ -29,5 +30,9 @@ public class NullParam : Param {
         if (other is NullParam) {
             LoadSubs(other);
         }
+    }
+
+    protected override void AppendHelpString(StringBuilder help, bool isMarkDown) { 
+        // Don't append anything
     }
 }
