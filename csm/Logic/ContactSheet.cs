@@ -14,6 +14,9 @@ public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
 public delegate void ImageListChangedEventHandler(ImageListChangedEventArgs args);
 public delegate void ExceptionEventHandler(Exception e);
 
+/// <summary>
+/// Creates contact sheets
+/// </summary>
 public class ContactSheet {
 
     private static readonly string[] coverNames = { "cover", "folder", "square", "front" };
@@ -49,20 +52,54 @@ public class ContactSheet {
     private readonly StringParam outputFilePath;
     private readonly BoolParam openOutputDirectoryOnComplete;
 
+    /// <summary>
+    /// The parameters used for creating the sheet
+    /// </summary>
     public List<Param> Params { get; private set; }
 
     private int imageCount, drawnCount, activeDrawThreads;
     private DirectoryInfo? sourceDir;
+
+    /// <summary>
+    /// The path to the settings file
+    /// </summary>
     public string? SettingsFile { get; set; }
 
+    /// <summary>
+    /// The list of images found in the source directory
+    /// </summary>
     public List<ImageData> ImageList { get; private set; }
 
+    #region Events
+
+    /// <summary>
+    /// Fired when the progress of drawing the output contact sheet changes
+    /// </summary>
     public event DrawProgressEventHandler DrawProgressChanged = delegate { };
+
+    /// <summary>
+    /// Fired when the settings file changes and is loaded
+    /// </summary>
     public event SettingsChangedEventHandler SettingsChanged = delegate { };
+
+    /// <summary>
+    /// Fired when there is a change to the contents of the image list
+    /// </summary>
     public event ImageListChangedEventHandler ImageListChanged = delegate { };
+
+    /// <summary>
+    /// Fired when an exception occurred
+    /// </summary>
     public event ExceptionEventHandler ExceptionOccurred = delegate { };
+
+    /// <summary>
+    /// Fired when the source directory is changed
+    /// </summary>
     public event SourceDirectoryChangedEventHandler SourceDirectoryChanged = delegate { };
 
+    #endregion
+
+    // RAM Analysis variables
     readonly bool canAnalyzeRam = false;
     private readonly PerformanceCounter? workingSetCounter;
     private readonly PerformanceCounter? availableRamCounter;
@@ -71,6 +108,9 @@ public class ContactSheet {
     private bool drawThreadsRunning;
     private DateTime startTime;
 
+    /// <summary>
+    /// The source directory path
+    /// </summary>
     public string? SourceDirectory {
         get {
             if (sourceDir != null) {
@@ -98,6 +138,11 @@ public class ContactSheet {
         }
     }
 
+    /// <summary>
+    /// Get the output file path with an optional suffix
+    /// </summary>
+    /// <param name="suffix">Optional numeric filename suffix (before the extension)</param>
+    /// <returns>The output file path</returns>
     public string OutFilePath(int suffix = 0) {
         string? path = outputFilePath.Val;
 
@@ -115,10 +160,19 @@ public class ContactSheet {
         
     }
 
+    /// <summary>
+    /// Whether the GUI is enabled
+    /// </summary>
     public bool GuiEnabled => !noGui.Val;
 
+    /// <summary>
+    /// Whether the output directory should be opened after the contact sheet output file is created
+    /// </summary>
     public bool OpenOutputDir => openOutputDirectoryOnComplete.Val;
 
+    /// <summary>
+    /// Create a contact sheet instance
+    /// </summary>
     public ContactSheet() {
 
         // Set parameter fields and defaults
@@ -306,13 +360,18 @@ public class ContactSheet {
         }
     }
 
+    /// <summary>
+    /// Save settings to a file. If <see cref="SettingsFile"/> is not set,
+    /// save to default.xml.
+    /// </summary>
     public void SaveSettings() {
-        if (SettingsFile == null) {
-            return;
-        }
-        SaveSettings(SettingsFile);
+        SaveSettings(SettingsFile ?? "default.xml");
     }
 
+    /// <summary>
+    /// Save settings to a file with the given path.
+    /// </summary>
+    /// <param name="path">The settings file path</param>
     public void SaveSettings(string path) {
         try {
             TextWriter w = new StreamWriter(path);
@@ -327,6 +386,10 @@ public class ContactSheet {
         }
     }
 
+    /// <summary>
+    /// Load parameters from command-line arguments
+    /// </summary>
+    /// <param name="args">Command-line arguments</param>
     public void Load(string[] args) {
 
         // Get any command line arguments
@@ -342,6 +405,14 @@ public class ContactSheet {
         }
     }
 
+    /// <summary>
+    /// Guess a the path for a <see cref="FileParam"/> based on the configured
+    /// file type and supplied patterns.
+    /// </summary>
+    /// <param name="fileParam">The <see cref="FileParam"/></param>
+    /// <param name="patterns">The patterns (Regular Expressions)</param>
+    /// <param name="force">If true, proceeds even if <paramref name="fileParam"/> already has a file set</param>
+    /// <returns>Whether the the guess was executed and succeeded</returns>
     private bool GuessFile(FileParam fileParam, string[] patterns, bool force) {
         if (string.IsNullOrEmpty(fileType.Val)) {
             return false;
@@ -357,13 +428,26 @@ public class ContactSheet {
         return changed;
     }
 
-    private void GuessCover(bool force) => GuessFile(coverFile, !string.IsNullOrEmpty(coverPattern.Val) ? new string[] { coverPattern.Val } : coverNames, force);
+    /// <summary>
+    /// Guess the cover file path
+    /// </summary>
+    /// <param name="force">Proceeds even if the cover file path has already been set</param>
+    private void GuessCover(bool force) => GuessFile(coverFile, 
+        !string.IsNullOrEmpty(coverPattern.Val) ? new string[] { coverPattern.Val } : coverNames, 
+        force);
 
+    /// <summary>
+    /// Load the 
+    /// </summary>
+    /// <param name="p"></param>
     public void LoadFileList(Param p) {
         Console.WriteLine("Reloading file list due to change in {0}", p.Arg);
         LoadFileList();
     }
 
+    /// <summary>
+    /// Load the file list and image information from the source directory if it's set
+    /// </summary>
     public void LoadFileList() {
         if (sourceDir == null) {
             return;
@@ -397,6 +481,10 @@ public class ContactSheet {
         }
     }
 
+    /// <summary>
+    /// Refreshes the image data and whether they should be included in the output based on parameter changes
+    /// </summary>
+    /// <param name="p">The <see cref="Param"/> that caused the need for the refresh</param>
     public void RefreshImageList(Param p) {
         if (!ImageList.Any()) {
             return;
@@ -405,6 +493,9 @@ public class ContactSheet {
         RefreshImageList();
     }
 
+    /// <summary>
+    /// Refreshes the image data and whether they should be included in the output based on parameter changes
+    /// </summary>
     private void RefreshImageList() {
         // Don't include images smaller than minDimInput
         var isTooSmall = (ImageData image) => image.Width < minDimInput.Val && image.Height < minDimInput.Val;
@@ -420,6 +511,10 @@ public class ContactSheet {
         ImageListChanged?.Invoke(new ImageListChangedEventArgs());
     }
 
+    /// <summary>
+    /// Runs the image analysis and contact sheet creation process
+    /// </summary>
+    /// <returns>Whether the process is set to exit on complete</returns>
     public bool Run() {
 
         IEnumerable<ImageData> images;
@@ -899,6 +994,10 @@ public class ContactSheet {
         }
     }
 
+    /// <summary>
+    /// Draw a thumbnail image on the contact sheet
+    /// </summary>
+    /// <param name="state">Data about the image and its position on the sheet (<see cref="DrawThreadObj")/></param>
     private void DrawThumb(object? state) {
         if (state == null) {
             return;
@@ -963,8 +1062,6 @@ public class ContactSheet {
             thumbG.DrawString(label, font, Brushes.White, labelClip, alignCenter);
         }
 
-
-
         // Have to lock on the Graphics object
         // because two threads can't draw on it at the same time
         Monitor.Enter(data.G);
@@ -987,6 +1084,12 @@ public class ContactSheet {
         DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, imageCount, DateTime.Now - startTime));
     }
 
+    /// <summary>
+    /// Shift a thumbnail image from an end of one row to another on the contact sheet
+    /// </summary>
+    /// <param name="list">The list of rows of images</param>
+    /// <param name="fromRow">The index of the source row</param>
+    /// <param name="toRow">The index of the target row</param>
     private static void ShiftImage(List<List<ImageData>> list, int fromRow, int toRow) {
         if (fromRow < toRow) {
             if (list.Count <= toRow) {
@@ -1000,6 +1103,12 @@ public class ContactSheet {
         }
     }
 
+    /// <summary>
+    /// Scale the images in a row to fit a new row width
+    /// </summary>
+    /// <param name="list">The list of images in the row</param>
+    /// <param name="width">The new row width</param>
+    /// <returns>The newly scaled row height</returns>
     private static int ScaleRow(List<ImageData> list, int width) {
         double maxImageHeight = 0;
         double rowHeight = 0;
@@ -1046,6 +1155,11 @@ public class ContactSheet {
         return (int)rowHeight;
     }
 
+    /// <summary>
+    /// Get the minimum dimensions of the images in a row
+    /// </summary>
+    /// <param name="row">The list of images in a row</param>
+    /// <returns>A <see cref="Size"/> containing the calculated minimum Height and Width</returns>
     private static Size MinDims(List<ImageData> row) {
         Size s = new(row[0].Width, row[0].Height);
         foreach (ImageData img in row) {
@@ -1055,6 +1169,12 @@ public class ContactSheet {
         return s;
     }
 
+    /// <summary>
+    /// Check if the supplied command-line arguments include a Help argument.
+    /// If they do, print the Help message.
+    /// </summary>
+    /// <param name="args">The command-line arguments</param>
+    /// <returns>Whether a Help argument was found and Help message was output.</returns>
     public bool CheckPrintHelp(string[] args) {
         bool markDown = args.Contains("markdown");
         if (args.Any(a => helpStrings.Contains(a))) {
