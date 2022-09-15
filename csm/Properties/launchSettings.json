@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "csm": {
-      "commandName": "Project",
-      "commandLineArgs": " -nogui=false -sfile=default.xml \"E:\\[RylskyArt] 18.10.14 - Yani (Nieve) [x67]\""
-    }
-  }
-}
