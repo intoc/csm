@@ -28,13 +28,22 @@ public class ImageData {
         }
     }
 
+    public ImageData(string fileName) {
+        File = fileName;
+        OriginalSize = new Size(Width, Height);
+    }
+
     public ImageData(Size s, string filename) {
+        File = filename;
+        InitSize(s);
+    }
+
+    public void InitSize(Size s) {
         Width = s.Width;
         Height = s.Height;
         OriginalSize = s;
         Ratio = Width / (double)Height;
         IsLandscape = Ratio > 1.0;
-        File = filename;
     }
 
     /// <summary>

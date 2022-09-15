@@ -1,9 +1,7 @@
 ﻿using csm.Models;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Text.RegularExpressions;
-using System.Windows.Media.Imaging;
 using System.Xml;
 using System.Xml.Serialization;
 using Path = System.IO.Path;
@@ -462,7 +460,12 @@ public class ContactSheet {
         if (sourceDir == null) {
             return;
         }
-        var refresh = () => {
+        var loadImageDataStream = (ImageData image) => {
+            using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
+            using var fromStream = Image.FromStream(stream, false, false);
+            image.InitSize(new Size(fromStream.Width, fromStream.Height));
+        };
+        var loadAll = () => {
             lock (ImageList) {
                 var sw = Stopwatch.StartNew();
 
@@ -477,13 +480,16 @@ public class ContactSheet {
                 // Load Image data into list
                 ImageList.Clear();
 
+                IList<Task> tasks = new List<Task>();
                 foreach (string path in files) {
-                    // Load image info without actually loading the image
-                    var imageUri = new Uri(path);
-                    var bmpFrame = BitmapFrame.Create(imageUri, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-                    var image = new ImageData(new Size(bmpFrame.PixelWidth, bmpFrame.PixelHeight), path);
+                    ImageData image = new(path);
                     ImageList.Add(image);
+                    var task = new Task(() => loadImageDataStream(image));
+                    task.Start();
+                    tasks.Add(task);
                 }
+
+                Task.WaitAll(tasks.ToArray());
 
                 sw.Stop();
                 Debug.WriteLine("LoadFileList took {0}", sw.Elapsed);
@@ -492,9 +498,9 @@ public class ContactSheet {
             }
         };
         if (newThread) {
-            new Thread(() => refresh()).Start();
+            new Thread(() => loadAll()).Start();
         } else {
-            refresh();
+            loadAll();
         }
     }
 
