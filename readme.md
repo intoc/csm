@@ -63,11 +63,11 @@ Parameters may be in any order, and they don't all have to be used.
 | `-labels` | Show Image Labels | true/false | False | Shows the filename for each image.  |
 | `-lsize` | Image Label Font Size | pt | 8 | The font size of the image label text.  |
 | `-cover` | Show Cover | true/false | False | Show a cover at the top of the sheet. (Changing this option reloads the file list).  |
-| `-cregx` | Cover Pattern | Regex |  | The primary regular expression used to match cover files. (Changing this option reloads the file list).  |
+| `-cregx` | Cover Pattern | Regex | [none] | The primary regular expression used to match cover files. (Changing this option reloads the file list).  |
 | `-cfile` | Cover File | file | [none] | The path to the file to use as the cover. (Changing this option reloads the file list). (Not loaded from settings) |
 | `-cfill` | Attempt to Fill Cover Gaps | true/false | False | Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.  |
 | `-sfile` | Settings file path | File Path | default.aspx | The path to a settings file. Can be absolute or relative. |
-| `-help` | [no value required] View help message | None | N/A | Show a help message on the command line with parameter documentation. |
+| `-help` | View help message (no value required) | None | N/A | Show a help message on the command line with parameter documentation. |
 ## Tips
 iCSM will not recognize image files with the `Hidden` attribute. It will recognize them for covers.
 To create a shortcut that you can drag folders onto with your preferred parameters, first create a

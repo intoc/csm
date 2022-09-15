@@ -104,10 +104,12 @@ public abstract class Param {
     }
 
     protected virtual void AppendHelpString(StringBuilder help, bool isMarkDown) {
+        string? value = Value();
+        value = string.IsNullOrEmpty(value) ? "[none]" : value;
         if (isMarkDown) {
-            help.AppendLine($"| `{Arg}` | {Desc} | {Units} | {Value() ?? "[none]"} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
+            help.AppendLine($"| `{Arg}` | {Desc} | {Units} | {value} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
         } else {
-            string unitsDefaults = $"[{Units}, Default={(string.IsNullOrEmpty(Value()) ? "[empty]" : Value())}{(ExcludeFromLoading ? " (Not loaded from settings)" : string.Empty)}]";
+            string unitsDefaults = $"[{Units}, Default={value}{(ExcludeFromLoading ? " (Not loaded from settings)" : string.Empty)}]";
             help.AppendLine(Arg == "null" ? string.Empty : $"{Arg}: {Desc} {unitsDefaults}. {Note}");
         }
     }
