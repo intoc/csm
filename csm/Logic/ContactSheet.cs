@@ -2,6 +2,7 @@
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing.Imaging;
+using System.Text.RegularExpressions;
 using System.Windows.Media.Imaging;
 using System.Xml;
 using System.Xml.Serialization;
@@ -516,7 +517,8 @@ public class ContactSheet {
         // Don't include images smaller than minDimInput
         var isTooSmall = (ImageData image) => image.Width < minDimInput.Val && image.Height < minDimInput.Val;
         // Don't include a previously generated contact sheet if we can avoid it
-        var isOldSheet = (string path) => outputFilePath.Val?.EndsWith(path) ?? false;
+        var isOldSheet = (string path) => !string.IsNullOrEmpty(outputFilePath.Val) 
+            && Regex.IsMatch(path, $"{outputFilePath.Val.Replace(".jpg", @"(_\d*)?\.jpg")}");
         // Don't include cover file
         var isCover = (string fileName) => fileName.Equals(coverFile.File?.Name);
 
