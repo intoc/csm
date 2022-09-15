@@ -16,9 +16,11 @@ public delegate void ExceptionEventHandler(Exception e);
 
 public class ContactSheet {
 
-    private static readonly int DEFAULT_WIDTH = 900;
-    private static readonly int DEFAULT_COLUMNS = 6;
-    private static readonly int DEFAULT_QUALITY = 90;
+    private static readonly string[] coverNames = { "cover", "folder", "square", "front" };
+    private static readonly string[] helpStrings = { "--help", "-help", "/?", "-?" };
+    private const int DEFAULT_WIDTH = 900;
+    private const int DEFAULT_COLUMNS = 6;
+    private const int DEFAULT_QUALITY = 90;
 
     private readonly BoolParam noGui;
     private readonly StringParam fileType;
@@ -53,10 +55,7 @@ public class ContactSheet {
     private DirectoryInfo? sourceDir;
     public string? SettingsFile { get; set; }
 
-    public List<ImageData> ImageList { get; set; }
-
-    private readonly string[] coverNames = { "cover", "folder", "square", "front" };
-    private static readonly string[] helpStrings = { "--help", "-help", "/?", "-?" };
+    public List<ImageData> ImageList { get; private set; }
 
     public event DrawProgressEventHandler DrawProgressChanged = delegate { };
     public event SettingsChangedEventHandler SettingsChanged = delegate { };
@@ -1003,9 +1002,9 @@ public class ContactSheet {
 
     private static int ScaleRow(List<ImageData> list, int width) {
         double maxImageHeight = 0;
-        int rowWidth = 0;
         double rowHeight = 0;
         double factor;
+        int rowWidth = 0;
 
         if (list.Count > 1) {
             // Determine the maximum image height
@@ -1066,8 +1065,8 @@ public class ContactSheet {
 
             string sfile = markDown ? "`-sfile`" : "-sfile:";
             Console.WriteLine("{0} Specify a settings file path.", sfile);
-            string help = markDown ? "`--help`" : "--help:";
-            Console.WriteLine("{0} View this help message.", help);
+            string help = markDown ? "`-help`" : "-help:";
+            Console.WriteLine("{0} [no value required] View this help message.", help);
             
             return true;
         }

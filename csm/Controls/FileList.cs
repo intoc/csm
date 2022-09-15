@@ -5,15 +5,12 @@ using System.ComponentModel;
 
 namespace csm.Controls;
 public partial class FileList : Form {
-    readonly ContactSheet? cs;
+    readonly ContactSheet cs;
 
     public delegate void UpdateListDelegate(ImageListChangedEventArgs args);
 
-    public FileList() {
+    public FileList(ContactSheet cs) {
         InitializeComponent();
-    }
-
-    public FileList(ContactSheet cs) : this() {
         this.cs = cs;
         binder.DataSource = cs.ImageList;
     }
@@ -46,9 +43,6 @@ public partial class FileList : Form {
     }
 
     private void UpdateStatus() {
-        if (cs == null) {
-            return;
-        }
         Text = cs.SourceDirectory?.Split('\\').Last() ?? "No Directory Selected";
         lblImageCount.Text = string.Format("{0} Images ({1} Excluded, {2} Included)", binder.Count, cs.ImageList.Count(i => !i.Include), cs.ImageList.Count(i => i.Include));
     }
@@ -59,9 +53,7 @@ public partial class FileList : Form {
     /// <param name="sender"></param>
     /// <param name="e"></param>
     private void FileList_Load(object sender, EventArgs e) {
-        if (cs != null) {
-            cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
-        }
+        cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
         Rectangle bounds = Owner.Bounds;
         Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
         UpdateStatus();
@@ -85,7 +77,7 @@ public partial class FileList : Form {
         UpdateStatus();
     }
 
-    private void ReloadFiles(object sender, EventArgs e) =>  cs?.LoadFileList();
+    private void ReloadFiles(object sender, EventArgs e) =>  cs.LoadFileList();
 
     private void BtnClose_Click(object sender, EventArgs e)  => Hide();
 
