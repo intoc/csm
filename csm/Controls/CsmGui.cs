@@ -90,28 +90,25 @@ public partial class CsmGui : Form {
         settingsFileStatus.Text = args.Message;
     }
 
-    private void RunSheet(object sender, EventArgs e) {
+    private async void RunSheet(object sender, EventArgs e) {
         try {
-            ThreadPool.QueueUserWorkItem(new WaitCallback((state) => {
-                if (!cs.Run()) {
-                    Application.Exit();
-                }
-            }));
+            bool exit = await cs.DrawAndSave();
+            if (exit) {
+                Application.Exit();
+            }
         } catch (Exception ex) {
             MessageBox.Show(ex.Message);
         }
     }
 
-    public bool ChangeDirectory() {
+    public void ChangeDirectory() {
         FolderBrowserDialog folder = new() {
             Description = "Select the folder containing the images:",
             SelectedPath = cs.SourceDirectory
         };
         if (folder.ShowDialog() == DialogResult.OK) {
             cs.SourceDirectory = folder.SelectedPath;
-            return true;
         }
-        return false;
     }
 
     private void ChangeDirectory(object sender, EventArgs e) {

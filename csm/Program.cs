@@ -43,8 +43,8 @@ static class Program {
             Controls.CsmGui gui = new(cs);
 
             // Launch a directory chooser if no path was entered
-            if (noPathGiven && !gui.ChangeDirectory()) {
-                return;
+            if (noPathGiven) {
+                gui.ChangeDirectory();
             }
 
             // Show a GUI for parameter customization
@@ -54,9 +54,9 @@ static class Program {
             gui.Activate();
         } else {
             // Parameters are as they were entered, just load and go
-            if (!cs.Run()) {
-                Application.Exit();
-            }
+            var task = cs.DrawAndSave();
+            task.GetAwaiter();
+            task.Wait();
         }
     }
 

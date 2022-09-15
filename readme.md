@@ -14,10 +14,6 @@ iCSM will always open *default.xml* on load if it exists.
 You can view helpful information about most of the options by mouseing over their titles. 
 You can find the same information in this document under [Parameters](#Parameters).
 
-## A note on multi-threading
-Multi-threading can speed up draw times on sets of large images, especially with multiple processors/cores. 
-Users with lower-end computers will probably want to stick with single-threading. 
-
 ## File View
 Use `Tools -> View Files`, the corresponding button, or ctrl-F to make any changes to the file list. You can
 select multiple rows and remove them with the Delete key or the Remove button. If you made a
@@ -54,8 +50,6 @@ Parameters may be in any order, and they don't all have to be used.
 `-border` **Image Border Width** *[px, Default=0]*. The border width around an image. The border will be black.\
 `-qual` **Image Quality** *[%, Default=90]*. The Jpeg compression quality of the output image.\
 `-interp` **Use High Quality Interpolation** *[true/false, Default=True]*. Nicer looking thumbnails, but more taxing on processing. May be slow.\
-`-thread` **Use Multi-Threading** *[true/false, Default=False]*. Decreases draw time, may cause unresponsiveness.\
-`-tmax` **Maximum Threads** *[Number, Default=4]*. The maximum number of concurrent thumbnail-drawing threads. Decrease if multi-threading is locking up your system, increase if it isn't and you want to go faster.\
 `-exit` **Exit on Complete** *[true/false, Default=False]*. Close the GUI when the sheet is finished. Doesn't apply to the command-line.\
 `-openoutdir` **Open Output Directory on Complete** *[true/false, Default=True]*. Open the output directory in Windows Explorer when completed (GUI mode only).\
 `-preview` **Preview Layout Only** *[true/false, Default=False]*. Only draw the layout, not the images. Near instantaneous.\

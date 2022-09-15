@@ -85,7 +85,7 @@ public partial class FileList : Form {
         UpdateStatus();
     }
 
-    private void ReloadFiles(object sender, EventArgs e) =>  cs.LoadFileList(true);
+    private async void ReloadFiles(object sender, EventArgs e) =>  await cs.LoadFileList(true);
 
     private void BtnClose_Click(object sender, EventArgs e)  => Hide();
 

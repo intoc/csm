@@ -3,11 +3,11 @@ internal class DrawThreadObj {
 
     public DrawThreadObj(ImageData image, Graphics g) {
         Image = image;
-        G = g;
+        Graphics = g;
     }
 
     public ImageData Image { get; set; }
-    public Graphics G { get; set; }
+    public Graphics Graphics { get; set; }
     public int Index { get; set; }
     public int ImageTotal { get; set; }
     public int FontSize { get; set; }

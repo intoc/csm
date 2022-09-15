@@ -38,13 +38,11 @@ public class ContactSheet {
     private readonly BoolParam noGui;
     private readonly BoolParam openOutputDirectoryOnComplete;
     private readonly BoolParam preview;
-    private readonly BoolParam threading;
     private readonly FileParam coverFile;
     private readonly IntParam borders;
     private readonly IntParam columns;
     private readonly IntParam headerFontSize;
     private readonly IntParam labelFontSize;
-    private readonly IntParam maxThreads;
     private readonly IntParam minDim;
     private readonly IntParam minDimInput;
     private readonly IntParam quality;
@@ -54,19 +52,10 @@ public class ContactSheet {
     private readonly StringParam headerTitle;
     private readonly StringParam outputFilePath;
 
-    // RAM Analysis variables
-    private readonly bool canAnalyzeRam = false;
-    private readonly PerformanceCounter? workingSetCounter;
-    private readonly PerformanceCounter? availableRamCounter;
-    private float drawRam;
-
-    // Thread Analysis variables
-    private bool drawThreadsRunning;
-    private int activeDrawThreads;
-
     // Draw status variables
     private DateTime startTime;
     private int imageCount, drawnCount;
+    private readonly object graphicsLock = new();
 
     #region Public Properties
 
@@ -111,16 +100,6 @@ public class ContactSheet {
                 return;
             }
             sourceDir = new DirectoryInfo(value);
-            Console.WriteLine($"Setting sourcedir to {sourceDir}");
-            headerTitle.ParseVal(sourceDir.Name);
-            Console.WriteLine($"Directory Name -> Header Title: {headerTitle.Val}");
-
-            if (cover.Val) {
-                GuessCover(true);
-            }
-
-            LoadFileList();
-
             SourceDirectoryChanged?.Invoke(Path.GetFullPath(value));
         }
     }
@@ -200,12 +179,6 @@ public class ContactSheet {
 
         interpolate = new BoolParam("-interp", true);
 
-        threading = new BoolParam("-thread", false);
-        maxThreads = new IntParam("-tmax", 4) {
-            MinVal = 1,
-            MaxVal = 16
-        };
-        threading.AddSubParam(maxThreads);
         preview = new BoolParam("-preview", false);
         exitOnComplete = new BoolParam("-exit", false);
 
@@ -224,7 +197,6 @@ public class ContactSheet {
         generalParams.AddSubParam(borders);
         generalParams.AddSubParam(quality);
         generalParams.AddSubParam(interpolate);
-        generalParams.AddSubParam(threading);
         generalParams.AddSubParam(exitOnComplete);
         generalParams.AddSubParam(openOutputDirectoryOnComplete);
         generalParams.AddSubParam(preview);
@@ -280,7 +252,16 @@ public class ContactSheet {
         #endregion
 
         // Setup all instances where a file list reload is required
-        fileType.ParamChanged += new ParamChangedEventHandler(LoadFileList);
+        fileType.ParamChanged += new ParamChangedEventHandler(async (p) => await LoadFileList(p));
+        SourceDirectoryChanged += new SourceDirectoryChangedEventHandler(async (path) => {
+            Console.WriteLine($"SourceDirectory changed to {SourceDirectory}");
+            headerTitle.ParseVal(sourceDir?.Name);
+            Console.WriteLine($"Directory Name -> Header Title: {headerTitle.Val}");
+            if (cover.Val) {
+                GuessCover(true);
+            }
+            await LoadFileList();
+        });
 
         // Setup all instances where a image list refresh is required without a full reload
         var refreshImageListHandler = new ParamChangedEventHandler(RefreshImageList);
@@ -303,16 +284,6 @@ public class ContactSheet {
         ImageList = new List<ImageData>();
 
         drawnCount = 0;
-
-        try {
-            string procName = Process.GetCurrentProcess().ProcessName;
-            availableRamCounter = new PerformanceCounter("Memory", "Available Bytes", true);
-            workingSetCounter = new PerformanceCounter("Process", "Working Set", procName, true);
-            canAnalyzeRam = true;
-        } catch (InvalidOperationException ex) {
-            Console.Error.WriteLine("Encountered an error when seting up memory analysis: {0}", ex.Message);
-            Console.WriteLine("Multithreading will be disabled. If this persists, try running 'lodctr /r' (as admin)");
-        }
     }
 
     /// <summary>
@@ -355,7 +326,7 @@ public class ContactSheet {
             xmlReader.Close();
 
             Console.WriteLine("Loading Params from {0}", SettingsFile);
-            
+
             foreach (var param in Params) {
                 param.Load(deserializedList);
             }
@@ -440,31 +411,27 @@ public class ContactSheet {
     /// Guess the cover file path
     /// </summary>
     /// <param name="force">Proceed even if the cover file path has already been set</param>
-    private void GuessCover(bool force) => GuessFile(coverFile, 
-        !string.IsNullOrEmpty(coverPattern.Val) ? new string[] { coverPattern.Val } : coverNames, 
+    private void GuessCover(bool force) => GuessFile(coverFile,
+        !string.IsNullOrEmpty(coverPattern.Val) ? new string[] { coverPattern.Val } : coverNames,
         force);
 
     /// <summary>
     /// Load the file list and image information from the source directory if it's set
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need</param>
-    public void LoadFileList(Param p) {
+    public async Task LoadFileList(Param p) {
         Console.WriteLine("Reloading file list due to change in {0}", p.Arg);
-        LoadFileList(GuiEnabled);
+        await LoadFileList(GuiEnabled);
     }
 
     /// <summary>
     /// Load the file list and image information from the source directory if it's set
     /// </summary>
-    public void LoadFileList(bool newThread = false) {
+    /// <param name="threaded">Do it in a new thread</param>
+    public async Task LoadFileList(bool threaded = false) {
         if (sourceDir == null) {
             return;
         }
-        var loadImageDataStream = (ImageData image) => {
-            using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
-            using var fromStream = Image.FromStream(stream, false, false);
-            image.InitSize(new Size(fromStream.Width, fromStream.Height));
-        };
         var loadAll = () => {
             lock (ImageList) {
                 var sw = Stopwatch.StartNew();
@@ -484,9 +451,7 @@ public class ContactSheet {
                 foreach (string path in files) {
                     ImageData image = new(path);
                     ImageList.Add(image);
-                    var task = new Task(() => loadImageDataStream(image));
-                    task.Start();
-                    tasks.Add(task);
+                    tasks.Add(Task.Factory.StartNew(() => LoadImageDataFromStream(image)));
                 }
 
                 Task.WaitAll(tasks.ToArray());
@@ -497,11 +462,21 @@ public class ContactSheet {
                 RefreshImageList();
             }
         };
-        if (newThread) {
-            new Thread(() => loadAll()).Start();
+        if (threaded) {
+            await Task.Factory.StartNew(loadAll);
         } else {
             loadAll();
         }
+    }
+
+    /// <summary>
+    /// Initialize an <see cref="ImageData"/> instance by retrieving its dimensions from a file stream
+    /// </summary>
+    /// <param name="image">The <see cref="ImageData"/> to initialize</param>
+    private static void LoadImageDataFromStream(ImageData image) {
+        using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
+        using var fromStream = Image.FromStream(stream, false, false);
+        image.InitSize(new Size(fromStream.Width, fromStream.Height));
     }
 
     /// <summary>
@@ -523,7 +498,7 @@ public class ContactSheet {
         // Don't include images smaller than minDimInput
         var isTooSmall = (ImageData image) => image.Width < minDimInput.Val && image.Height < minDimInput.Val;
         // Don't include a previously generated contact sheet if we can avoid it
-        var isOldSheet = (string path) => !string.IsNullOrEmpty(outputFilePath.Val) 
+        var isOldSheet = (string path) => !string.IsNullOrEmpty(outputFilePath.Val)
             && Regex.IsMatch(path, $"{outputFilePath.Val.Replace(".jpg", @"(_\d*)?\.jpg")}");
         // Don't include cover file
         var isCover = (string fileName) => fileName.Equals(coverFile.File?.Name);
@@ -542,7 +517,7 @@ public class ContactSheet {
     /// Run the image analysis and contact sheet creation process
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
-    public bool Run() {
+    public async Task<bool> DrawAndSave() {
 
         IEnumerable<ImageData> images;
         List<List<ImageData>> analyses = new() {
@@ -559,10 +534,9 @@ public class ContactSheet {
 
             images = ImageList.Where(i => i.Include);
 
-            activeDrawThreads = 0;
             if (!images.Any()) {
                 ExceptionOccurred?.Invoke(new Exception(string.Format("No valid/selected {0} Images in {1}!", fileType.Val, SourceDirectory)));
-                return true; // Don't exit
+                return false; // Don't exit
             }
 
             // Avoid stupidness
@@ -870,12 +844,7 @@ public class ContactSheet {
 
         drawnCount = 0;
 
-
-        if (threading.Val && canAnalyzeRam) {
-            drawThreadsRunning = true;
-            new Thread(new ThreadStart(MonitorRunningMemory)).Start();
-        }
-
+        IList<Task> drawThumbTasks = new List<Task>();
         foreach (List<ImageData> row in analyses.Where(l => l.Count > 0)) {
             foreach (ImageData col in row) {
                 col.Y += headerHeight;
@@ -895,34 +864,11 @@ public class ContactSheet {
                     tdata.Image.Width = sheetWidth.Val - col.X;
                 }
 
-                // Add the operation to thread pool if threading is on.
-                // Don't thread the first image so memory data can be gathered.
-                if (threading.Val && canAnalyzeRam && availableRamCounter != null) {
-                    bool outofMemory() => drawRam > availableRamCounter.NextValue();
-                    if (outofMemory()) {
-                        Console.WriteLine("Not enough memory! Required: {0}Mb, Available: {1}Mb. Waiting for some threads to finish...",
-                            Math.Round(drawRam / (1024f * 1024f), 2),
-                            Math.Round(availableRamCounter.NextValue() / (1024f * 1024f), 2));
-                    }
-                    while ((activeDrawThreads >= maxThreads.Val) || outofMemory()) {
-                        Thread.Sleep(100);
-                    }
-                    Interlocked.Increment(ref activeDrawThreads);
-
-                    // Draw
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(DrawThumb), tdata);
-                } else {
-                    DrawThumb(tdata);
-                }
-
+                drawThumbTasks.Add(Task.Factory.StartNew(() => DrawThumb(tdata)));
                 ++index;
             }
         }
-
-        while (drawnCount < imageCount) {
-            Thread.Sleep(100);
-        }
-        drawThreadsRunning = false;
+        await Task.WhenAll(drawThumbTasks);
 
         // Save the sheet with the given Jpeg quality
         ImageCodecInfo? jpgEncoder = ImageCodecInfo.GetImageDecoders().SingleOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
@@ -980,62 +926,21 @@ public class ContactSheet {
         }
 
         Console.WriteLine("Exit on Complete: {0}", exitOnComplete.Val);
-        if (exitOnComplete.Val) {
-            return false;
-        }
-
-        return true;
+        return exitOnComplete.Val;
 
         #endregion
     }
 
     /// <summary>
-    /// Monitor the RAM used by the draw threads
-    /// </summary>
-    private void MonitorRunningMemory() {
-        if (workingSetCounter == null) {
-            return;
-        }
-        // Record the available RAM
-        float ramUsageAtStart = workingSetCounter.NextValue();
-        drawRam = 0;
-        float ram;
-        DateTime start = DateTime.Now;
-        bool stall = false;
-        while (drawThreadsRunning) {
-            ram = Math.Max(drawRam, (workingSetCounter.NextValue() - ramUsageAtStart));
-            drawRam = ram;
-            Thread.Sleep(50);
-
-            // If there is no activity for a while, then the max ram
-            // value is outdated. Reset it if necessary.
-            if (!stall && activeDrawThreads == 0) {
-                stall = true;
-                start = DateTime.Now;
-            } else if (stall && activeDrawThreads != 0) {
-                stall = false;
-            } else if (stall && (DateTime.Now.Millisecond - start.Millisecond) > 500) {
-                drawRam /= maxThreads.Val;
-                stall = false;
-            }
-        }
-    }
-
-    /// <summary>
     /// Draw a thumbnail image on the contact sheet
     /// </summary>
-    /// <param name="state">Data about the image and its position on the sheet (<see cref="DrawThreadObj")/></param>
-    private void DrawThumb(object? state) {
-        if (state == null) {
-            return;
-        }
-        DrawThreadObj data = (DrawThreadObj)state;
-
-        Image i;
+    /// <param name="data">Data about the image and its position on the sheet</param>
+    private void DrawThumb(DrawThreadObj data) {
+        Image image;
         if (!preview.Val) {
-            i = new Bitmap(data.File);
+            image = new Bitmap(data.File);
         } else {
-            i = new Bitmap(data.Image.Width, data.Image.Height);
+            image = new Bitmap(data.Image.Width, data.Image.Height);
         }
 
         Rectangle thumb = new(
@@ -1059,10 +964,10 @@ public class ContactSheet {
             thumbG.FillRectangle(Brushes.White, thumb);
             thumbG.DrawRectangle(Pens.LightGreen, thumb);
         } else {
-            thumbG.DrawImage(i, thumb);
+            thumbG.DrawImage(image, thumb);
         }
-        if (i != null) {
-            i.Dispose();
+        if (image != null) {
+            image.Dispose();
         }
 
         // Draw image name labels
@@ -1091,9 +996,9 @@ public class ContactSheet {
 
         // Have to lock on the Graphics object
         // because two threads can't draw on it at the same time
-        Monitor.Enter(data.G);
-        data.G.DrawImage(bmp, data.Image.Bounds);
-        Monitor.Exit(data.G);
+        lock (graphicsLock) {
+            data.Graphics.DrawImage(bmp, data.Image.Bounds);
+        }
 
         // Clean up
         bmp.Dispose();
@@ -1104,7 +1009,6 @@ public class ContactSheet {
             data.File.Split('\\').Last(), data.Index, data.ImageTotal);
 
         // Update counters
-        Interlocked.Decrement(ref activeDrawThreads);
         Interlocked.Increment(ref drawnCount);
 
         // Send progress to listeners
@@ -1214,7 +1118,7 @@ public class ContactSheet {
             Console.WriteLine("{0} Specify a settings file path.", sfile);
             string help = markDown ? "`-help`" : "-help:";
             Console.WriteLine("{0} [no value required] View this help message.", help);
-            
+
             return true;
         }
         return false;
