@@ -1,7 +1,7 @@
 ﻿using csm.Logic;
 using csm.Models;
 using System.ComponentModel;
-
+using System.Diagnostics;
 
 namespace csm.Controls;
 public partial class FileList : Form {
@@ -9,10 +9,12 @@ public partial class FileList : Form {
 
     public delegate void UpdateListDelegate(ImageListChangedEventArgs args);
 
-    public FileList(ContactSheet cs) {
+    public FileList(ContactSheet sheet) {
         InitializeComponent();
-        this.cs = cs;
-        binder.DataSource = cs.ImageList;
+        cs = sheet;
+        if (cs.ImageList.Any()) {
+            binder.DataSource = new BindingList<ImageData>(cs.ImageList);
+        }
     }
 
     /// <summary>
@@ -20,6 +22,10 @@ public partial class FileList : Form {
     /// </summary>
     /// <param name="args"></param>
     void ImageListChanged(ImageListChangedEventArgs args) {
+        Debug.WriteLine("FileList-ImageListChanged");
+        if (binder.DataSource == null && cs.ImageList.Any()) {
+            binder.DataSource = new BindingList<ImageData>(cs.ImageList);
+        }
         object[] argsArr = { args };
         Invoke(new UpdateListDelegate(UpdateList), argsArr);
     }
@@ -29,6 +35,7 @@ public partial class FileList : Form {
     /// </summary>
     /// <param name="args"></param>
     void UpdateList(ImageListChangedEventArgs args) {
+        Debug.WriteLine("FileList-UpdateList");
         binder.ResetBindings(false);
         UpdateStatus();
     }
@@ -72,12 +79,13 @@ public partial class FileList : Form {
         foreach (DataGridViewRow row in files.SelectedRows) {
             if (row.DataBoundItem is ImageData data) {
                 data.Include = false;
+                data.ManuallyExcluded = true;
             }
         }
         UpdateStatus();
     }
 
-    private void ReloadFiles(object sender, EventArgs e) =>  cs.LoadFileList();
+    private void ReloadFiles(object sender, EventArgs e) =>  cs.LoadFileList(true);
 
     private void BtnClose_Click(object sender, EventArgs e)  => Hide();
 

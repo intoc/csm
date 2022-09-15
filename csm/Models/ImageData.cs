@@ -9,6 +9,7 @@ public class ImageData {
     public string File { get; set; }
     public Size OriginalSize { get; private set; }
     public bool Include { get; set; } = true;
+    public bool ManuallyExcluded { get; set; } = false;
 
     public Rectangle Bounds {
         get {

@@ -27,6 +27,7 @@ static class Program {
             path = "./";
         }
         cs.SourceDirectory = path;
+        cs.LoadSettingsFromCommandLine(args);
 
         // Prompt for arguments graphically
         if (cs.GuiEnabled) {
@@ -53,7 +54,6 @@ static class Program {
             gui.Activate();
         } else {
             // Parameters are as they were entered, just load and go
-            cs.LoadSettingsFromCommandLine(args);
             if (!cs.Run()) {
                 Application.Exit();
             }

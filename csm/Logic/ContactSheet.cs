@@ -1,4 +1,5 @@
 ﻿using csm.Models;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Windows.Media.Imaging;
@@ -450,42 +451,49 @@ public class ContactSheet {
     /// <param name="p">The <see cref="Param"/> that caused the need</param>
     public void LoadFileList(Param p) {
         Console.WriteLine("Reloading file list due to change in {0}", p.Arg);
-        LoadFileList();
+        LoadFileList(GuiEnabled);
     }
 
     /// <summary>
     /// Load the file list and image information from the source directory if it's set
     /// </summary>
-    public void LoadFileList() {
+    public void LoadFileList(bool newThread = false) {
         if (sourceDir == null) {
             return;
         }
-        lock (ImageList) {
-            var sw = Stopwatch.StartNew();
+        var refresh = () => {
+            lock (ImageList) {
+                var sw = Stopwatch.StartNew();
 
-            // Get a list of all the images in the directory, 
-            // Don't include hidden files
-            IEnumerable<string> files =
-                from file in sourceDir.GetFiles()
-                where fileType.Val == null || file.Extension.ToLower().Contains(fileType.Val.ToLower())
-                where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
-                select file.FullName;
+                // Get a list of all the images in the directory, 
+                // Don't include hidden files
+                IEnumerable<string> files =
+                    from file in sourceDir.GetFiles()
+                    where fileType.Val == null || file.Extension.ToLower().Contains(fileType.Val.ToLower())
+                    where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
+                    select file.FullName;
 
-            // Load Image data into list
-            ImageList.Clear();
+                // Load Image data into list
+                ImageList.Clear();
 
-            foreach (string path in files) {
-                // Load image info without actually loading the image
-                var imageUri = new Uri(path);
-                var bmpFrame = BitmapFrame.Create(imageUri, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-                var image = new ImageData(new Size(bmpFrame.PixelWidth, bmpFrame.PixelHeight), path);
-                ImageList.Add(image);
+                foreach (string path in files) {
+                    // Load image info without actually loading the image
+                    var imageUri = new Uri(path);
+                    var bmpFrame = BitmapFrame.Create(imageUri, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+                    var image = new ImageData(new Size(bmpFrame.PixelWidth, bmpFrame.PixelHeight), path);
+                    ImageList.Add(image);
+                }
+
+                sw.Stop();
+                Debug.WriteLine("LoadFileList took {0}", sw.Elapsed);
+
+                RefreshImageList();
             }
-
-            sw.Stop();
-            Debug.WriteLine("LoadFileList took {0}", sw.Elapsed);
-
-            RefreshImageList();
+        };
+        if (newThread) {
+            new Thread(() => refresh()).Start();
+        } else {
+            refresh();
         }
     }
 
@@ -508,11 +516,14 @@ public class ContactSheet {
         // Don't include images smaller than minDimInput
         var isTooSmall = (ImageData image) => image.Width < minDimInput.Val && image.Height < minDimInput.Val;
         // Don't include a previously generated contact sheet if we can avoid it
-        var isOldSheet = (string path) => path.Equals(System.IO.Path.GetFileName(outputFilePath.Val));
+        var isOldSheet = (string path) => outputFilePath.Val?.EndsWith(path) ?? false;
         // Don't include cover file
         var isCover = (string fileName) => fileName.Equals(coverFile.File?.Name);
 
         foreach (ImageData image in ImageList) {
+            if (image.ManuallyExcluded) {
+                continue;
+            }
             image.Include = !(isTooSmall(image) || isOldSheet(image.FileName) || isCover(image.FileName));
         }
 
