@@ -79,10 +79,14 @@ public abstract class Param {
     /// <returns>True if the command matched</returns>
     public bool Parse(string argAndValue) {
         if (argAndValue.StartsWith($"{Arg}=")) {
-            ParseVal(argAndValue[(argAndValue.IndexOf('=') + 1)..]);
+            ParseVal(GetValueFromArg(Arg, argAndValue));
             return true;
         }
         return SubParams.Any(p => p.Parse(argAndValue));
+    }
+
+    public static string GetValueFromArg(string arg, string argAndValue) {
+        return argAndValue[(argAndValue.IndexOf('=') + 1)..];
     }
 
     /// <summary>

@@ -35,4 +35,8 @@
 		<FrameworkReference Include="Microsoft.WindowsDesktop.App" />
 	</ItemGroup>
 
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Exec Command="xcopy /y $(SolutionDir)readme.md  $(ProjectDir)$(OutDir)" />
+	</Target>
+
 </Project>

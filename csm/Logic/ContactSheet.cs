@@ -282,12 +282,16 @@ public class ContactSheet {
     /// <param name="filename">The filename/path</param>
     public void LoadSettings(string filename) {
         try {
+            SettingsFile = filename;
+            if (!File.Exists(SettingsFile)) {
+                Console.Error.WriteLine("Settings file does not exist ({0})", SettingsFile);
+                return;
+            }
+
             XmlTextReader xmlReader = new(filename);
             XmlSerializer ser = new(Params.GetType());
             var deserializedList = ser.Deserialize(xmlReader) as List<Param> ?? new List<Param>();
             xmlReader.Close();
-
-            SettingsFile = filename;
 
             Console.WriteLine("Loading Params from {0}", SettingsFile);
             
