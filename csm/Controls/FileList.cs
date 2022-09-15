@@ -1,13 +1,12 @@
 ﻿using csm.Logic;
 using csm.Models;
 using System.ComponentModel;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 
 namespace csm.Controls;
 public partial class FileList : Form {
     readonly ContactSheet cs;
-
-    public delegate void UpdateListDelegate(ImageListChangedEventArgs args);
 
     public FileList(ContactSheet sheet) {
         InitializeComponent();
@@ -21,31 +20,22 @@ public partial class FileList : Form {
     /// Invoked by the back end whenever the image list is loaded
     /// </summary>
     /// <param name="args"></param>
-    void ImageListChanged(ImageListChangedEventArgs args) {
+    void ImageListChanged() {
         Debug.WriteLine("FileList-ImageListChanged");
-        if (binder.DataSource == null && cs.ImageList.Any()) {
-            binder.DataSource = new BindingList<ImageData>(cs.ImageList);
-        }
-        object[] argsArr = { args };
-        Invoke(new UpdateListDelegate(UpdateList), argsArr);
+        Invoke(new MethodInvoker(UpdateList));
     }
 
     /// <summary>
     /// Invoked by cs_ImageListChanged
     /// </summary>
     /// <param name="args"></param>
-    void UpdateList(ImageListChangedEventArgs args) {
+    void UpdateList() {
         Debug.WriteLine("FileList-UpdateList");
-        binder.ResetBindings(false);
-        UpdateStatus();
-    }
-
-    /// <summary>
-    /// Invoked when a change is noticed by the BindingSource
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void ImagesBindingSource_ListChanged(object sender, ListChangedEventArgs e) {
+        if (binder.DataSource == null && cs.ImageList.Any()) {
+            binder.DataSource = new BindingList<ImageData>(cs.ImageList);
+        } else {
+            binder.ResetBindings(false);
+        }
         UpdateStatus();
     }
 
@@ -63,7 +53,7 @@ public partial class FileList : Form {
         cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
         Rectangle bounds = Owner.Bounds;
         Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
-        UpdateStatus();
+        UpdateList();
     }
 
 
@@ -92,7 +82,7 @@ public partial class FileList : Form {
     private void Files_CellDoubleClick(object sender, DataGridViewCellEventArgs e) {
         // Open the image with the user's default image viewer
         string path = ((ImageData)files.Rows[e.RowIndex].DataBoundItem).File;
-        System.Diagnostics.Process.Start(@path);
+        Process.Start(@path);
     }
 
     private void Files_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {

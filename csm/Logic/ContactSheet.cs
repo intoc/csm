@@ -11,7 +11,7 @@ namespace csm.Logic;
 public delegate void SourceDirectoryChangedEventHandler(string path);
 public delegate void DrawProgressEventHandler(DrawProgressEventArgs args);
 public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
-public delegate void ImageListChangedEventHandler(ImageListChangedEventArgs args);
+public delegate void ImageListChangedEventHandler();
 public delegate void ExceptionEventHandler(Exception e);
 
 /// <summary>
@@ -241,7 +241,7 @@ public class ContactSheet {
         #region Cover
 
         cover = new BoolParam("-cover", false);
-        coverPattern = new StringParam("-cregx", string.Empty, "Regex") {
+        coverPattern = new StringParam("-cregx", @"cover\.", "Regex") {
             MaxChars = 20
         };
         coverFile = new FileParam("-cfile", null) {
@@ -272,6 +272,10 @@ public class ContactSheet {
         coverFile.ParamChanged += refreshImageListHandler;
         minDimInput.ParamChanged += refreshImageListHandler;
         outputFilePath.ParamChanged += refreshImageListHandler;
+
+        cover.ParamChanged += new ParamChangedEventHandler((p) => {
+            GuessCover(false);
+        });
 
         coverPattern.ParamChanged += (param) => GuessCover(true);
 
@@ -504,7 +508,7 @@ public class ContactSheet {
         var isOldSheet = (string path) => !string.IsNullOrEmpty(outputFilePath.Val)
             && Regex.IsMatch(path, $"{outputFilePath.Val.Replace(".jpg", @"(_\d*)?\.jpg")}");
         // Don't include cover file
-        var isCover = (string fileName) => fileName.Equals(coverFile.File?.Name);
+        var isCover = (string fileName) => cover.Val && fileName.Equals(coverFile.File?.Name);
 
         foreach (ImageData image in ImageList) {
             if (image.ManuallyExcluded) {
@@ -513,7 +517,7 @@ public class ContactSheet {
             image.Include = !(isTooSmall(image) || isOldSheet(image.FileName) || isCover(image.FileName));
         }
 
-        ImageListChanged?.Invoke(new ImageListChangedEventArgs());
+        ImageListChanged?.Invoke();
     }
 
     /// <summary>
@@ -763,7 +767,7 @@ public class ContactSheet {
             }
         }
         // Update list watchers so they see the new sizes
-        ImageListChanged?.Invoke(new ImageListChangedEventArgs());
+        ImageListChanged?.Invoke();
 
         #region Drawing
         // Detemermine the maximum image dimensions
