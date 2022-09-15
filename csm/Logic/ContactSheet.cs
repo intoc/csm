@@ -150,7 +150,10 @@ public class ContactSheet {
             MaxChars = 4
         };
 
-        minDimInput = new IntParam("-mindiminput", 0, "px");
+        minDimInput = new IntParam("-mindiminput", 0, "px") {
+            MinVal = 0,
+            MaxVal = 999999
+        };
 
         columns = new IntParam("-cols", DEFAULT_COLUMNS) {
             MinVal = 1,

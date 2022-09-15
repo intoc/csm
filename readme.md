@@ -68,6 +68,7 @@ Parameters may be in any order, and they don't all have to be used.
 | `-cfill` | Attempt to Fill Cover Gaps | true/false | False | Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.  |
 | `-sfile` | Settings file path | File Path | default.aspx | The path to a settings file. Can be absolute or relative. |
 | `-help` | View help message (no value required) | None | N/A | Show a help message on the command line with parameter documentation. |
+
 ## Tips
 iCSM will not recognize image files with the `Hidden` attribute. It will recognize them for covers.
 To create a shortcut that you can drag folders onto with your preferred parameters, first create a
