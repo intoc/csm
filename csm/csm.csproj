@@ -6,7 +6,15 @@
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<AssemblyVersion>0.2.1.0</AssemblyVersion>
+		<FileVersion>0.2.1.0</FileVersion>
+		<StartupObject>csm.Program</StartupObject>
+		<ApplicationIcon>csm.ico</ApplicationIcon>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Include="csm.ico" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Update="ParamsResources.Designer.cs">
@@ -24,7 +32,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<FrameworkReference Include="Microsoft.WindowsDesktop.App"/>
+		<FrameworkReference Include="Microsoft.WindowsDesktop.App" />
 	</ItemGroup>
 
 </Project>
