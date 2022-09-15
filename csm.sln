@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csm", "csm\csm.csproj", "{7B1D387F-EFCA-4879-B5AA-260D1164F3BF}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{394EFCB4-EA72-4E5B-8E2F-9808ACEADAEF}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -12,19 +10,24 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		readme.md = readme.md
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "csm", "csm\csm.csproj", "{98BA0E83-FB12-4B6F-A366-83A8CAA839E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7B1D387F-EFCA-4879-B5AA-260D1164F3BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7B1D387F-EFCA-4879-B5AA-260D1164F3BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7B1D387F-EFCA-4879-B5AA-260D1164F3BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7B1D387F-EFCA-4879-B5AA-260D1164F3BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98BA0E83-FB12-4B6F-A366-83A8CAA839E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98BA0E83-FB12-4B6F-A366-83A8CAA839E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98BA0E83-FB12-4B6F-A366-83A8CAA839E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98BA0E83-FB12-4B6F-A366-83A8CAA839E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{98BA0E83-FB12-4B6F-A366-83A8CAA839E9} = {394EFCB4-EA72-4E5B-8E2F-9808ACEADAEF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {87794B38-4BE4-420B-9532-664AD3D2D523}

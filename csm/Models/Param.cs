@@ -1,13 +1,9 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Resources;
+﻿using System.Resources;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace csm.Models; 
+namespace csm.Models;
 public delegate void ParamChangedEventHandler(Param source);
 
 [Serializable()]
@@ -18,13 +14,16 @@ public delegate void ParamChangedEventHandler(Param source);
 [XmlInclude(typeof(NullParam))]
 public abstract class Param {
 
-    public event ParamChangedEventHandler ParamChanged;
-
-    [XmlAttribute]
-    public string Arg { get; set; }
+    public event ParamChangedEventHandler ParamChanged = delegate { };
 
     [XmlIgnore]
-    public string Units { get; set; }
+    public bool PreventEvents { get; set; }
+
+    [XmlAttribute]
+    public string Arg { get; set; } = string.Empty;
+
+    [XmlIgnore]
+    public string? Units { get; set; }
 
     [XmlIgnore]
     public bool ExcludeFromLoading { get; set; }
@@ -32,25 +31,24 @@ public abstract class Param {
     [XmlElement("Param")]
     public List<Param> SubParams { get; set; }
 
-    private static ResourceSet Resources => ParamsResources.ResourceManager.GetResourceSet(System.Threading.Thread.CurrentThread.CurrentCulture, true, true);
-    public string Desc => Resources.GetString($"{Arg[1..]}_desc");
-    public string Note => Resources.GetString($"{Arg[1..]}_note");
+    private static ResourceSet? Resources => ParamsResources.ResourceManager.GetResourceSet(Thread.CurrentThread.CurrentCulture, true, true);
+    public string? Desc => Resources?.GetString($"{Arg[1..]}_desc");
+    public string? Note => Resources?.GetString($"{Arg[1..]}_note");
 
-    [XmlIgnore]
-    public bool PreventEvents { get; set; }
+
 
     protected Param() {
         SubParams = new List<Param>();
     }
 
-    protected Param(string arg, string units = null) : this() {
+    protected Param(string arg, string? units = null) : this() {
         Arg = arg;
         Units = units;
     }
 
     protected abstract void Load(Param other);
-    public abstract void ParseVal(string value);
-    public abstract string Value();
+    public abstract void ParseVal(string? value);
+    public abstract string? Value();
 
     public void Load(IEnumerable<Param> fromList) {
         if (ExcludeFromLoading) {

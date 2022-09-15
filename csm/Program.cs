@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Windows.Forms;
-
-namespace csm;
+﻿namespace csm;
 static class Program {
 
     [STAThread]

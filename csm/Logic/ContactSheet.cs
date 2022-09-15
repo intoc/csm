@@ -1,12 +1,6 @@
 ﻿using csm.Models;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Windows.Media.Imaging;
 using System.Xml;
 using System.Xml.Serialization;
@@ -56,29 +50,29 @@ public class ContactSheet {
     public List<Param> Params { get; private set; }
 
     private int imageCount, drawnCount, activeDrawThreads;
-    private DirectoryInfo sourceDir;
-    public string SettingsFile { get; set; }
+    private DirectoryInfo? sourceDir;
+    public string? SettingsFile { get; set; }
 
     public List<ImageData> ImageList { get; set; }
 
     private readonly string[] coverNames = { "cover", "folder", "square", "front" };
     private static readonly string[] helpStrings = { "--help", "-help", "/?", "-?" };
 
-    public event DrawProgressEventHandler DrawProgressChanged;
-    public event SettingsChangedEventHandler SettingsChanged;
-    public event ImageListChangedEventHandler ImageListChanged;
-    public event ExceptionEventHandler ExceptionOccurred;
-    public event SourceDirectoryChangedEventHandler SourceDirectoryChanged;
+    public event DrawProgressEventHandler DrawProgressChanged = delegate { };
+    public event SettingsChangedEventHandler SettingsChanged = delegate { };
+    public event ImageListChangedEventHandler ImageListChanged = delegate { };
+    public event ExceptionEventHandler ExceptionOccurred = delegate { };
+    public event SourceDirectoryChangedEventHandler SourceDirectoryChanged = delegate { };
 
     readonly bool canAnalyzeRam = false;
-    private readonly PerformanceCounter workingSetCounter;
-    private readonly PerformanceCounter availableRamCounter;
+    private readonly PerformanceCounter? workingSetCounter;
+    private readonly PerformanceCounter? availableRamCounter;
     private float drawRam;
 
     private bool drawThreadsRunning;
     private DateTime startTime;
 
-    public string SourceDirectory {
+    public string? SourceDirectory {
         get {
             if (sourceDir != null) {
                 return sourceDir.FullName;
@@ -87,6 +81,9 @@ public class ContactSheet {
             }
         }
         set {
+            if (value == null) {
+                return;
+            }
             sourceDir = new DirectoryInfo(value);
             Console.WriteLine($"Setting sourcedir to {sourceDir}");
             headerTitle.ParseVal(sourceDir.Name);
@@ -103,14 +100,17 @@ public class ContactSheet {
     }
 
     public string OutFilePath(int suffix = 0) {
-        string path = outputFilePath.Val;
+        string? path = outputFilePath.Val;
 
         if (suffix > 0) {
-            path = path.Replace(".jpg", $"_{suffix}.jpg");
+            path = path?.Replace(".jpg", $"_{suffix}.jpg");
         }
 
         if (Path.IsPathRooted(path)) {
             return path;
+        }
+        if (SourceDirectory == null || path == null) {
+            return string.Empty;
         }
         return Path.GetFullPath(Path.Combine(SourceDirectory, path));
         
@@ -269,7 +269,6 @@ public class ContactSheet {
             string procName = Process.GetCurrentProcess().ProcessName;
             availableRamCounter = new PerformanceCounter("Memory", "Available Bytes", true);
             workingSetCounter = new PerformanceCounter("Process", "Working Set", procName, true);
-            //workingSetPeakCounter = new PerformanceCounter("Process", "Working Set Peak", procName, true);
             canAnalyzeRam = true;
         } catch (InvalidOperationException ex) {
             Console.Error.WriteLine("Encountered an error when seting up memory analysis: {0}", ex.Message);
@@ -285,7 +284,7 @@ public class ContactSheet {
         try {
             XmlTextReader xmlReader = new(filename);
             XmlSerializer ser = new(Params.GetType());
-            var deserializedList = (List<Param>)ser.Deserialize(xmlReader);
+            var deserializedList = ser.Deserialize(xmlReader) as List<Param> ?? new List<Param>();
             xmlReader.Close();
 
             SettingsFile = filename;
@@ -305,6 +304,9 @@ public class ContactSheet {
     }
 
     public void SaveSettings() {
+        if (SettingsFile == null) {
+            return;
+        }
         SaveSettings(SettingsFile);
     }
 
@@ -338,6 +340,9 @@ public class ContactSheet {
     }
 
     private bool GuessFile(FileParam fileParam, string[] patterns, bool force) {
+        if (string.IsNullOrEmpty(fileType.Val)) {
+            return false;
+        }
         bool changed = false;
         fileParam.Ext = fileType.Val;
         // If the command line set the cover file pattern/name,
@@ -361,12 +366,13 @@ public class ContactSheet {
             return;
         }
         lock (ImageList) {
+            var sw = Stopwatch.StartNew();
 
             // Get a list of all the images in the directory, 
             // Don't include hidden files
             IEnumerable<string> files =
                 from file in sourceDir.GetFiles()
-                where file.Extension.ToLower().Contains(fileType.Val.ToLower())
+                where fileType.Val == null || file.Extension.ToLower().Contains(fileType.Val.ToLower())
                 where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
                 select file.FullName;
 
@@ -380,6 +386,9 @@ public class ContactSheet {
                 var image = new ImageData(new Size(bmpFrame.PixelWidth, bmpFrame.PixelHeight), path);
                 ImageList.Add(image);
             }
+
+            sw.Stop();
+            Debug.WriteLine("LoadFileList took {0}", sw.Elapsed);
 
             RefreshImageList();
         }
@@ -410,12 +419,12 @@ public class ContactSheet {
 
     public bool Run() {
 
-        IEnumerable<ImageData> images = null;
+        IEnumerable<ImageData> images;
         List<List<ImageData>> analyses = new() {
             new List<ImageData>()
         };
         Rectangle coverBounds = new();
-        Image coverImage = null;
+        Image? coverImage = null;
         int rowIndex = 0;
         int maxRowHeight = 0;
         int rowHeight;
@@ -443,7 +452,7 @@ public class ContactSheet {
             #region Cover Setup
 
             // Draw the cover
-            if (cover.Val) {
+            if (cover.Val && coverFile.File != null) {
                 coverImage = Image.FromFile(coverFile.File.FullName);
 
                 if (coverImage.Width > sheetWidth.Val) {
@@ -476,8 +485,6 @@ public class ContactSheet {
             }
 
             #endregion
-
-            #region Analyses
 
             // Begin image analysis
             imageCount = images.Count();
@@ -656,8 +663,6 @@ public class ContactSheet {
         // Update list watchers so they see the new sizes
         ImageListChanged?.Invoke(new ImageListChangedEventArgs());
 
-        #endregion
-
         #region Drawing
         // Detemermine the maximum image dimensions
         Size maxSize = (from row in analyses
@@ -666,13 +671,13 @@ public class ContactSheet {
                   .OrderBy(im => im.OriginalSize.Height).Last().OriginalSize;
 
         // Set up the header
-        Image headerImage = null;
+        Image? headerImage = null;
         int headerHeight = 0;
         if (header.Val) {
             headerImage = new Bitmap(sheetWidth.Val, sheetWidth.Val);
             Graphics headerG = Graphics.FromImage(headerImage);
             SolidBrush br = new(Color.White);
-            string headerText = headerTitle.Val;
+            string headerText = headerTitle.Val ?? string.Empty;
             if (headerStats.Val) {
                 headerText += string.Format("\n(x{0}) max {1}x{2}px", imageCount, maxSize.Width, maxSize.Height);
             }
@@ -701,7 +706,7 @@ public class ContactSheet {
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
         // Draw the header
-        if (header.Val) {
+        if (header.Val && headerImage != null) {
             Console.WriteLine("Drawing header...");
             g.DrawImage(headerImage, 0, 0);
             headerImage.Dispose();
@@ -723,10 +728,10 @@ public class ContactSheet {
                     Brushes.Black,
                     bounds.X + bounds.Width / 2,
                     bounds.Y + bounds.Height / 2);
-            } else {
+            } else if (coverImage != null) {
                 g.DrawImage(coverImage, bounds);
             }
-            coverImage.Dispose();
+            coverImage?.Dispose();
         }
 
         // Interpolation is being done by the draw function on separate graphics
@@ -754,12 +759,9 @@ public class ContactSheet {
                 }
 
                 // Create info for threaded load/draw operation
-                DrawThreadObj tdata = new() {
-                    Image = col,
+                DrawThreadObj tdata = new(col, g) {
                     Index = index,
-                    File = col.File,
                     ImageTotal = imageCount,
-                    G = g,
                     FontSize = labels.Val ? labelFontSize.Val : 0,
                     BorderWidth = borders.Val
                 };
@@ -770,14 +772,8 @@ public class ContactSheet {
 
                 // Add the operation to thread pool if threading is on.
                 // Don't thread the first image so memory data can be gathered.
-                if (threading.Val && canAnalyzeRam) {
-                    // Analyze RAM
-                    //Console.WriteLine("Required Ram: {0}, Available Ram: {1}",
-                    //    Math.Round(drawRam / (1024f * 1024f), 2),
-                    //    Math.Round(availableRamCounter.NextValue() / (1024f * 1024f), 2));
-
+                if (threading.Val && canAnalyzeRam && availableRamCounter != null) {
                     bool outofMemory() => drawRam > availableRamCounter.NextValue();
-
                     if (outofMemory()) {
                         Console.WriteLine("Not enough memory! Required: {0}Mb, Available: {1}Mb. Waiting for some threads to finish...",
                             Math.Round(drawRam / (1024f * 1024f), 2),
@@ -786,7 +782,6 @@ public class ContactSheet {
                     while ((activeDrawThreads >= maxThreads.Val) || outofMemory()) {
                         Thread.Sleep(100);
                     }
-
                     Interlocked.Increment(ref activeDrawThreads);
 
                     // Draw
@@ -805,7 +800,7 @@ public class ContactSheet {
         drawThreadsRunning = false;
 
         // Save the sheet with the given Jpeg quality
-        ImageCodecInfo jpgEncoder = ImageCodecInfo.GetImageDecoders().SingleOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
+        ImageCodecInfo? jpgEncoder = ImageCodecInfo.GetImageDecoders().SingleOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
         EncoderParameters myEncoderParameters = new(1);
         myEncoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, quality.Val);
 
@@ -828,21 +823,27 @@ public class ContactSheet {
 
         try {
             int suffix = 0;
-            Console.WriteLine("Saving to {0}... ", OutFilePath(suffix));
-            if (System.IO.File.Exists(OutFilePath(suffix))) {
-                Console.WriteLine("File exists. Attempting to delete...");
+            string outPath = OutFilePath(suffix);
+            Console.WriteLine("Saving to {0}... ", outPath);
+            if (File.Exists(outPath)) {
+                Console.Write("File exists. Attempting to delete... ");
                 try {
-                    System.IO.File.Delete(OutFilePath(suffix));
-                } catch (System.IO.IOException ioEx) {
-                    Console.Error.WriteLine("Can't delete: {0}", ioEx.Message);
-                    Console.WriteLine("Trying a new output file name.");
-                    while (System.IO.File.Exists(OutFilePath(suffix))) {
-                        suffix++;
+                    File.Delete(outPath);
+                    Console.WriteLine("deleted.");
+                } catch (IOException ioEx) {
+                    Console.WriteLine("can't delete: {0}", ioEx.Message);
+                    while (File.Exists(outPath)) {
+                        outPath = OutFilePath(++suffix);
+                        Console.WriteLine("Trying a new output file name: {0}", outPath);
                     }
                 }
             }
-            sheet.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
-            Console.WriteLine("Saved. Size: {0:.00}Mb", new FileInfo(OutFilePath(suffix)).Length / (1024f * 1024f));
+            if (jpgEncoder != null) {
+                sheet.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
+                Console.WriteLine("Saved. Size: {0:.00}Mb", new FileInfo(OutFilePath(suffix)).Length / (1024f * 1024f));
+            } else {
+                Console.Error.WriteLine("JPEG Encoder not found");
+            }
         } catch (System.Runtime.InteropServices.ExternalException e) {
             Exception ex = new(string.Format("Can't Save Sheet: {0}", e.Message), e);
             Console.Error.WriteLine(ex.Message);
@@ -867,6 +868,9 @@ public class ContactSheet {
     /// Monitors the RAM used by the draw threads, recording to drawRam
     /// </summary>
     private void MonitorRunningMemory() {
+        if (workingSetCounter == null) {
+            return;
+        }
         // Record the available RAM
         float ramUsageAtStart = workingSetCounter.NextValue();
         drawRam = 0;
@@ -892,12 +896,17 @@ public class ContactSheet {
         }
     }
 
-    private void DrawThumb(object state) {
+    private void DrawThumb(object? state) {
+        if (state == null) {
+            return;
+        }
         DrawThreadObj data = (DrawThreadObj)state;
 
-        Image i = null;
+        Image i;
         if (!preview.Val) {
             i = new Bitmap(data.File);
+        } else {
+            i = new Bitmap(data.Image.Width, data.Image.Height);
         }
 
         Rectangle thumb = new(
@@ -958,9 +967,6 @@ public class ContactSheet {
         Monitor.Enter(data.G);
         data.G.DrawImage(bmp, data.Image.Bounds);
         Monitor.Exit(data.G);
-
-        // Set the RAM used for this draw
-        //Console.WriteLine("t{0}: RAM={1}", data.Index, Math.Abs(workingSetPeakCounter.NextValue() - ramUsageAtStart));
 
         // Clean up
         bmp.Dispose();

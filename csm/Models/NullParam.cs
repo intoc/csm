@@ -1,15 +1,13 @@
-﻿
-using System;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Serialization;
 
-namespace csm.Models; 
+namespace csm.Models;
 
 [Serializable]
 public class NullParam : Param {
 
     [XmlAttribute]
-    public string Text { get; set; }
+    public string Text { get; set; } = "Group";
 
     public NullParam() : base("null") { }
 
@@ -21,7 +19,7 @@ public class NullParam : Param {
         SubParams.Add(p);
     }
 
-    public override void ParseVal(string value) {}
+    public override void ParseVal(string? value) {}
 
     public override string Value() {
         return string.Format("{0}", Text);

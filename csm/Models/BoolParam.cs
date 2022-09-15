@@ -1,7 +1,4 @@
-﻿
-using System;
-using System.Linq;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Serialization;
 
 namespace csm.Models;
@@ -25,9 +22,9 @@ public class BoolParam : Param {
         SubParams.Add(p);
     }
 
-    public override void ParseVal(string value) {
+    public override void ParseVal(string? value) {
         bool orig = Val;
-        Val = !falses.Contains(value.ToLower());
+        Val = !falses.Contains(value?.ToLower() ?? "false");
         if (Val != orig) {
             Changed();
         }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.Linq;
-
-namespace csm.Models; 
+﻿namespace csm.Models;
 public class ImageData {
     public int Width { get; set; }
     public int Height { get; set; }

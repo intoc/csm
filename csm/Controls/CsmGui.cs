@@ -1,42 +1,20 @@
 ﻿using csm.Logic;
 using csm.Models;
-using System;
-using System.IO;
-using System.Threading;
-using System.Windows.Forms;
 
-namespace csm.Controls; 
+namespace csm.Controls;
 public partial class CsmGui : Form {
 
-    private ContactSheet cs;
+    private readonly ContactSheet cs;
 
     public delegate void UpdateProgressDelegate(DrawProgressEventArgs args);
     public delegate void UpdateSettingsStatusDelegate(SettingsChangedEventArgs args);
 
-    private FileList fileListWindow;
-
-    public ContactSheet Sheet {
-        get { return cs; }
-        set {
-            cs = value;
-            foreach (Param p in cs.Params) {
-                paramsPanel.AddParamControl(p);
-            }
-            
-            cs.DrawProgressChanged += new DrawProgressEventHandler(DrawProgressChanged);
-            cs.SettingsChanged += new SettingsChangedEventHandler(SettingsChanged);
-            cs.ExceptionOccurred += new ExceptionEventHandler(ExceptionOccurred);
-
-            settingsLabel.Text = cs.SettingsFile;
-
-            fileListWindow = new FileList(cs);
-        }
-    }
+    private readonly FileList fileListWindow;
 
     /// <summary>
     /// Main Constructor
     /// </summary>
-    public CsmGui(ContactSheet cs) {
+    public CsmGui(ContactSheet sheet) {
         InitializeComponent();
         Application.EnableVisualStyles();
 
@@ -48,12 +26,25 @@ public partial class CsmGui : Form {
         // Initialize status elements
         drawStatus.Text = string.Empty;
         settingsFileStatus.Text = string.Empty;
-        directoryLabel.Text = cs.SourceDirectory;
+        directoryLabel.Text = sheet.SourceDirectory;
+
+        cs = sheet;
+
+        foreach (Param p in cs.Params) {
+            paramsPanel.AddParamControl(p);
+        }
+
+        cs.DrawProgressChanged += new DrawProgressEventHandler(DrawProgressChanged);
+        cs.SettingsChanged += new SettingsChangedEventHandler(SettingsChanged);
+        cs.ExceptionOccurred += new ExceptionEventHandler(ExceptionOccurred);
         cs.SourceDirectoryChanged += (path) => directoryLabel.Text = path;
-        Sheet = cs;
+
+        settingsLabel.Text = cs.SettingsFile;
+
+        fileListWindow = new FileList(cs);
     }
 
-    void Exit(object sender, EventArgs e) {
+    void Exit(object? sender, EventArgs e) {
         Close();
     }
 
@@ -87,7 +78,7 @@ public partial class CsmGui : Form {
             drawStatus.Text = "Drawing Finished!";
             // Open the folder
             if (cs.OpenOutputDir) {
-                System.Diagnostics.Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", Path.GetDirectoryName(cs.OutFilePath(0)));
+                System.Diagnostics.Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", Path.GetDirectoryName(cs.OutFilePath(0)) ?? string.Empty);
             }
         }
     }
@@ -165,7 +156,7 @@ public partial class CsmGui : Form {
     private void Activate(object sender, EventArgs e) {
         // If the user is attempting to open a menu item at
         // activation, oblige them!
-        System.Drawing.Point p = PointToClient(Cursor.Position);
+        Point p = PointToClient(Cursor.Position);
         ToolStripMenuItem i = (ToolStripMenuItem)menu.GetItemAt(p);
         i?.ShowDropDown();
     }

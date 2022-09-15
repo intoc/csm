@@ -12,6 +12,7 @@ public partial class ParamControl : UserControl {
 
     public ParamControl() {
         InitializeComponent();
+        pram = new NullParam();
     }
     public ParamControl(Param p) : this() {
 
@@ -57,7 +58,7 @@ public partial class ParamControl : UserControl {
             foreach (Param sub in boolParam.SubParams) {
                 subPanel.Controls.Add(new ParamControl(sub));
             }
-            if (checkBox.Checked == false) {
+            if (!checkBox.Checked) {
                 EnableSubParams(false);
             }
         }
@@ -83,9 +84,9 @@ public partial class ParamControl : UserControl {
         text.Width = 250;
     }
 
-    void BtnFileChooser_Click(object sender, EventArgs e) {
+    void BtnFileChooser_Click(object? sender, EventArgs e) {
         OpenFileDialog ofd = new() {
-            InitialDirectory = ((FileParam)pram).Directory.ToString()
+            InitialDirectory = ((FileParam)pram).Directory?.ToString()
         };
 
         if (ofd.ShowDialog() == DialogResult.OK) {

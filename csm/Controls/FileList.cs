@@ -1,15 +1,11 @@
 ﻿using csm.Logic;
 using csm.Models;
-using System;
 using System.ComponentModel;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
 
 
-namespace csm.Controls; 
+namespace csm.Controls;
 public partial class FileList : Form {
-    readonly ContactSheet cs;
+    readonly ContactSheet? cs;
 
     public delegate void UpdateListDelegate(ImageListChangedEventArgs args);
 
@@ -50,7 +46,10 @@ public partial class FileList : Form {
     }
 
     private void UpdateStatus() {
-        Text = cs.SourceDirectory.Split('\\').Last();
+        if (cs == null) {
+            return;
+        }
+        Text = cs.SourceDirectory?.Split('\\').Last() ?? "No Directory Selected";
         lblImageCount.Text = string.Format("{0} Images ({1} Excluded, {2} Included)", binder.Count, cs.ImageList.Count(i => !i.Include), cs.ImageList.Count(i => i.Include));
     }
 
@@ -60,7 +59,9 @@ public partial class FileList : Form {
     /// <param name="sender"></param>
     /// <param name="e"></param>
     private void FileList_Load(object sender, EventArgs e) {
-        cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
+        if (cs != null) {
+            cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
+        }
         Rectangle bounds = Owner.Bounds;
         Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
         UpdateStatus();
@@ -77,12 +78,14 @@ public partial class FileList : Form {
 
     private void RemoveFiles(object sender, EventArgs e) {
         foreach (DataGridViewRow row in files.SelectedRows) {
-            (row.DataBoundItem as ImageData).Include = false;
+            if (row.DataBoundItem is ImageData data) {
+                data.Include = false;
+            }
         }
         UpdateStatus();
     }
 
-    private void ReloadFiles(object sender, EventArgs e) =>  cs.LoadFileList();
+    private void ReloadFiles(object sender, EventArgs e) =>  cs?.LoadFileList();
 
     private void BtnClose_Click(object sender, EventArgs e)  => Hide();
 

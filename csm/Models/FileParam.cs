@@ -1,18 +1,14 @@
-﻿
-using System;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 
 namespace csm.Models;
 [Serializable]
 public class FileParam : Param {
-    private string unParsedVal;
+    private string? unParsedVal;
 
     [XmlAttribute]
-    public string Val {
+    public string? Val {
         get {
             if (File != null) {
                 return File.Name;
@@ -26,7 +22,7 @@ public class FileParam : Param {
     }
 
     [XmlIgnore]
-    public string Path {
+    public string? Path {
         get {
             if (File != null) {
                 return File.FullName;
@@ -39,28 +35,24 @@ public class FileParam : Param {
         }
     }
 
-    private string ext;
     [XmlAttribute]
-    public string Ext {
-        get => ext ?? string.Empty;
-        set => ext = value;
-    }
+    public string Ext { get; set; } = string.Empty;
 
     [XmlIgnore]
-    public FileInfo File { get; set; }
+    public FileInfo? File { get; set; }
 
     [XmlIgnore]
-    public DirectoryInfo Directory { get; set; }
+    public DirectoryInfo? Directory { get; set; }
 
     public FileParam() : base() { }
 
-    public FileParam(string arg, string val, DirectoryInfo dir = null) : base(arg, "file") {
+    public FileParam(string arg, string? val, DirectoryInfo? dir = null) : base(arg, "file") {
         Directory = dir;
         ParseVal(val);
     }
 
     public bool Guess(string[] patterns) {
-        string origFile = Path;
+        string? origFile = Path;
         bool changed = false;
         if (Directory == null) {
             return false;
@@ -69,7 +61,7 @@ public class FileParam : Param {
         FileInfo[] files = Directory.GetFiles($"*{Ext}");
         try {
             var regexes = patterns.Select(p => new Regex(p));
-            FileInfo match = regexes.Select(r =>
+            FileInfo? match = regexes.Select(r =>
                 files.FirstOrDefault(f => r.IsMatch(f.ToString())))
                     .FirstOrDefault();
             if (match != null) {
@@ -95,7 +87,7 @@ public class FileParam : Param {
         return changed;
     }
 
-    public override void ParseVal(string value) {
+    public override void ParseVal(string? value) {
         // Use the current directory if the path is not null,
         // the path is not (supposedly) in the current directory,
         // and the current directory exists
@@ -120,7 +112,7 @@ public class FileParam : Param {
         }
     }
 
-    public override string Value() {
+    public override string? Value() {
         return Val;
     }
 

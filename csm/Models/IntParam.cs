@@ -1,9 +1,7 @@
-﻿
-using System;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Serialization;
 
-namespace csm.Models; 
+namespace csm.Models;
 [Serializable()]
 public class IntParam : Param {
 
@@ -24,7 +22,7 @@ public class IntParam : Param {
         MaxVal = int.MaxValue;
     }
 
-    public override void ParseVal(string value) {
+    public override void ParseVal(string? value) {
         int oldVal = Val;
         if (value == string.Empty) {
             Val = 0;

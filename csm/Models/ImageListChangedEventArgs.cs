@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace csm.Models; 
+﻿namespace csm.Models;
 public class ImageListChangedEventArgs : EventArgs {
     public ImageListChangedEventArgs() : base() { }
 }
