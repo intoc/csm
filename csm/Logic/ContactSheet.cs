@@ -25,40 +25,55 @@ public class ContactSheet {
     private const int DEFAULT_COLUMNS = 6;
     private const int DEFAULT_QUALITY = 90;
 
-    private readonly BoolParam noGui;
-    private readonly StringParam fileType;
-    private readonly IntParam columns;
-    private readonly IntParam sheetWidth;
-    private readonly IntParam minDim;
-    private readonly IntParam minDimInput;
-    private readonly IntParam borders;
-    private readonly IntParam quality;
-    private readonly BoolParam interpolate;
-    private readonly BoolParam labels;
-    private readonly IntParam labelFontSize;
+    private DirectoryInfo? sourceDir;
+
+    private readonly BoolParam cover;
+    private readonly BoolParam exitOnComplete;
+    private readonly BoolParam fillCoverGap;
     private readonly BoolParam header;
-    private readonly IntParam headerFontSize;
-    private readonly StringParam headerTitle;
     private readonly BoolParam headerBold;
     private readonly BoolParam headerStats;
-    private readonly BoolParam cover;
-    private readonly StringParam coverPattern;
-    private readonly FileParam coverFile;
-    private readonly BoolParam fillCoverGap;
-    private readonly BoolParam preview;
-    private readonly BoolParam exitOnComplete;
-    private readonly BoolParam threading;
-    private readonly IntParam maxThreads;
-    private readonly StringParam outputFilePath;
+    private readonly BoolParam interpolate;
+    private readonly BoolParam labels;
+    private readonly BoolParam noGui;
     private readonly BoolParam openOutputDirectoryOnComplete;
+    private readonly BoolParam preview;
+    private readonly BoolParam threading;
+    private readonly FileParam coverFile;
+    private readonly IntParam borders;
+    private readonly IntParam columns;
+    private readonly IntParam headerFontSize;
+    private readonly IntParam labelFontSize;
+    private readonly IntParam maxThreads;
+    private readonly IntParam minDim;
+    private readonly IntParam minDimInput;
+    private readonly IntParam quality;
+    private readonly IntParam sheetWidth;
+    private readonly StringParam coverPattern;
+    private readonly StringParam fileType;
+    private readonly StringParam headerTitle;
+    private readonly StringParam outputFilePath;
+
+    // RAM Analysis variables
+    private readonly bool canAnalyzeRam = false;
+    private readonly PerformanceCounter? workingSetCounter;
+    private readonly PerformanceCounter? availableRamCounter;
+    private float drawRam;
+
+    // Thread Analysis variables
+    private bool drawThreadsRunning;
+    private int activeDrawThreads;
+
+    // Draw status variables
+    private DateTime startTime;
+    private int imageCount, drawnCount;
+
+    #region Public Properties
 
     /// <summary>
     /// The parameters used for creating the sheet
     /// </summary>
     public List<Param> Params { get; private set; }
-
-    private int imageCount, drawnCount, activeDrawThreads;
-    private DirectoryInfo? sourceDir;
 
     /// <summary>
     /// The path to the settings file
@@ -70,43 +85,15 @@ public class ContactSheet {
     /// </summary>
     public List<ImageData> ImageList { get; private set; }
 
-    #region Events
+    /// <summary>
+    /// Whether the GUI is enabled
+    /// </summary>
+    public bool GuiEnabled => !noGui.Val;
 
     /// <summary>
-    /// Fired when the progress of drawing the output contact sheet changes
+    /// Whether the output directory should be opened after the contact sheet output file is created
     /// </summary>
-    public event DrawProgressEventHandler DrawProgressChanged = delegate { };
-
-    /// <summary>
-    /// Fired when the settings file changes and is loaded
-    /// </summary>
-    public event SettingsChangedEventHandler SettingsChanged = delegate { };
-
-    /// <summary>
-    /// Fired when there is a change to the contents of the image list
-    /// </summary>
-    public event ImageListChangedEventHandler ImageListChanged = delegate { };
-
-    /// <summary>
-    /// Fired when an exception occurred
-    /// </summary>
-    public event ExceptionEventHandler ExceptionOccurred = delegate { };
-
-    /// <summary>
-    /// Fired when the source directory is changed
-    /// </summary>
-    public event SourceDirectoryChangedEventHandler SourceDirectoryChanged = delegate { };
-
-    #endregion
-
-    // RAM Analysis variables
-    readonly bool canAnalyzeRam = false;
-    private readonly PerformanceCounter? workingSetCounter;
-    private readonly PerformanceCounter? availableRamCounter;
-    private float drawRam;
-
-    private bool drawThreadsRunning;
-    private DateTime startTime;
+    public bool OpenOutputDir => openOutputDirectoryOnComplete.Val;
 
     /// <summary>
     /// The source directory path
@@ -138,37 +125,36 @@ public class ContactSheet {
         }
     }
 
-    /// <summary>
-    /// Get the output file path with an optional suffix
-    /// </summary>
-    /// <param name="suffix">Optional numeric filename suffix (before the extension)</param>
-    /// <returns>The output file path</returns>
-    public string OutFilePath(int suffix = 0) {
-        string? path = outputFilePath.Val;
+    #endregion
 
-        if (suffix > 0) {
-            path = path?.Replace(".jpg", $"_{suffix}.jpg");
-        }
-
-        if (Path.IsPathRooted(path)) {
-            return path;
-        }
-        if (SourceDirectory == null || path == null) {
-            return string.Empty;
-        }
-        return Path.GetFullPath(Path.Combine(SourceDirectory, path));
-        
-    }
+    #region Public Events
 
     /// <summary>
-    /// Whether the GUI is enabled
+    /// Fired when the progress of drawing the output contact sheet changes
     /// </summary>
-    public bool GuiEnabled => !noGui.Val;
+    public event DrawProgressEventHandler DrawProgressChanged = delegate { };
 
     /// <summary>
-    /// Whether the output directory should be opened after the contact sheet output file is created
+    /// Fired when the settings file changes and is loaded
     /// </summary>
-    public bool OpenOutputDir => openOutputDirectoryOnComplete.Val;
+    public event SettingsChangedEventHandler SettingsChanged = delegate { };
+
+    /// <summary>
+    /// Fired when there is a change to the contents of the image list
+    /// </summary>
+    public event ImageListChangedEventHandler ImageListChanged = delegate { };
+
+    /// <summary>
+    /// Fired when an exception occurred
+    /// </summary>
+    public event ExceptionEventHandler ExceptionOccurred = delegate { };
+
+    /// <summary>
+    /// Fired when the source directory is changed
+    /// </summary>
+    public event SourceDirectoryChangedEventHandler SourceDirectoryChanged = delegate { };
+
+    #endregion
 
     /// <summary>
     /// Create a contact sheet instance
@@ -330,10 +316,32 @@ public class ContactSheet {
     }
 
     /// <summary>
+    /// Get the output file path with an optional suffix
+    /// </summary>
+    /// <param name="suffix">Optional numeric filename suffix (before the extension)</param>
+    /// <returns>The output file path</returns>
+    public string OutFilePath(int suffix = 0) {
+        string? path = outputFilePath.Val;
+
+        if (suffix > 0) {
+            path = path?.Replace(".jpg", $"_{suffix}.jpg");
+        }
+
+        if (Path.IsPathRooted(path)) {
+            return path;
+        }
+        if (SourceDirectory == null || path == null) {
+            return string.Empty;
+        }
+        return Path.GetFullPath(Path.Combine(SourceDirectory, path));
+
+    }
+
+    /// <summary>
     /// Load settings from a settings xml file
     /// </summary>
     /// <param name="filename">The filename/path</param>
-    public void LoadSettings(string filename) {
+    public void LoadSettingsFromFile(string filename) {
         try {
             SettingsFile = filename;
             if (!File.Exists(SettingsFile)) {
@@ -357,6 +365,25 @@ public class ContactSheet {
         } catch (Exception) {
             Console.WriteLine("Couldn't load {0}! Using hard-coded defaults.", SettingsFile);
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(filename, "Load Failed", false));
+        }
+    }
+
+    /// <summary>
+    /// Load parameters from command-line arguments
+    /// </summary>
+    /// <param name="args">Command-line arguments</param>
+    public void LoadSettingsFromCommandLine(string[] args) {
+
+        // Get any command line arguments
+        foreach (string a in args) {
+            foreach (Param p in Params) {
+                p.Parse(a);
+            }
+        }
+
+        // If the GUI is enabled, remove the No GUI option
+        if (GuiEnabled && Params.Contains(noGui)) {
+            Params.Remove(noGui);
         }
     }
 
@@ -387,25 +414,6 @@ public class ContactSheet {
     }
 
     /// <summary>
-    /// Load parameters from command-line arguments
-    /// </summary>
-    /// <param name="args">Command-line arguments</param>
-    public void Load(string[] args) {
-
-        // Get any command line arguments
-        foreach (string a in args) {
-            foreach (Param p in Params) {
-                p.Parse(a);
-            }
-        }
-
-        // If the GUI is enabled, remove the No GUI option
-        if (GuiEnabled && Params.Contains(noGui)) {
-            Params.Remove(noGui);
-        }
-    }
-
-    /// <summary>
     /// Guess a the path for a <see cref="FileParam"/> based on the configured
     /// file type and supplied patterns.
     /// </summary>
@@ -431,15 +439,15 @@ public class ContactSheet {
     /// <summary>
     /// Guess the cover file path
     /// </summary>
-    /// <param name="force">Proceeds even if the cover file path has already been set</param>
+    /// <param name="force">Proceed even if the cover file path has already been set</param>
     private void GuessCover(bool force) => GuessFile(coverFile, 
         !string.IsNullOrEmpty(coverPattern.Val) ? new string[] { coverPattern.Val } : coverNames, 
         force);
 
     /// <summary>
-    /// Load the 
+    /// Load the file list and image information from the source directory if it's set
     /// </summary>
-    /// <param name="p"></param>
+    /// <param name="p">The <see cref="Param"/> that caused the need</param>
     public void LoadFileList(Param p) {
         Console.WriteLine("Reloading file list due to change in {0}", p.Arg);
         LoadFileList();
@@ -482,7 +490,7 @@ public class ContactSheet {
     }
 
     /// <summary>
-    /// Refreshes the image data and whether they should be included in the output based on parameter changes
+    /// Refresh the image data and whether they should be included in the output based on parameter changes
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need for the refresh</param>
     public void RefreshImageList(Param p) {
@@ -494,7 +502,7 @@ public class ContactSheet {
     }
 
     /// <summary>
-    /// Refreshes the image data and whether they should be included in the output based on parameter changes
+    /// Refresh the image data and whether they should be included in the output based on parameter changes
     /// </summary>
     private void RefreshImageList() {
         // Don't include images smaller than minDimInput
@@ -512,7 +520,7 @@ public class ContactSheet {
     }
 
     /// <summary>
-    /// Runs the image analysis and contact sheet creation process
+    /// Run the image analysis and contact sheet creation process
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
     public bool Run() {
@@ -963,7 +971,7 @@ public class ContactSheet {
     }
 
     /// <summary>
-    /// Monitors the RAM used by the draw threads, recording to drawRam
+    /// Monitor the RAM used by the draw threads
     /// </summary>
     private void MonitorRunningMemory() {
         if (workingSetCounter == null) {

@@ -124,7 +124,7 @@ public partial class CsmGui : Form {
         };
 
         if (ofd.ShowDialog() == DialogResult.OK) {
-            cs.LoadSettings(ofd.FileName);
+            cs.LoadSettingsFromFile(ofd.FileName);
         }
     }
 

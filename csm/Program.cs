@@ -15,7 +15,7 @@ static class Program {
         var sFileArgAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith($"{sFileArg}="));
         if (sFileArgAndValue != null) {
             var settingsPath = Path.GetFullPath(Models.Param.GetValueFromArg(sFileArg, sFileArgAndValue));
-            cs.LoadSettings(settingsPath);
+            cs.LoadSettingsFromFile(settingsPath);
         }
 
         // Search all arguments for a path, use the first one that shows up
@@ -34,11 +34,11 @@ static class Program {
             if (sFileArgAndValue == null) {
                 var settingsPath = Application.ExecutablePath;
                 settingsPath = Path.Combine(settingsPath[..settingsPath.LastIndexOf(@"\")], "default.xml");
-                cs.LoadSettings(settingsPath);
+                cs.LoadSettingsFromFile(settingsPath);
             }
 
             // Load command line arguments
-            cs.Load(args);
+            cs.LoadSettingsFromCommandLine(args);
             Controls.CsmGui gui = new(cs);
 
             // Launch a directory chooser if no path was entered
@@ -53,7 +53,7 @@ static class Program {
             gui.Activate();
         } else {
             // Parameters are as they were entered, just load and go
-            cs.Load(args);
+            cs.LoadSettingsFromCommandLine(args);
             if (!cs.Run()) {
                 Application.Exit();
             }
