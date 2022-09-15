@@ -1,7 +1,6 @@
 ﻿using csm.Logic;
 using csm.Models;
 using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 
 namespace csm.Controls;
@@ -56,15 +55,6 @@ public partial class FileList : Form {
         UpdateList();
     }
 
-
-    protected override bool ProcessCmdKey(ref Message msg, Keys keyData) {
-        if (keyData == Keys.Escape) {
-            Hide();
-            return true;
-        }
-        return base.ProcessCmdKey(ref msg, keyData);
-    }
-
     private void RemoveFiles(object sender, EventArgs e) {
         foreach (DataGridViewRow row in files.SelectedRows) {
             if (row.DataBoundItem is ImageData data) {
@@ -78,12 +68,6 @@ public partial class FileList : Form {
     private async void ReloadFiles(object sender, EventArgs e) =>  await cs.LoadFileList(true);
 
     private void BtnClose_Click(object sender, EventArgs e)  => Hide();
-
-    private void Files_CellDoubleClick(object sender, DataGridViewCellEventArgs e) {
-        // Open the image with the user's default image viewer
-        string path = ((ImageData)files.Rows[e.RowIndex].DataBoundItem).File;
-        Process.Start(@path);
-    }
 
     private void Files_RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {
         if (files.Rows[e.RowIndex].DataBoundItem is ImageData concreteSelectedRowItem && !concreteSelectedRowItem.Include) {

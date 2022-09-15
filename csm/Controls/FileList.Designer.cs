@@ -106,7 +106,6 @@ partial class FileList
             this.files.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.files.Size = new System.Drawing.Size(569, 380);
             this.files.TabIndex = 3;
-            this.files.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.Files_CellDoubleClick);
             this.files.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.Files_RowPrePaint);
             // 
             // FileCol
