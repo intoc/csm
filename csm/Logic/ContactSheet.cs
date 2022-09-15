@@ -1125,7 +1125,7 @@ public class ContactSheet {
             string sfile = markDown ? "| `-sfile` |" : "-sfile:";
             Console.WriteLine(@"{0} Settings file path {1}", sfile, markDown ? "| File Path | default.aspx | The path to a settings file. Can be absolute or relative. |" : string.Empty);
             string help = markDown ? "| `-help` |" : "-help:";
-            Console.WriteLine("{0} [no value required] View help message {1}", help, markDown ? "| None | N/A | Show a help message on the command line with parameter documentation. |" : string.Empty);
+            Console.WriteLine("{0} View help message (no value required) {1}", help, markDown ? "| None | N/A | Show a help message on the command line with parameter documentation. |" : string.Empty);
 
             return true;
         }

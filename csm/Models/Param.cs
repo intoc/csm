@@ -107,7 +107,7 @@ public abstract class Param {
         if (isMarkDown) {
             help.AppendLine($"| `{Arg}` | {Desc} | {Units} | {Value() ?? "[none]"} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
         } else {
-            string unitsDefaults = $"[{Units}, Default={Value() ?? "[empty]"}, {(ExcludeFromLoading ? "Not loaded from settings" : string.Empty)}]";
+            string unitsDefaults = $"[{Units}, Default={(string.IsNullOrEmpty(Value()) ? "[empty]" : Value())}{(ExcludeFromLoading ? " (Not loaded from settings)" : string.Empty)}]";
             help.AppendLine(Arg == "null" ? string.Empty : $"{Arg}: {Desc} {unitsDefaults}. {Note}");
         }
     }
