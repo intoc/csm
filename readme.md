@@ -39,38 +39,35 @@ then the current directory will be used.
 Parameters may be in any order, and they don't all have to be used.
 
 ### Parameters
-`-nogui` **Don't Launch GUI** *[true/false, Default=False]*. Prevents the GUI (Graphical User Interface) from being launched.\
-
-`-filetype` **File Type** *[Extension, Default=.jpg]*. The extension of the image file type you want to use.\
-`-cols` **Maximum Images per Row** *[Number, Default=6]*. The maximum number of images per row. Rows with mixed aspect ratios will probably have fewer images.\
-`-mindiminput` **Minimum Input Dimension (Height and Width)** *[px, Default=0]*. The minimum width and height for input images to be included in the output sheet. (Changing this option reloads the file list)\
-`-width` **Width of Contact Sheet** *[px, Default=900]*. The width of the contact sheet in pixels.\
-`-cols` **Maximum Images per Row** *[Number, Default=6]*. The maximum number of images per row. Rows with mixed aspect ratios will probably have fewer images.\
-`-mindim` **Minimum Thumbnail Dimension (Height and Width)** *[px, Default=0]*. All thumbnails' widths and heights will be at least this value.\
-`-border` **Image Border Width** *[px, Default=0]*. The border width around an image. The border will be black.\
-`-qual` **Image Quality** *[%, Default=90]*. The Jpeg compression quality of the output image.\
-`-interp` **Use High Quality Interpolation** *[true/false, Default=True]*. Nicer looking thumbnails, but more taxing on processing. May be slow.\
-`-exit` **Exit on Complete** *[true/false, Default=False]*. Close the GUI when the sheet is finished. Doesn't apply to the command-line.\
-`-openoutdir` **Open Output Directory on Complete** *[true/false, Default=True]*. Open the output directory in Windows Explorer when completed (GUI mode only).\
-`-preview` **Preview Layout Only** *[true/false, Default=False]*. Only draw the layout, not the images. Near instantaneous.\
-`-outfile` **Output File** *[File Path, Default=ContactSheet.jpg]*. File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list)
-
-`-header` **Show Header** *[true/false, Default=False]*. Shows the title of the sheet and other info at the top of the sheet.\
-`-hsize` **Header Font Size** *[pt, Default=12]*. The font size of the header text\
-`-hbold` **Bold Header** *[true/false, Default=False]*. Makes the header text bold\
-`-htitle` **Header Title** *[Words, Default=Title]*. The name of the image set. This is not loaded from settings files.\
-`-hstats` **Show Statistics** *[true/false, Default=False]*. Show statistics about the images, e.g. "(x100) max 1200x600px"
-
-`-labels` **Show Image Labels** *[true/false, Default=False]*. Shows the filename for each image.\
-`-lsize` **Image Label Font Size** *[pt, Default=8]*. The font size of the image label text
-
-`-cover` **Show Cover** *[true/false, Default=False]*. Show a cover at the top of the sheet. (Changing this option reloads the file list)\
-`-cregx` **Cover Pattern** *[Regex, Default=]*. The primary regular expression used to match cover files. (Changing this option reloads the file list).\
-`-cfile` **Cover File** *[file, Default=[empty]]*. The path to the file to use as the cover. This is not loaded from settings files. (Changing this option reloads the file list)\
-`-cfill` **Attempt to Fill Cover Gaps** *[true/false, Default=False]*. Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.
-
-`-sfile` Specify a settings file path.\
-`--help` View this help message.
+| Parameter | Name | Type | Default | Description |
+| --------- | ---- | ---- | ------- | ----------- |
+| -nogui | Don't Launch GUI | true/false | False | Prevents the GUI (Graphical User Interface) from being launched.  |
+| -filetype | File Type | Extension | .jpg | The extension of the image file type you want to use.  |
+| -cols | Maximum Images per Row | Number | 6 | The maximum number of images per row. Rows with mixed aspect ratios will probably have fewer images.  |
+| -mindiminput | Minimum Input Dimension (Height and Width) | px | 0 | The minimum width and height for input images to be included in the output sheet. (Changing this option reloads the file list).  |
+| -width | Width of Contact Sheet | px | 900 | The width of the contact sheet in pixels.  |
+| -cols | Maximum Images per Row | Number | 6 | The maximum number of images per row. Rows with mixed aspect ratios will probably have fewer images.  |
+| -mindim | Minimum Thumbnail Dimension (Height and Width) | px | 0 | All thumbnails' widths and heights will be at least this value.  |
+| -border | Image Border Width | px | 0 | The border width around an image. The border will be black.  |
+| -qual | Image Quality | % | 90 | The Jpeg compression quality of the output image.  |
+| -interp | Use High Quality Interpolation | true/false | True | Nicer looking thumbnails, but more taxing on processing. May be slow.  |
+| -exit | Exit on Complete | true/false | False | Close the GUI when the sheet is finished. Doesn't apply to the command-line.  |
+| -openoutdir | Open Output Directory on Complete | true/false | True | Open the output directory in Windows Explorer when completed (GUI mode only).  |
+| -preview | Preview Layout Only | true/false | False | Only draw the layout, not the images. Near instantaneous.  |
+| -outfile | Output File | File Path | ContactSheet.jpg | File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list).  |
+| -header | Show Header | true/false | False | Shows the title of the sheet and other info at the top of the sheet.  |
+| -hsize | Header Font Size | pt | 12 | The font size of the header text.  |
+| -hbold | Bold Header | true/false | False | Makes the header text bold.  |
+| -htitle | Header Title | Words | Title | The name of the image set. (Not loaded from settings) |
+| -hstats | Show Statistics | true/false | False | Show statistics about the images, e.g. "(x100) max 1200x600px".  |
+| -labels | Show Image Labels | true/false | False | Shows the filename for each image.  |
+| -lsize | Image Label Font Size | pt | 8 | The font size of the image label text.  |
+| -cover | Show Cover | true/false | False | Show a cover at the top of the sheet. (Changing this option reloads the file list).  |
+| -cregx | Cover Pattern | Regex |  | The primary regular expression used to match cover files. (Changing this option reloads the file list).  |
+| -cfile | Cover File | file | [none] | The path to the file to use as the cover. (Changing this option reloads the file list). (Not loaded from settings) |
+| -cfill | Attempt to Fill Cover Gaps | true/false | False | Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.  |
+| -sfile | Settings file path | File Path | default.aspx | The path to a settings file. Can be absolute or relative. |
+| -help | [no value required] View help message | None | N/A | Show a help message on the command line with parameter documentation. |
 
 ## Tips
 iCSM will not recognize image files with the `Hidden` attribute. It will recognize them for covers.

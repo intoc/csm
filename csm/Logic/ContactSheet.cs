@@ -1109,15 +1109,23 @@ public class ContactSheet {
     public bool CheckPrintHelp(string[] args) {
         bool markDown = args.Contains("markdown");
         if (args.Any(a => helpStrings.Contains(a))) {
-            Console.WriteLine("------ Parameters ------");
+            if (markDown) {
+                Console.WriteLine("| Parameter | Name | Type | Default | Description |");
+                Console.WriteLine("| --------- | ---- | ---- | ------- | ----------- |");
+            } else {
+                Console.WriteLine("------ Parameters ------");
+            }
             foreach (Param p in Params) {
-                Console.WriteLine(p.GetHelp(markDown));
+                Console.Write(p.GetHelp(markDown));
+                if (!markDown) {
+                    Console.WriteLine();
+                }
             }
 
-            string sfile = markDown ? "`-sfile`" : "-sfile:";
-            Console.WriteLine("{0} Specify a settings file path.", sfile);
-            string help = markDown ? "`-help`" : "-help:";
-            Console.WriteLine("{0} [no value required] View this help message.", help);
+            string sfile = markDown ? "| -sfile |" : "-sfile:";
+            Console.WriteLine(@"{0} Settings file path {1}", sfile, markDown ? "| File Path | default.aspx | The path to a settings file. Can be absolute or relative. |" : string.Empty);
+            string help = markDown ? "| -help |" : "-help:";
+            Console.WriteLine("{0} [no value required] View help message {1}", help, markDown ? "| None | N/A | Show a help message on the command line with parameter documentation. |" : string.Empty);
 
             return true;
         }

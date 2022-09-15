@@ -1,4 +1,5 @@
-﻿using System.Resources;
+﻿using System.ComponentModel.Design;
+using System.Resources;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -94,17 +95,16 @@ public abstract class Param {
     /// </summary>
     /// <returns>The help message</returns>
     public string GetHelp(bool markDown) {
-        string arg = markDown ? $"`{Arg}`" : $"{Arg}:";
         string unitsDefaults = $"[{Units}, Default={Value() ?? "[empty]"}, {(ExcludeFromLoading ? "Not loaded from settings" : string.Empty)}]";
-        var desc = Desc;
-        string newLine = string.Empty;
-        if (markDown) {
-            unitsDefaults = $"*{unitsDefaults}*";
-            desc = $"**{Desc}**";
-            newLine = @"\";
-        }
+        
         StringBuilder help = new();
-        help.AppendLine(Arg == "null" ? string.Empty : $"{arg} {desc} {unitsDefaults}. {Note}{newLine}");
+        if (this is not NullParam) {
+            if (markDown) {
+                help.AppendLine($"| {Arg} | {Desc} | {Units} | {Value() ?? "[none]"} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
+            } else {
+                help.AppendLine(Arg == "null" ? string.Empty : $"{Arg}: {Desc} {unitsDefaults}. {Note}");
+            }
+        }
         foreach (Param p in SubParams) {
             help.Append($"{p.GetHelp(markDown)}");
         }
