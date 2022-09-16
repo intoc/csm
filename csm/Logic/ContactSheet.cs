@@ -12,7 +12,7 @@ public delegate void SourceDirectoryChangedEventHandler(string path);
 public delegate void DrawProgressEventHandler(DrawProgressEventArgs args);
 public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
 public delegate void ImageListChangedEventHandler();
-public delegate void ExceptionEventHandler(Exception e);
+public delegate void ExceptionEventHandler(string message, Exception? e = null);
 
 /// <summary>
 /// Creates contact sheets
@@ -127,7 +127,7 @@ public class ContactSheet {
     /// <summary>
     /// Fired when an exception occurred
     /// </summary>
-    public event ExceptionEventHandler ExceptionOccurred = delegate { };
+    public event ExceptionEventHandler ErrorOccurred = delegate { };
 
     /// <summary>
     /// Fired when the source directory is changed
@@ -323,7 +323,7 @@ public class ContactSheet {
         try {
             SettingsFile = Path.GetFullPath(filename);
             if (!File.Exists(SettingsFile)) {
-                Console.Error.WriteLine("Settings file does not exist ({0})", SettingsFile);
+                ErrorOccurred?.Invoke($"Settings file does not exist ({SettingsFile}).");
                 return false;
             }
 
@@ -341,7 +341,7 @@ public class ContactSheet {
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(SettingsFile, "Loaded", true));
             return true;
         } catch (Exception e) {
-            Console.WriteLine("Couldn't load {0}! {1}. Using hard-coded defaults.", e.Message, SettingsFile);
+            ErrorOccurred?.Invoke($"Couldn't load {SettingsFile}!", e);
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(filename, "Load Failed", false));
         }
         return false;
@@ -526,9 +526,7 @@ public class ContactSheet {
     /// <returns>Whether the process is set to exit on complete</returns>
     public async Task<bool> DrawAndSave() {
         if (string.IsNullOrEmpty(SourceDirectory)) {
-            string error = "No directory selected!";
-            Console.Error.WriteLine(error);
-            ExceptionOccurred?.Invoke(new Exception(error));
+            ErrorOccurred?.Invoke("No directory selected!");
             return false; // Don't exit the GUI
         }
 
@@ -549,9 +547,7 @@ public class ContactSheet {
             images = ImageList.Where(i => i.Include);
 
             if (!images.Any()) {
-                string error = $"No valid/selected {fileType.ParsedValue} Images in {SourceDirectory}!";
-                Console.Error.WriteLine(error);
-                ExceptionOccurred?.Invoke(new Exception(error));
+                ErrorOccurred?.Invoke($"No valid/selected {fileType.ParsedValue} Images in {SourceDirectory}!");
                 return false; // Don't exit the GUI
             }
 
@@ -721,7 +717,7 @@ public class ContactSheet {
                     // No gap images. Display the cover normally.
                     coverBounds.X = sheetWidth.IntValue / 2 - coverBounds.Width / 2;
                     fillGap = false;
-                    Console.WriteLine("GAP FILL FAILED. Cover image is too small.");
+                    ErrorOccurred?.Invoke("Cover gap fill failed, image is too small. Displaying cover normally.");
                 }
                 // We're done with the gap
                 inGap = false;
@@ -752,13 +748,13 @@ public class ContactSheet {
                     analyses[rowIndex][0].X = curPoint.X;
                     analyses[rowIndex][0].Y += lastRowHeight;
                     rowHeight = ScaleRow(analyses[rowIndex], rowWidth);
-                    Console.WriteLine("Row {0} Rescaled, {1} images. Height: {2}", rowIndex - 1, analyses[rowIndex - 1].Count, lastRowHeight);
+                    Console.WriteLine("Row {0} Rescaled, {1} images. Height: {2}px", rowIndex - 1, analyses[rowIndex - 1].Count, lastRowHeight);
                 }
                 done = true;
             }
 
             if (rowIndex >= 0) {
-                Console.WriteLine("Row {0} finished, {1} images. Height: {2}. Y: {3}", rowIndex, analyses[rowIndex].Count, rowHeight, analyses[rowIndex][0].Y);
+                Console.WriteLine("Row {0}: {1} images. Height: {2}px. Y: {3}", rowIndex, analyses[rowIndex].Count, rowHeight, analyses[rowIndex][0].Y);
             }
         }
 
@@ -925,15 +921,13 @@ public class ContactSheet {
                 }
                 if (jpgEncoder != null) {
                     sheetImage.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
-                    Console.WriteLine("Saved. Size: {0:.00}Mb", new FileInfo(OutFilePath(suffix)).Length / (1024f * 1024f));
+                    Console.WriteLine("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / (1024f));
                 } else {
-                    Console.Error.WriteLine("JPEG Encoder not found");
+                    ErrorOccurred?.Invoke("JPEG Encoder not found.");
                 }
             }
         } catch (System.Runtime.InteropServices.ExternalException e) {
-            Exception ex = new(string.Format("Can't Save Sheet: {0}", e.Message), e);
-            Console.Error.WriteLine(ex.Message);
-            ExceptionOccurred?.Invoke(ex);
+            ErrorOccurred?.Invoke("Can't Save Sheet", e);
         } finally {
             Console.WriteLine("---------------------------------------------------------------------------");
             // Clean up

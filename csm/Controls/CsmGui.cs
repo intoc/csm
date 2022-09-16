@@ -37,7 +37,7 @@ public partial class CsmGui : Form {
 
         cs.DrawProgressChanged += new DrawProgressEventHandler(DrawProgressChanged);
         cs.SettingsChanged += new SettingsChangedEventHandler(SettingsChanged);
-        cs.ExceptionOccurred += new ExceptionEventHandler(ExceptionOccurred);
+        cs.ErrorOccurred += new ExceptionEventHandler(ExceptionOccurred);
         cs.SourceDirectoryChanged += (path) => directoryLabel.Text = directoryLabelText(path);
 
         settingsLabel.Text = cs.SettingsFile;
@@ -49,8 +49,9 @@ public partial class CsmGui : Form {
         Close();
     }
 
-    void ExceptionOccurred(Exception e) {
-        MessageBox.Show(e.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    void ExceptionOccurred(string message, Exception? e) {
+        MessageBox.Show($"{message} {(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!", 
+            MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
     void DrawProgressChanged(DrawProgressEventArgs args) {
