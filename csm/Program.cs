@@ -1,18 +1,20 @@
 ﻿namespace csm;
 static class Program {
 
+    private const string DEFAULT_SETTINGS_FILE = "default.xml";
+
     [STAThread]
     static void Main(string[] args) {
 
         Logic.ContactSheet cs = new();
 
-        if (cs.CheckPrintHelp(args)) {
+        // Check for a -help parameter and handle it
+        if (cs.Help(args)) {
             return;
         }
 
         // Get a settings file if path is provided
-        const string sFileArg = "-sfile";
-        var sFileArgAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith($"{sFileArg}="));
+        var sFileArgAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
         if (sFileArgAndValue != null) {
             var settingsPath = Path.GetFullPath(Models.Param.GetValueFromCmdParamAndValue(sFileArgAndValue));
             cs.LoadSettingsFromFile(settingsPath);
@@ -31,15 +33,16 @@ static class Program {
 
         // Prompt for arguments graphically
         if (cs.GuiEnabled) {
-            // Load default settings
-            if (sFileArgAndValue == null) {
+            // Load settings
+            if (cs.SettingsFile == null) {
                 var settingsPath = Application.ExecutablePath;
-                settingsPath = Path.Combine(settingsPath[..settingsPath.LastIndexOf(@"\")], "default.xml");
-                cs.LoadSettingsFromFile(settingsPath);
+                settingsPath = Path.Combine(settingsPath[..settingsPath.LastIndexOf(@"\")], DEFAULT_SETTINGS_FILE);
+                if (cs.LoadSettingsFromFile(settingsPath)) {
+                    // Load parameters from command line arguments again to override the settings file
+                    cs.LoadSettingsFromCommandLine(args);
+                }
             }
 
-            // Load command line arguments
-            cs.LoadSettingsFromCommandLine(args);
             Controls.CsmGui gui = new(cs);
 
             // Launch a directory chooser if no path was entered
@@ -53,10 +56,8 @@ static class Program {
             gui.ShowDialog();
             gui.Activate();
         } else {
-            // Parameters are as they were entered, just load and go
-            var task = cs.DrawAndSave();
-            task.GetAwaiter();
-            task.Wait();
+            // Parameters are as they were entered, just go
+            cs.DrawAndSave().Wait();
         }
     }
 

@@ -1,5 +1,4 @@
-# Intelligent Contact Sheet Maker - iCSM
-
+# Intelligent Contact Sheet Maker - csm
 On normal execution, you will first be presented with a directory selection dialog. 
 Select the directory containing the images you want to use in your contact sheet. Click OK, 
 and you’ll get the main userinterface. Here you can set all the parameters you want.
@@ -29,14 +28,13 @@ with different settings, and also change the directory using `Change Directory` 
 corresponding button.
 
 ## Command Line
-iCSM is also a (nearly) fully functional command-line program. In order to use it without the GUI, you
+csm is also a fully functional command-line program. In order to use it without the GUI, you
 must start it with the `–nogui` option.
 
 *Usage*: `csm [path to image directory] [param1=val1] [param2=val2] [...]`
 
 You can actually put the path anywhere in the command, as long as it's in quotes. If you omit the path,
-then the current directory will be used. 
-Parameters may be in any order, and they don't all have to be used.
+then the current directory will be used. Parameters may be in any order, and they don't all have to be used.
 
 ### Parameters
 | Parameter | Name | Type | Default | Description |
@@ -69,8 +67,9 @@ Parameters may be in any order, and they don't all have to be used.
 | `-help` | View help message (no value required) | None | N/A | Show a help message on the command line with parameter documentation. |
 
 ## Tips
-iCSM will not recognize image files with the `Hidden` attribute. It will recognize them for covers.
-To create a shortcut that you can drag folders onto with your preferred parameters, first create a
+- csm will not recognize image files with the `Hidden` attribute. It will recognize them for covers.
+- To create a shortcut that you can drag folders onto with your preferred parameters, first create a
 shortcut to csm.exe, then right-click the shortcut and select Properties. Once there, add your
-parameters to the end of the `Target` field, or just use the Settings file feature to create different
-settings files. iCSM will always load *default.xml* at start, but you can load other files afterwards.
+parameters to the end of the `Target` field, e.g. `C:\csm\csm.exe -nogui=true -sfile=mysettings.xml`.
+The folder path will be passed in automatically if you drag the folder onto the shortcut.
+- The csm GUI will always try to load *default.xml* at start if `-sfile` isn't specified in the command line arguments, but you can load other files afterwards.

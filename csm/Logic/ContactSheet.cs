@@ -319,12 +319,12 @@ public class ContactSheet {
     /// Load settings from a settings xml file
     /// </summary>
     /// <param name="filename">The filename/path</param>
-    public void LoadSettingsFromFile(string filename) {
+    public bool LoadSettingsFromFile(string filename) {
         try {
             SettingsFile = filename;
             if (!File.Exists(SettingsFile)) {
                 Console.Error.WriteLine("Settings file does not exist ({0})", SettingsFile);
-                return;
+                return false;
             }
 
             XmlTextReader xmlReader = new(filename);
@@ -339,11 +339,12 @@ public class ContactSheet {
             }
 
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(SettingsFile, "Loaded", true));
-
+            return true;
         } catch (Exception e) {
             Console.WriteLine("Couldn't load {0}! {1}. Using hard-coded defaults.", e.Message, SettingsFile);
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(filename, "Load Failed", false));
         }
+        return false;
     }
 
     /// <summary>
@@ -1119,7 +1120,7 @@ public class ContactSheet {
     /// </summary>
     /// <param name="args">The command-line arguments</param>
     /// <returns>Whether a Help argument was found and Help message was output.</returns>
-    public bool CheckPrintHelp(string[] args) {
+    public bool Help(string[] args) {
         bool markDown = args.Contains("markdown");
         if (args.Any(a => helpStrings.Contains(a))) {
             if (markDown) {
