@@ -76,7 +76,6 @@ public partial class FileList : Form {
         lblImageCount.Text = string.Format("{0} Images ({1} Excluded, {2} Included)", binder.Count, cs.ImageList.Count(i => !i.Include), cs.ImageList.Count(i => i.Include));
     }
 
-
     private void PinImage(ImageData image) {
         image.InclusionPinned = true;
         PinnedImages[image.File] = image.Include;
