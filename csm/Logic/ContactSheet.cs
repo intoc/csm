@@ -1029,8 +1029,6 @@ public class ContactSheet {
         }
     }
 
-
-
     /// <summary>
     /// Shift a thumbnail image from an end of one row to another on the contact sheet
     /// </summary>
