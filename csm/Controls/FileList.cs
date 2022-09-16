@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 
 namespace csm.Controls;
+
 public partial class FileList : Form {
     readonly ContactSheet cs;
 
@@ -19,6 +20,28 @@ public partial class FileList : Form {
         if (cs.ImageList.Any()) {
             binder.DataSource = new BindingList<ImageData>(cs.ImageList);
         }
+    }
+
+    /// <summary>
+    /// Invoked after the window loads
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void FileListLoaded(object sender, EventArgs e) {
+        cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
+        Rectangle bounds = Owner.Bounds;
+        Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
+        cs.SourceDirectoryChanged += (path) => {
+            fileWatcher.Path = path;
+            PinnedImages.Clear();
+        };
+        fileWatcher.NotifyFilter = NotifyFilters.FileName;
+        fileWatcher.Changed += ReloadFiles;
+        fileWatcher.Deleted += ReloadFiles;
+        fileWatcher.Created += ReloadFiles;
+        fileWatcher.Renamed += ReloadFiles;
+        fileWatcher.EnableRaisingEvents = true;
+        UpdateList();
     }
 
     /// <summary>
@@ -53,26 +76,10 @@ public partial class FileList : Form {
         lblImageCount.Text = string.Format("{0} Images ({1} Excluded, {2} Included)", binder.Count, cs.ImageList.Count(i => !i.Include), cs.ImageList.Count(i => i.Include));
     }
 
-    /// <summary>
-    /// Invoked after the window loads
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void FileListLoaded(object sender, EventArgs e) {
-        cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
-        Rectangle bounds = Owner.Bounds;
-        Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
-        cs.SourceDirectoryChanged += (path) => {
-            fileWatcher.Path = path;
-            PinnedImages.Clear();
-        };
-        fileWatcher.NotifyFilter = NotifyFilters.FileName;
-        fileWatcher.Changed += ReloadFiles;
-        fileWatcher.Deleted += ReloadFiles;
-        fileWatcher.Created += ReloadFiles;
-        fileWatcher.Renamed += ReloadFiles;
-        fileWatcher.EnableRaisingEvents = true;
-        UpdateList();
+
+    private void PinImage(ImageData image) {
+        image.InclusionPinned = true;
+        PinnedImages[image.File] = image.Include;
     }
 
     private void RemoveFilesClicked(object sender, EventArgs e) {
@@ -101,8 +108,6 @@ public partial class FileList : Form {
 
     private async void ReloadFiles(object sender, EventArgs e) => await cs.LoadFileList(true);
 
-    private void CloseButtonClicked(object sender, EventArgs e) => Hide();
-
     private void RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {
         if (files.Rows[e.RowIndex].DataBoundItem is ImageData image) {
             files.Rows[e.RowIndex].DefaultCellStyle.BackColor = image.Include ? Color.White : Color.LightGray;
@@ -118,9 +123,6 @@ public partial class FileList : Form {
         }
     }
 
-    private void PinImage(ImageData image) {
-        image.InclusionPinned = true;
-        PinnedImages[image.File] = image.Include;
-    }
+    private void CloseButtonClicked(object sender, EventArgs e) => Hide();
 }
 
