@@ -90,9 +90,7 @@ public class FileParam : Param {
             File = files[0];
         }
         changed = origFile != Path;
-        if (changed) {
-            Changed();
-        }
+        Changed(changed);
         return changed;
     }
 
@@ -115,17 +113,15 @@ public class FileParam : Param {
                 File = null;
             }
         }
+        Changed(unParsedVal != FileName);
         
-        if (unParsedVal != FileName) {
-            Changed();
-        }
     }
 
     protected override void Load(Param other) {
         if (other is FileParam otherFile) {
             ParseVal(otherFile.FileName);
             Ext = otherFile.Ext ?? Ext;
-            LoadSubs(other);
+            LoadSubParams(other);
         }
     }
 }

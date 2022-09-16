@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.Design;
-using System.Resources;
+﻿using System.Resources;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -7,7 +6,7 @@ using System.Xml.Serialization;
 namespace csm.Models;
 public delegate void ParamChangedEventHandler(Param source);
 
-[Serializable()]
+[Serializable]
 [XmlInclude(typeof(BoolParam))]
 [XmlInclude(typeof(IntParam))]
 [XmlInclude(typeof(StringParam))]
@@ -15,85 +14,146 @@ public delegate void ParamChangedEventHandler(Param source);
 [XmlInclude(typeof(NullParam))]
 public abstract class Param {
 
+    /// <summary>
+    /// Fired when relevant state changes
+    /// </summary>
     public event ParamChangedEventHandler ParamChanged = delegate { };
 
-    [XmlIgnore]
-    public bool PreventEvents { get; set; }
-
+    /// <summary>
+    /// The command-line parameter string for this Parameter
+    /// </summary>
     [XmlAttribute]
-    public string Arg { get; set; } = string.Empty;
+    public string CmdParameter { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The units of <see cref="Value"/>
+    /// </summary>
     [XmlIgnore]
     public string? Units { get; set; }
 
+    /// <summary>
+    /// Whether to exclude this parameter from the settings file loading process
+    /// </summary>
     [XmlIgnore]
     public bool ExcludeFromLoading { get; set; }
 
+    /// <summary>
+    /// Sub-parameters of this parameter
+    /// </summary>
     [XmlElement("Param")]
     public List<Param> SubParams { get; set; }
 
+    /// <summary>
+    /// The parameter value
+    /// </summary>
+    [XmlAttribute]
+    public abstract string? Value { get; set; }
+
     private static ResourceSet? Resources => ParamsResources.ResourceManager.GetResourceSet(Thread.CurrentThread.CurrentCulture, true, true);
-    public string? Desc => Resources?.GetString($"{Arg[1..]}_desc");
-    public string? Note => Resources?.GetString($"{Arg[1..]}_note");
+    public string? Desc => Resources?.GetString($"{CmdParameter[1..]}_desc");
+    public string? Note => Resources?.GetString($"{CmdParameter[1..]}_note");
 
-
-
+    /// <summary>
+    /// Default constructor
+    /// </summary>
     protected Param() {
         SubParams = new List<Param>();
     }
 
-    protected Param(string arg, string? units = null) : this() {
-        Arg = arg;
+    /// <summary>
+    /// Creates a <see cref="Param"/>
+    /// </summary>
+    /// <param name="cmdParameter">The command-line parameter string</param>
+    /// <param name="units">The units of <see cref="Value"/></param>
+    protected Param(string cmdParameter, string? units = null) : this() {
+        CmdParameter = cmdParameter;
         Units = units;
     }
 
+    /// <summary>
+    /// Parses the value from a command line parameter=value string
+    /// </summary>
+    /// <param name="cmdParamAndValue">The parameter=value string</param>
+    /// <returns>The value</returns>
+    public static string GetValueFromCmdParamAndValue(string cmdParamAndValue) {
+        return cmdParamAndValue[(cmdParamAndValue.IndexOf('=') + 1)..];
+    }
+
+    /// <summary>
+    /// Parses a string value into this parameter's properties
+    /// </summary>
+    /// <param name="value">The string</param>
     public abstract void ParseVal(string? value);
 
-    [XmlAttribute]
-    public abstract string? Value { get; set; }
-
-    public void Load(IEnumerable<Param> fromList) {
-        if (ExcludeFromLoading) {
-            return;
-        }
-        var p = fromList.FirstOrDefault(prm => prm.Arg == Arg);
-        if (p != null) {
-            Load(p);
+    /// <summary>
+    /// Appends information about this parameter and <see cref="SubParams"/> to a <see cref="StringBuilder"/>
+    /// </summary>
+    /// <param name="help">The <see cref="StringBuilder"/></param>
+    /// <param name="isMarkDown">Whether to format the appended string in MarkDown syntax</param>
+    protected virtual void AppendHelpString(StringBuilder help, bool isMarkDown) {
+        string? value = Value;
+        value = string.IsNullOrEmpty(value) ? "[none]" : value;
+        if (isMarkDown) {
+            help.AppendLine($"| `{CmdParameter}` | {Desc} | {Units} | {value} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
+        } else {
+            string unitsDefaults = $"[{Units}, Default={value}{(ExcludeFromLoading ? " (Not loaded from settings)" : string.Empty)}]";
+            help.AppendLine(CmdParameter == "null" ? string.Empty : $"{CmdParameter}: {Desc} {unitsDefaults}. {Note}");
         }
     }
 
+    /// <summary>
+    /// Load the values from another <see cref="Param"/> into this one
+    /// </summary>
+    /// <param name="other"></param>
     protected virtual void Load(Param other) {
-        ParseVal(other.Value);
-        LoadSubs(other);
+        if (!ExcludeFromLoading) {
+            ParseVal(other.Value);
+        }
+        LoadSubParams(other);
     }
 
-    protected void LoadSubs(Param other) {
+    /// <summary>
+    /// Load any matching sub-parameter values of another <see cref="Param"/>into this instance's <see cref="SubParams"/>
+    /// </summary>
+    /// <param name="other">The other <see cref="Param"/></param>
+    protected void LoadSubParams(Param other) {
         foreach (var p in SubParams) {
             p.Load(other.SubParams);
         }
     }
 
-    protected void Changed() {
-        if (!PreventEvents) {
+    /// <summary>
+    /// Fire the <see cref="ParamChanged"/> event
+    /// </summary>
+    /// <param name="changed">Will only fire if true</param>
+    protected void Changed(bool changed = true) {
+        if (changed) {
             ParamChanged?.Invoke(this);
         }
     }
 
     /// <summary>
-    /// Parses an arg-value pair and sets it internally if matched. Will also check for a match on Sub Parameters and parse if matched.
+    /// Load
     /// </summary>
-    /// <param name="argAndValue"></param>
-    /// <returns>True if the command matched</returns>
-    public bool Parse(string argAndValue) {
-        if (argAndValue.StartsWith($"{Arg}=")) {
-            ParseVal(GetValueFromArg(argAndValue));
-            return true;
+    /// <param name="fromList"></param>
+    public void Load(IEnumerable<Param> fromList) {
+        var p = fromList.FirstOrDefault(prm => prm.CmdParameter == CmdParameter);
+        if (p != null) {
+            Load(p);
         }
-        return SubParams.Any(p => p.Parse(argAndValue));
     }
 
-    public static string GetValueFromArg(string argAndValue) {
-        return argAndValue[(argAndValue.IndexOf('=') + 1)..];
+    /// <summary>
+    /// Parses an param=value pair and sets it internally if matched. Will also check for a match on Sub Parameters and parse if matched.
+    /// </summary>
+    /// <param name="cmdParamAndValue"></param>
+    /// <returns>True if the command line parameter matched and value was successfully parsed</returns>
+    public bool Parse(string cmdParamAndValue) {
+        if (cmdParamAndValue.StartsWith($"{CmdParameter}=")) {
+            ParseVal(GetValueFromCmdParamAndValue(cmdParamAndValue));
+            return true;
+        }
+        return SubParams.Any(p => p.Parse(cmdParamAndValue));
     }
 
     /// <summary>
@@ -107,17 +167,6 @@ public abstract class Param {
             help.Append($"{p.GetHelp(markDown)}");
         }
         return help.ToString();
-    }
-
-    protected virtual void AppendHelpString(StringBuilder help, bool isMarkDown) {
-        string? value = Value;
-        value = string.IsNullOrEmpty(value) ? "[none]" : value;
-        if (isMarkDown) {
-            help.AppendLine($"| `{Arg}` | {Desc} | {Units} | {value} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
-        } else {
-            string unitsDefaults = $"[{Units}, Default={value}{(ExcludeFromLoading ? " (Not loaded from settings)" : string.Empty)}]";
-            help.AppendLine(Arg == "null" ? string.Empty : $"{Arg}: {Desc} {unitsDefaults}. {Note}");
-        }
     }
 
     public override string ToString() {

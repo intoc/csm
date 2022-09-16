@@ -46,8 +46,6 @@ public class IntParam : Param {
             IntValue = oldVal;
             throw new ArgumentOutOfRangeException(string.Format("Value for {0} must be at least {1} and at most {2}.", Desc, MinVal, MaxVal));
         }
-        if (IntValue != oldVal) {
-            Changed();
-        }
+        Changed(IntValue != oldVal);
     }
 }

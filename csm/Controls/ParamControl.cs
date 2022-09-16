@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using csm.Models;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Windows.Forms;
-using csm.Models;
 
-namespace csm.Controls; 
+namespace csm.Controls;
 public partial class ParamControl : UserControl {
     private Param parameter;
 
@@ -43,7 +39,7 @@ public partial class ParamControl : UserControl {
             }
         }
         p.ParamChanged += new ParamChangedEventHandler((param) => {
-            Debug.WriteLine("ParamControl Update {0}: {1}", param.Arg, param.Value);
+            Debug.WriteLine("ParamControl Update {0}: {1}", param.CmdParameter, param.Value);
             RefreshValue(param);
         });
     }
@@ -109,7 +105,7 @@ public partial class ParamControl : UserControl {
 
     public void Reset(List<Param> prams) {
         foreach (Param p in prams) {
-            if (p.Arg == parameter.Arg) {
+            if (p.CmdParameter == parameter.CmdParameter) {
                 parameter = p;
                 RefreshValue(parameter);
                 foreach (ParamControl sub in subPanel.Controls) {

@@ -427,7 +427,7 @@ public class ContactSheet {
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need</param>
     public async Task LoadFileList(Param p) {
-        Console.WriteLine("Reloading file list due to change in {0}", p.Arg);
+        Console.WriteLine("Reloading file list due to change in {0}", p.CmdParameter);
         await LoadFileList(GuiEnabled);
     }
 
@@ -494,7 +494,7 @@ public class ContactSheet {
         if (!ImageList.Any()) {
             return;
         }
-        Console.WriteLine("Refreshing image list due to change in {0}", p.Arg);
+        Console.WriteLine("Refreshing image list due to change in {0}", p.CmdParameter);
         RefreshImageList();
     }
 

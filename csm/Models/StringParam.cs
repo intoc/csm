@@ -2,7 +2,7 @@
 using System.Xml.Serialization;
 
 namespace csm.Models;
-[Serializable()]
+[Serializable]
 public class StringParam : Param {
 
     [XmlIgnore]
@@ -29,9 +29,7 @@ public class StringParam : Param {
     public override void ParseVal(string? value) {
         bool same = value == ParsedValue;
         ParsedValue = value;
-        if (!same) {
-            Changed();
-        }
+        Changed(!same);
     }
 
 }

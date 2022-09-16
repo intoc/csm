@@ -14,7 +14,7 @@ static class Program {
         const string sFileArg = "-sfile";
         var sFileArgAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith($"{sFileArg}="));
         if (sFileArgAndValue != null) {
-            var settingsPath = Path.GetFullPath(Models.Param.GetValueFromArg(sFileArgAndValue));
+            var settingsPath = Path.GetFullPath(Models.Param.GetValueFromCmdParamAndValue(sFileArgAndValue));
             cs.LoadSettingsFromFile(settingsPath);
         }
 

@@ -32,8 +32,6 @@ public class BoolParam : Param {
     public override void ParseVal(string? value) {
         bool orig = BoolValue;
         BoolValue = !falses.Contains(value?.ToLower() ?? "false");
-        if (BoolValue != orig) {
-            Changed();
-        }
+        Changed(BoolValue != orig);
     }
 }
