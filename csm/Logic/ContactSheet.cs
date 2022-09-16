@@ -511,7 +511,7 @@ public class ContactSheet {
         var isCover = (string fileName) => cover.Val && fileName.Equals(coverFile.File?.Name);
 
         foreach (ImageData image in ImageList) {
-            if (image.ManuallyExcluded) {
+            if (image.InclusionPinned) {
                 continue;
             }
             image.Include = !(isTooSmall(image) || isOldSheet(image.FileName) || isCover(image.FileName));
@@ -900,27 +900,29 @@ public class ContactSheet {
         Console.WriteLine("---------------------------------------------------------------------------");
 
         try {
-            int suffix = 0;
-            string outPath = OutFilePath(suffix);
-            Console.WriteLine("Saving to {0}... ", outPath);
-            if (File.Exists(outPath)) {
-                Console.Write("File exists. Attempting to delete... ");
-                try {
-                    File.Delete(outPath);
-                    Console.WriteLine("deleted.");
-                } catch (IOException ioEx) {
-                    Console.WriteLine("can't delete: {0}", ioEx.Message);
-                    while (File.Exists(outPath)) {
-                        outPath = OutFilePath(++suffix);
-                        Console.WriteLine("Trying a new output file name: {0}", outPath);
+            lock (ImageList) {
+                int suffix = 0;
+                string outPath = OutFilePath(suffix);
+                Console.WriteLine("Saving to {0}... ", outPath);
+                if (File.Exists(outPath)) {
+                    Console.Write("File exists. Attempting to delete... ");
+                    try {
+                        File.Delete(outPath);
+                        Console.WriteLine("deleted.");
+                    } catch (IOException ioEx) {
+                        Console.WriteLine("can't delete: {0}", ioEx.Message);
+                        while (File.Exists(outPath)) {
+                            outPath = OutFilePath(++suffix);
+                            Console.WriteLine("Trying a new output file name: {0}", outPath);
+                        }
                     }
                 }
-            }
-            if (jpgEncoder != null) {
-                sheet.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
-                Console.WriteLine("Saved. Size: {0:.00}Mb", new FileInfo(OutFilePath(suffix)).Length / (1024f * 1024f));
-            } else {
-                Console.Error.WriteLine("JPEG Encoder not found");
+                if (jpgEncoder != null) {
+                    sheet.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
+                    Console.WriteLine("Saved. Size: {0:.00}Mb", new FileInfo(OutFilePath(suffix)).Length / (1024f * 1024f));
+                } else {
+                    Console.Error.WriteLine("JPEG Encoder not found");
+                }
             }
         } catch (System.Runtime.InteropServices.ExternalException e) {
             Exception ex = new(string.Format("Can't Save Sheet: {0}", e.Message), e);

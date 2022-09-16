@@ -1,8 +1,7 @@
 ﻿
 namespace csm.Controls;
 
-partial class FileList
-{
+partial class FileList {
     /// <summary>
     /// Required designer variable.
     /// </summary>
@@ -12,10 +11,8 @@ partial class FileList
     /// Clean up any resources being used.
     /// </summary>
     /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing && (components != null))
-        {
+    protected override void Dispose(bool disposing) {
+        if (disposing && (components != null)) {
             components.Dispose();
         }
         base.Dispose(disposing);
@@ -27,8 +24,7 @@ partial class FileList
     /// Required method for Designer support - do not modify
     /// the contents of this method with the code editor.
     /// </summary>
-    private void InitializeComponent()
-    {
+    private void InitializeComponent() {
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
@@ -44,7 +40,8 @@ partial class FileList
             this.binder = new System.Windows.Forms.BindingSource(this.components);
             this.pnlButtons = new System.Windows.Forms.FlowLayoutPanel();
             this.btnExclude = new System.Windows.Forms.Button();
-            this.btnReload = new System.Windows.Forms.Button();
+            this.btnInclude = new System.Windows.Forms.Button();
+            this.btnReset = new System.Windows.Forms.Button();
             this.btnClose = new System.Windows.Forms.Button();
             this.statusBar.SuspendLayout();
             this.pnlCenter.SuspendLayout();
@@ -106,7 +103,8 @@ partial class FileList
             this.files.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.files.Size = new System.Drawing.Size(569, 380);
             this.files.TabIndex = 3;
-            this.files.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.Files_RowPrePaint);
+            this.files.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.RowPrePaint);
+            this.files.UserDeletingRow += new System.Windows.Forms.DataGridViewRowCancelEventHandler(this.UserDeletingRow);
             // 
             // FileCol
             // 
@@ -160,7 +158,8 @@ partial class FileList
             // pnlButtons
             // 
             this.pnlButtons.Controls.Add(this.btnExclude);
-            this.pnlButtons.Controls.Add(this.btnReload);
+            this.pnlButtons.Controls.Add(this.btnInclude);
+            this.pnlButtons.Controls.Add(this.btnReset);
             this.pnlButtons.Controls.Add(this.btnClose);
             this.pnlButtons.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.pnlButtons.Location = new System.Drawing.Point(0, 380);
@@ -174,56 +173,72 @@ partial class FileList
             this.btnExclude.Location = new System.Drawing.Point(4, 3);
             this.btnExclude.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnExclude.Name = "btnExclude";
-            this.btnExclude.Size = new System.Drawing.Size(88, 27);
+            this.btnExclude.Size = new System.Drawing.Size(107, 27);
             this.btnExclude.TabIndex = 0;
-            this.btnExclude.Text = "Exclude";
+            this.btnExclude.Text = "Exclude Selected";
             this.btnExclude.UseVisualStyleBackColor = true;
-            this.btnExclude.Click += new System.EventHandler(this.RemoveFiles);
+            this.btnExclude.Click += new System.EventHandler(this.RemoveFilesClicked);
             // 
-            // btnReload
+            // btnInclude
             // 
-            this.btnReload.Location = new System.Drawing.Point(100, 3);
-            this.btnReload.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnReload.Name = "btnReload";
-            this.btnReload.Size = new System.Drawing.Size(88, 27);
-            this.btnReload.TabIndex = 1;
-            this.btnReload.Text = "Reload";
-            this.btnReload.UseVisualStyleBackColor = true;
-            this.btnReload.Click += new System.EventHandler(this.ReloadFiles);
+            this.btnInclude.AutoSize = true;
+            this.btnInclude.Location = new System.Drawing.Point(119, 3);
+            this.btnInclude.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnInclude.Name = "btnInclude";
+            this.btnInclude.Size = new System.Drawing.Size(103, 27);
+            this.btnInclude.TabIndex = 0;
+            this.btnInclude.Text = "Include Selected";
+            this.btnInclude.UseVisualStyleBackColor = true;
+            this.btnInclude.Click += new System.EventHandler(this.IncludeFilesClicked);
+            // 
+            // btnReset
+            // 
+            this.btnReset.AutoSize = true;
+            this.btnReset.Location = new System.Drawing.Point(230, 3);
+            this.btnReset.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnReset.Name = "btnReset";
+            this.btnReset.Size = new System.Drawing.Size(88, 27);
+            this.btnReset.TabIndex = 3;
+            this.btnReset.Text = "Reset";
+            this.btnReset.UseVisualStyleBackColor = true;
+            this.btnReset.Click += new System.EventHandler(this.ResetIncluded);
             // 
             // btnClose
             // 
-            this.btnClose.Location = new System.Drawing.Point(196, 3);
+            this.btnClose.Location = new System.Drawing.Point(326, 3);
             this.btnClose.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(88, 27);
             this.btnClose.TabIndex = 2;
             this.btnClose.Text = "Close";
             this.btnClose.UseVisualStyleBackColor = true;
-            this.btnClose.Click += new System.EventHandler(this.BtnClose_Click);
+            this.btnClose.Click += new System.EventHandler(this.CloseButtonClicked);
             // 
             // FileList
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
+            this.CancelButton = this.btnClose;
             this.ClientSize = new System.Drawing.Size(569, 440);
             this.ControlBox = false;
             this.Controls.Add(this.pnlCenter);
             this.Controls.Add(this.statusBar);
+            this.DoubleBuffered = true;
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "FileList";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "File List";
-            this.Load += new System.EventHandler(this.FileList_Load);
+            this.Load += new System.EventHandler(this.FileListLoaded);
             this.statusBar.ResumeLayout(false);
             this.statusBar.PerformLayout();
             this.pnlCenter.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.files)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.binder)).EndInit();
             this.pnlButtons.ResumeLayout(false);
+            this.pnlButtons.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -231,18 +246,19 @@ partial class FileList
 
     #endregion
 
-    private System.Windows.Forms.StatusStrip statusBar;
-    private System.Windows.Forms.ToolStripStatusLabel lblImageCount;
-    private System.Windows.Forms.Panel pnlCenter;
-    private System.Windows.Forms.DataGridView files;
-    private System.Windows.Forms.FlowLayoutPanel pnlButtons;
-    private System.Windows.Forms.Button btnExclude;
-    private System.Windows.Forms.Button btnReload;
-    private System.Windows.Forms.Button btnClose;
-    private System.Windows.Forms.BindingSource binder;
-    private System.Windows.Forms.DataGridViewTextBoxColumn FileCol;
-    private System.Windows.Forms.DataGridViewTextBoxColumn WidthCol;
-    private System.Windows.Forms.DataGridViewTextBoxColumn HeightCol;
-    private System.Windows.Forms.DataGridViewTextBoxColumn OriginalSize;
-    private System.Windows.Forms.DataGridViewTextBoxColumn Orientation;
+    private StatusStrip statusBar;
+    private ToolStripStatusLabel lblImageCount;
+    private Panel pnlCenter;
+    private DataGridView files;
+    private FlowLayoutPanel pnlButtons;
+    private Button btnExclude;
+    private Button btnInclude;
+    private Button btnClose;
+    private BindingSource binder;
+    private DataGridViewTextBoxColumn FileCol;
+    private DataGridViewTextBoxColumn WidthCol;
+    private DataGridViewTextBoxColumn HeightCol;
+    private DataGridViewTextBoxColumn OriginalSize;
+    private DataGridViewTextBoxColumn Orientation;
+    private Button btnReset;
 }
