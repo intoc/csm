@@ -121,7 +121,7 @@ public partial class ParamControl : UserControl {
 
     private void CheckBox_CheckedChanged(object sender, EventArgs e) {
         if (parameter is BoolParam boolParam) {
-            boolParam.Val = checkBox.Checked;
+            boolParam.ParseVal(checkBox.Checked.ToString());
         }
         EnableSubParams(checkBox.Checked);
     }

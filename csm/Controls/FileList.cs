@@ -110,7 +110,10 @@ public partial class FileList : Form {
 
     private void RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {
         if (files.Rows[e.RowIndex].DataBoundItem is ImageData image) {
-            files.Rows[e.RowIndex].DefaultCellStyle.BackColor = image.Include ? Color.White : Color.LightGray;
+            files.Rows[e.RowIndex].DefaultCellStyle.BackColor = 
+                image.Include ? 
+                (image.InclusionPinned ? (Color.Beige) : (Color.White)) :
+                (image.InclusionPinned ? (Color.DarkGray) : (Color.LightGray));
         }
     }
 

@@ -511,10 +511,9 @@ public class ContactSheet {
         var isCover = (string fileName) => cover.Val && fileName.Equals(coverFile.File?.Name);
 
         foreach (ImageData image in ImageList) {
-            if (image.InclusionPinned) {
-                continue;
+            if (!image.InclusionPinned) {
+                image.Include = !(isTooSmall(image) || isOldSheet(image.FileName) || isCover(image.FileName));
             }
-            image.Include = !(isTooSmall(image) || isOldSheet(image.FileName) || isCover(image.FileName));
         }
 
         ImageListChanged?.Invoke();
