@@ -1,8 +1,7 @@
 # Intelligent Contact Sheet Maker - csm
-On normal execution, you will first be presented with a directory selection dialog. 
-Select the directory containing the images you want to use in your contact sheet. Click OK, 
-and you’ll get the main userinterface. Here you can set all the parameters you want.
-You can skip the directory selection step if you drag an image folder onto the program icon or a shortcut to it.
+This program is used to make good-looking "Contact Sheets," or image files containing
+thumbnail representations of a list of images. It has a GUI and command-line interface. You can start the GUI
+by simply running csm.exe.
 
 ## Main GUI
 If you want to save your settings, you can click `Save Settings`, `File -> Save Settings`, 
@@ -10,7 +9,7 @@ or `File -> Save Settings As…` The `Save Settings` options will save to the curr
 (shown next to the button) or *default.xml* if no file is open.
 You can later load your settings files with `File -> Load Settings`.
 iCSM will always open *default.xml* on load if it exists.
-You can view helpful information about most of the options by mouseing over their titles. 
+You can view helpful information about most of the options by mousing over their titles. 
 You can find the same information in this document under [Parameters](#Parameters).
 
 ## File View
@@ -20,7 +19,7 @@ mistake, click Reload to grab all of the files again. You can double-click on a 
 your default image viewer.
 
 ## Making the Contact Sheet from the GUI
-When you’re happy with your settings and the files, click Run in the main UI, select `Tools -> Draw
+When you’re happy with your settings and the files, click `Run`, select `Tools -> Draw
 Sheet`, or hit F5. The `Width` and `Height` columns will be updated with the new thumbnail sizes, and the
 drawing progress will be shown in the status bar. Once completed, the directory containing your contact
 sheet will be opened in Explorer. The program will remain open until you close it (unless otherwise specified), so you can run again

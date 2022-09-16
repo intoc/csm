@@ -26,7 +26,8 @@ public partial class CsmGui : Form {
         // Initialize status elements
         drawStatus.Text = string.Empty;
         settingsFileStatus.Text = string.Empty;
-        directoryLabel.Text = sheet.SourceDirectory;
+        var directoryLabelText = (string? path) => string.IsNullOrEmpty(path) ? "None Selected" : path;
+        directoryLabel.Text = directoryLabelText(sheet.SourceDirectory);
 
         cs = sheet;
 
@@ -37,7 +38,7 @@ public partial class CsmGui : Form {
         cs.DrawProgressChanged += new DrawProgressEventHandler(DrawProgressChanged);
         cs.SettingsChanged += new SettingsChangedEventHandler(SettingsChanged);
         cs.ExceptionOccurred += new ExceptionEventHandler(ExceptionOccurred);
-        cs.SourceDirectoryChanged += (path) => directoryLabel.Text = path;
+        cs.SourceDirectoryChanged += (path) => directoryLabel.Text = directoryLabelText(path);
 
         settingsLabel.Text = cs.SettingsFile;
 

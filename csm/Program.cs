@@ -13,42 +13,29 @@ static class Program {
             return;
         }
 
-        // Get a settings file if path is provided
+        // Load a settings file if path is provided
         var sFileArgAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
         if (sFileArgAndValue != null) {
-            var settingsPath = Path.GetFullPath(Models.Param.GetValueFromCmdParamAndValue(sFileArgAndValue));
-            cs.LoadSettingsFromFile(settingsPath);
+            cs.LoadSettingsFromFile(Models.Param.GetValueFromCmdParamAndValue(sFileArgAndValue));
         }
 
         // Search all arguments for a path, use the first one that shows up
-        bool noPathGiven = true;
         var path = args.FirstOrDefault(a => Directory.Exists(a));
         if (path != null) {
-            noPathGiven = false;
-        } else {
-            path = "./";
+            cs.SourceDirectory = path;
         }
-        cs.SourceDirectory = path;
+
         cs.LoadSettingsFromCommandLine(args);
 
         // Prompt for arguments graphically
         if (cs.GuiEnabled) {
-            // Load settings
-            if (cs.SettingsFile == null) {
-                var settingsPath = Application.ExecutablePath;
-                settingsPath = Path.Combine(settingsPath[..settingsPath.LastIndexOf(@"\")], DEFAULT_SETTINGS_FILE);
-                if (cs.LoadSettingsFromFile(settingsPath)) {
-                    // Load parameters from command line arguments again to override the settings file
-                    cs.LoadSettingsFromCommandLine(args);
-                }
+            // Load default settings file if none was supplied from the CLA
+            if (cs.SettingsFile == null && cs.LoadSettingsFromFile(DEFAULT_SETTINGS_FILE)) {
+                // Load parameters from command line arguments again to override the settings file
+                cs.LoadSettingsFromCommandLine(args);
             }
 
             Controls.CsmGui gui = new(cs);
-
-            // Launch a directory chooser if no path was entered
-            if (noPathGiven) {
-                gui.ChangeDirectory();
-            }
 
             // Show a GUI for parameter customization
             Application.EnableVisualStyles();

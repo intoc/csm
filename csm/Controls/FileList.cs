@@ -32,17 +32,24 @@ public partial class FileList : Form {
         cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
         Rectangle bounds = Owner.Bounds;
         Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
-        cs.SourceDirectoryChanged += (path) => {
-            fileWatcher.Path = path;
-            PinnedImages.Clear();
-        };
+        cs.SourceDirectoryChanged += DirectoryChanged;
         fileWatcher.NotifyFilter = NotifyFilters.FileName;
         fileWatcher.Changed += ReloadFiles;
         fileWatcher.Deleted += ReloadFiles;
         fileWatcher.Created += ReloadFiles;
         fileWatcher.Renamed += ReloadFiles;
-        fileWatcher.EnableRaisingEvents = true;
         UpdateList();
+    }
+
+    /// <summary>
+    /// Invoked by the back end whenever the source directory changes
+    /// </summary>
+    /// <param name="path"></param>
+    void DirectoryChanged(string path) {
+        fileWatcher.Path = path;
+        fileWatcher.EnableRaisingEvents = !string.IsNullOrEmpty(path);
+        Text = path?.Split('\\').Last() ?? "No Directory Selected";
+        PinnedImages.Clear();
     }
 
     /// <summary>
@@ -73,7 +80,6 @@ public partial class FileList : Form {
     }
 
     private void UpdateStatus() {
-        Text = cs.SourceDirectory?.Split('\\').Last() ?? "No Directory Selected";
         lblImageCount.Text = string.Format("{0} Images ({1} Excluded, {2} Included)", binder.Count, cs.ImageList.Count(i => !i.Include), cs.ImageList.Count(i => i.Include));
     }
 

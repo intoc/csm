@@ -321,7 +321,7 @@ public class ContactSheet {
     /// <param name="filename">The filename/path</param>
     public bool LoadSettingsFromFile(string filename) {
         try {
-            SettingsFile = filename;
+            SettingsFile = Path.GetFullPath(filename);
             if (!File.Exists(SettingsFile)) {
                 Console.Error.WriteLine("Settings file does not exist ({0})", SettingsFile);
                 return false;
@@ -525,6 +525,12 @@ public class ContactSheet {
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
     public async Task<bool> DrawAndSave() {
+        if (string.IsNullOrEmpty(SourceDirectory)) {
+            string error = "No directory selected!";
+            Console.Error.WriteLine(error);
+            ExceptionOccurred?.Invoke(new Exception(error));
+            return false; // Don't exit the GUI
+        }
 
         IEnumerable<ImageData> images;
         List<List<ImageData>> analyses = new() {
@@ -543,8 +549,10 @@ public class ContactSheet {
             images = ImageList.Where(i => i.Include);
 
             if (!images.Any()) {
-                ExceptionOccurred?.Invoke(new Exception(string.Format("No valid/selected {0} Images in {1}!", fileType.ParsedValue, SourceDirectory)));
-                return false; // Don't exit
+                string error = $"No valid/selected {fileType.ParsedValue} Images in {SourceDirectory}!";
+                Console.Error.WriteLine(error);
+                ExceptionOccurred?.Invoke(new Exception(error));
+                return false; // Don't exit the GUI
             }
 
             // Avoid stupidness
