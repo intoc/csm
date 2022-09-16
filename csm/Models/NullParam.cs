@@ -7,8 +7,16 @@ namespace csm.Models;
 [Serializable]
 public class NullParam : Param {
 
-    [XmlAttribute]
+    [XmlIgnore]
     public string Text { get; set; } = "Group";
+
+    [XmlAttribute]
+    public override string? Value {
+        get => Text;
+        set {
+            Text = value ?? Text;
+        }
+    }
 
     public NullParam() : base("null") { }
 
@@ -21,16 +29,6 @@ public class NullParam : Param {
     }
 
     public override void ParseVal(string? value) {}
-
-    public override string Value() {
-        return string.Format("{0}", Text);
-    }
-
-    protected override void Load(Param other) {
-        if (other is NullParam) {
-            LoadSubs(other);
-        }
-    }
 
     protected override void AppendHelpString(StringBuilder help, bool isMarkDown) { 
         // Don't append anything

@@ -5,9 +5,17 @@ namespace csm.Models;
 [Serializable()]
 public class StringParam : Param {
 
+    [XmlIgnore]
+    public string? ParsedValue { get; set; }
+
     [XmlAttribute]
-    public string? Val { get; set; }
-    
+    public override string? Value {
+        get => ParsedValue;
+        set {
+            ParsedValue = value;
+        }
+    }
+
     [XmlIgnore]
     public int MaxChars { get; set; }
 
@@ -15,29 +23,15 @@ public class StringParam : Param {
 
     public StringParam(string arg, string val, string units)
         : base(arg, units) {
-        Val = val;
+        ParsedValue = val;
     }
 
     public override void ParseVal(string? value) {
-        bool same = value == Val;
-        Val = value;
+        bool same = value == ParsedValue;
+        ParsedValue = value;
         if (!same) {
             Changed();
         }
     }
 
-    public override string? Value() {
-        return Val;
-    }
-
-    protected override void Load(Param other) {
-        if (other is StringParam otherString) {
-            string? orig = Val;
-            Val = otherString.Val;
-            if (Val != orig) {
-                Changed();
-            }
-            LoadSubs(other);
-        }
-    }
 }

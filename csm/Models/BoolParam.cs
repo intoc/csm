@@ -8,13 +8,21 @@ public class BoolParam : Param {
 
     private static readonly string[] falses = { "no", "false", "0" };
 
+    [XmlIgnore]
+    public bool BoolValue { get; set; }
+
     [XmlAttribute]
-    public bool Val { get; set; }
+    public override string? Value {
+        get => BoolValue.ToString().ToLower();
+        set {
+            BoolValue = bool.Parse(value ?? "false");
+        }
+    }
 
     public BoolParam() : base() { }
 
     public BoolParam(string arg, bool val) : base(arg, "true/false") {
-        Val = val;
+        BoolValue = val;
     }
 
     public void AddSubParam(Param p) {
@@ -22,25 +30,10 @@ public class BoolParam : Param {
     }
 
     public override void ParseVal(string? value) {
-        bool orig = Val;
-        Val = !falses.Contains(value?.ToLower() ?? "false");
-        if (Val != orig) {
+        bool orig = BoolValue;
+        BoolValue = !falses.Contains(value?.ToLower() ?? "false");
+        if (BoolValue != orig) {
             Changed();
-        }
-    }
-
-    public override string Value() {
-        return string.Format("{0}", Val);
-    }
-
-    protected override void Load(Param other) {
-        if (other is BoolParam otherBool) {
-            var orig = Val;
-            Val = otherBool.Val;
-            if (orig != Val) {
-                Changed();
-            }
-            LoadSubs(other);
         }
     }
 }

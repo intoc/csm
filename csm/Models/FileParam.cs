@@ -3,12 +3,13 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace csm.Models;
+
 [Serializable]
 public class FileParam : Param {
     private string? unParsedVal;
 
-    [XmlAttribute]
-    public string? Val {
+    [XmlIgnore]
+    public string? FileName {
         get {
             if (File != null) {
                 return File.Name;
@@ -18,6 +19,14 @@ public class FileParam : Param {
         }
         set {
             Path = value;
+        }
+    }
+
+    [XmlAttribute]
+    public override string? Value {
+        get => FileName;
+        set {
+            FileName = value;
         }
     }
 
@@ -107,18 +116,14 @@ public class FileParam : Param {
             }
         }
         
-        if (unParsedVal != Val) {
+        if (unParsedVal != FileName) {
             Changed();
         }
     }
 
-    public override string? Value() {
-        return Val;
-    }
-
     protected override void Load(Param other) {
         if (other is FileParam otherFile) {
-            ParseVal(otherFile.Val);
+            ParseVal(otherFile.FileName);
             Ext = otherFile.Ext ?? Ext;
             LoadSubs(other);
         }

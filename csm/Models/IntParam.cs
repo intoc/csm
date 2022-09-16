@@ -1,12 +1,21 @@
-﻿using System.Xml;
+﻿using System.Reflection.Metadata.Ecma335;
+using System.Xml;
 using System.Xml.Serialization;
 
 namespace csm.Models;
 [Serializable()]
 public class IntParam : Param {
 
+    [XmlIgnore]
+    public int IntValue { get; set; }
+
     [XmlAttribute]
-    public int Val { get; set; }
+    public override string? Value {
+        get => IntValue.ToString();
+        set {
+            IntValue = int.Parse(value ?? "0");
+        }
+    }
 
     [XmlIgnore]
     public int MinVal { get; set; }
@@ -17,44 +26,28 @@ public class IntParam : Param {
     public IntParam() : base() { }
 
     public IntParam(string arg, int val, string units = "Number") : base(arg, units) {
-        Val = val;
+        IntValue = val;
         MinVal = int.MinValue;
         MaxVal = int.MaxValue;
     }
 
     public override void ParseVal(string? value) {
-        int oldVal = Val;
+        int oldVal = IntValue;
         if (value == string.Empty) {
-            Val = 0;
+            IntValue = 0;
         } else {
             if (int.TryParse(value, out int outVal)) {
-                Val = outVal;
+                IntValue = outVal;
             } else {
                 throw new ArgumentException(string.Format("Value for {0} must be an Integer.", Desc));
             }
         }
-        if (Val < MinVal || Val > MaxVal) {
-            Val = oldVal;
+        if (IntValue < MinVal || IntValue > MaxVal) {
+            IntValue = oldVal;
             throw new ArgumentOutOfRangeException(string.Format("Value for {0} must be at least {1} and at most {2}.", Desc, MinVal, MaxVal));
         }
-        if (Val != oldVal) {
+        if (IntValue != oldVal) {
             Changed();
         }
     }
-
-    public override string Value() {
-        return string.Format("{0}", Val);
-    }
-
-    protected override void Load(Param other) {
-        if (other is IntParam otherInt) {
-            int orig = Val;
-            Val = otherInt.Val;
-            if (Val != orig) {
-                Changed();
-            }
-            LoadSubs(other);
-        }
-    }
-
 }

@@ -47,9 +47,10 @@ public abstract class Param {
         Units = units;
     }
 
-    protected abstract void Load(Param other);
     public abstract void ParseVal(string? value);
-    public abstract string? Value();
+
+    [XmlAttribute]
+    public abstract string? Value { get; set; }
 
     public void Load(IEnumerable<Param> fromList) {
         if (ExcludeFromLoading) {
@@ -59,6 +60,11 @@ public abstract class Param {
         if (p != null) {
             Load(p);
         }
+    }
+
+    protected virtual void Load(Param other) {
+        ParseVal(other.Value);
+        LoadSubs(other);
     }
 
     protected void LoadSubs(Param other) {
@@ -104,7 +110,7 @@ public abstract class Param {
     }
 
     protected virtual void AppendHelpString(StringBuilder help, bool isMarkDown) {
-        string? value = Value();
+        string? value = Value;
         value = string.IsNullOrEmpty(value) ? "[none]" : value;
         if (isMarkDown) {
             help.AppendLine($"| `{Arg}` | {Desc} | {Units} | {value} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
@@ -115,7 +121,7 @@ public abstract class Param {
     }
 
     public override string ToString() {
-        var value = Value();
+        var value = Value;
         if (string.IsNullOrEmpty(value)) {
             value = "[empty]";
         }

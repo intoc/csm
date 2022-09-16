@@ -18,7 +18,7 @@ public partial class ParamControl : UserControl {
 
         parameter = p;
         label.Text = p.Desc;
-        text.Text = p.Value();
+        text.Text = p.Value;
         units.Text = p.Units;
 
         if (parameter.Note != null) {
@@ -43,7 +43,7 @@ public partial class ParamControl : UserControl {
             }
         }
         p.ParamChanged += new ParamChangedEventHandler((param) => {
-            Debug.WriteLine("ParamControl Update {0}: {1}", param.Arg, param.Value());
+            Debug.WriteLine("ParamControl Update {0}: {1}", param.Arg, param.Value);
             RefreshValue(param);
         });
     }
@@ -52,7 +52,7 @@ public partial class ParamControl : UserControl {
         text.Visible = false;
         units.Visible = false;
         checkBox.Visible = true;
-        checkBox.Checked = boolParam.Val;
+        checkBox.Checked = boolParam.BoolValue;
         if (boolParam.SubParams.Any()) {
             subBox.Visible = true;
             foreach (Param sub in boolParam.SubParams) {
@@ -72,7 +72,7 @@ public partial class ParamControl : UserControl {
         if (strParam.MaxChars <= 0) {
             return;
         }
-        int valWidth = (int)text.CreateGraphics().MeasureString(parameter.Value(), text.Font).Width;
+        int valWidth = (int)text.CreateGraphics().MeasureString(parameter.Value, text.Font).Width;
         int charWidth = (int)text.CreateGraphics().MeasureString("M", text.Font).Width;
         int maxWidth = charWidth * strParam.MaxChars;
         text.Width = Math.Max(valWidth, maxWidth);
@@ -91,7 +91,7 @@ public partial class ParamControl : UserControl {
 
         if (ofd.ShowDialog() == DialogResult.OK) {
             parameter.ParseVal(ofd.FileName);
-            text.Text = parameter.Value();
+            text.Text = parameter.Value;
         }
     }
 
@@ -101,9 +101,9 @@ public partial class ParamControl : UserControl {
 
     public void RefreshValue(Param p) {
         if (p is BoolParam param) {
-            checkBox.Checked = param.Val;
+            checkBox.Checked = param.BoolValue;
         } else {
-            text.Text = p.Value();
+            text.Text = p.Value;
         }
     }
 

@@ -70,11 +70,11 @@ partial class CsmGui
             this.elapsedTime,
             this.settingsFileStatus});
             this.statusStrip.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
-            this.statusStrip.Location = new System.Drawing.Point(0, 656);
+            this.statusStrip.Location = new System.Drawing.Point(0, 556);
             this.statusStrip.Name = "statusStrip";
             this.statusStrip.Padding = new System.Windows.Forms.Padding(1, 0, 16, 0);
             this.statusStrip.ShowItemToolTips = true;
-            this.statusStrip.Size = new System.Drawing.Size(1100, 27);
+            this.statusStrip.Size = new System.Drawing.Size(1017, 27);
             this.statusStrip.TabIndex = 0;
             this.statusStrip.Text = "status";
             // 
@@ -113,7 +113,7 @@ partial class CsmGui
             this.menu.Location = new System.Drawing.Point(0, 0);
             this.menu.Name = "menu";
             this.menu.Padding = new System.Windows.Forms.Padding(7, 2, 0, 2);
-            this.menu.Size = new System.Drawing.Size(1100, 24);
+            this.menu.Size = new System.Drawing.Size(1017, 24);
             this.menu.TabIndex = 4;
             this.menu.Text = "menuStrip1";
             // 
@@ -206,7 +206,7 @@ partial class CsmGui
             this.pnlMain.Location = new System.Drawing.Point(0, 24);
             this.pnlMain.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pnlMain.Name = "pnlMain";
-            this.pnlMain.Size = new System.Drawing.Size(1100, 632);
+            this.pnlMain.Size = new System.Drawing.Size(1017, 532);
             this.pnlMain.TabIndex = 6;
             // 
             // directoryPanel
@@ -221,7 +221,7 @@ partial class CsmGui
             this.directoryPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.directoryPanel.Name = "directoryPanel";
             this.directoryPanel.Padding = new System.Windows.Forms.Padding(2);
-            this.directoryPanel.Size = new System.Drawing.Size(1100, 23);
+            this.directoryPanel.Size = new System.Drawing.Size(1017, 23);
             this.directoryPanel.TabIndex = 0;
             // 
             // directoryLabelLabel
@@ -260,7 +260,7 @@ partial class CsmGui
             this.paramsPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.paramsPanel.Name = "paramsPanel";
             this.paramsPanel.Padding = new System.Windows.Forms.Padding(0, 35, 0, 0);
-            this.paramsPanel.Size = new System.Drawing.Size(1100, 599);
+            this.paramsPanel.Size = new System.Drawing.Size(1017, 499);
             this.paramsPanel.TabIndex = 3;
             // 
             // buttonPanel
@@ -273,10 +273,10 @@ partial class CsmGui
             this.buttonPanel.Controls.Add(this.btnSave);
             this.buttonPanel.Controls.Add(this.settingsLabel);
             this.buttonPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.buttonPanel.Location = new System.Drawing.Point(0, 599);
+            this.buttonPanel.Location = new System.Drawing.Point(0, 499);
             this.buttonPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.buttonPanel.Name = "buttonPanel";
-            this.buttonPanel.Size = new System.Drawing.Size(1100, 33);
+            this.buttonPanel.Size = new System.Drawing.Size(1017, 33);
             this.buttonPanel.TabIndex = 4;
             // 
             // btnRun
@@ -337,7 +337,7 @@ partial class CsmGui
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1100, 683);
+            this.ClientSize = new System.Drawing.Size(1017, 583);
             this.Controls.Add(this.pnlMain);
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.menu);
