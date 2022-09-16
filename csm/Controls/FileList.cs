@@ -110,12 +110,12 @@ public partial class FileList : Form {
 
     private void RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {
         if (files.Rows[e.RowIndex].DataBoundItem is ImageData image) {
-            files.Rows[e.RowIndex].DefaultCellStyle.BackColor = 
-                image.Include ? 
-                (image.InclusionPinned ? (Color.Beige) : (Color.White)) :
-                (image.InclusionPinned ? (Color.DarkGray) : (Color.LightGray));
+            files.Rows[e.RowIndex].DefaultCellStyle.BackColor =
+                image.Include ? RowColorIncluded(image) : RowColorExcluded(image);
         }
     }
+    private static Color RowColorIncluded(ImageData image) => image.InclusionPinned ? (Color.Beige) : (Color.White);
+    private static Color RowColorExcluded(ImageData image) => image.InclusionPinned ? (Color.DarkGray) : (Color.LightGray);
 
     private void UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e) {
         if (e.Row?.DataBoundItem is ImageData image) {
