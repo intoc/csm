@@ -8,32 +8,32 @@ using csm.Models;
 
 namespace csm.Controls; 
 public partial class ParamControl : UserControl {
-    private Param pram;
+    private Param parameter;
 
     public ParamControl() {
         InitializeComponent();
-        pram = new NullParam();
+        parameter = new NullParam();
     }
     public ParamControl(Param p) : this() {
 
-        pram = p;
+        parameter = p;
         label.Text = p.Desc;
         text.Text = p.Value();
         units.Text = p.Units;
 
-        if (pram.Note != null) {
-            tltpHelp.SetToolTip(label, pram.Note);
+        if (parameter.Note != null) {
+            tltpHelp.SetToolTip(label, parameter.Note);
         }
 
-        if (pram is BoolParam boolParam) {
+        if (parameter is BoolParam boolParam) {
             SetupBool(boolParam);
-        } else if (pram is IntParam intParam) {
+        } else if (parameter is IntParam intParam) {
             SetupInt(intParam);
-        } else if (pram is StringParam strParam) {
+        } else if (parameter is StringParam strParam) {
             SetupString(strParam);
-        } else if (pram is FileParam) {
+        } else if (parameter is FileParam) {
             SetupFile();
-        } else if (pram is NullParam nullParam){
+        } else if (parameter is NullParam nullParam){
             // Just a group
             outerFlow.Visible = false;
             subBox.Visible = true;
@@ -72,7 +72,7 @@ public partial class ParamControl : UserControl {
         if (strParam.MaxChars <= 0) {
             return;
         }
-        int valWidth = (int)text.CreateGraphics().MeasureString(pram.Value(), text.Font).Width;
+        int valWidth = (int)text.CreateGraphics().MeasureString(parameter.Value(), text.Font).Width;
         int charWidth = (int)text.CreateGraphics().MeasureString("M", text.Font).Width;
         int maxWidth = charWidth * strParam.MaxChars;
         text.Width = Math.Max(valWidth, maxWidth);
@@ -86,12 +86,12 @@ public partial class ParamControl : UserControl {
 
     void BtnFileChooser_Click(object? sender, EventArgs e) {
         OpenFileDialog ofd = new() {
-            InitialDirectory = ((FileParam)pram).Directory?.ToString()
+            InitialDirectory = ((FileParam)parameter).Directory?.ToString()
         };
 
         if (ofd.ShowDialog() == DialogResult.OK) {
-            pram.ParseVal(ofd.FileName);
-            text.Text = pram.Value();
+            parameter.ParseVal(ofd.FileName);
+            text.Text = parameter.Value();
         }
     }
 
@@ -109,9 +109,9 @@ public partial class ParamControl : UserControl {
 
     public void Reset(List<Param> prams) {
         foreach (Param p in prams) {
-            if (p.Arg == pram.Arg) {
-                pram = p;
-                RefreshValue(pram);
+            if (p.Arg == parameter.Arg) {
+                parameter = p;
+                RefreshValue(parameter);
                 foreach (ParamControl sub in subPanel.Controls) {
                     sub.Reset(p.SubParams);
                 }
@@ -120,16 +120,18 @@ public partial class ParamControl : UserControl {
     }
 
     private void CheckBox_CheckedChanged(object sender, EventArgs e) {
-        pram.ParseVal(checkBox.Checked.ToString());
+        if (parameter is BoolParam boolParam) {
+            boolParam.Val = checkBox.Checked;
+        }
         EnableSubParams(checkBox.Checked);
     }
 
     private void CheckValueChanged() {
         try {
-            pram.ParseVal(text.Text);
+            parameter.ParseVal(text.Text);
         } catch (Exception ex) {
             MessageBox.Show(ex.Message, "Validation Error");
-            RefreshValue(pram);
+            RefreshValue(parameter);
         }
     }
 

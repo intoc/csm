@@ -11,7 +11,6 @@ public class BoolParam : Param {
     [XmlAttribute]
     public bool Val { get; set; }
 
-
     public BoolParam() : base() { }
 
     public BoolParam(string arg, bool val) : base(arg, "true/false") {

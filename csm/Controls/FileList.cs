@@ -6,10 +6,11 @@ using System.Diagnostics;
 namespace csm.Controls;
 
 public partial class FileList : Form {
+
     readonly ContactSheet cs;
 
     private readonly IDictionary<string, bool> PinnedImages = new Dictionary<string, bool>();
-    private FileSystemWatcher fileWatcher = new FileSystemWatcher();
+    private readonly FileSystemWatcher fileWatcher = new();
 
     public FileList(ContactSheet sheet) {
         InitializeComponent();

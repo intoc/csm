@@ -536,6 +536,7 @@ public class ContactSheet {
         int maxRowHeight = 0;
         int rowHeight;
         int fileIndex = 1;
+        bool fillGap = fillCoverGap.Val;
 
         lock (ImageList) {
 
@@ -549,7 +550,7 @@ public class ContactSheet {
             // Avoid stupidness
             if (!cover.Val || coverFile.File == null) {
                 cover.Val = false;
-                fillCoverGap.Val = false;
+                fillGap = false;
             }
 
             // Mark the start time
@@ -567,17 +568,17 @@ public class ContactSheet {
                     coverBounds.X = 0;
 
                     // Since there is no gap, no sense in trying to fill it
-                    fillCoverGap.Val = false;
+                    fillGap = false;
                 } else {
                     coverBounds.Width = coverImage.Width;
                     coverBounds.Height = coverImage.Height;
 
-                    if (fillCoverGap.Val && (sheetWidth.Val - coverBounds.Width) >= (sheetWidth.Val / columns.Val)) {
+                    if (fillGap && (sheetWidth.Val - coverBounds.Width) >= (sheetWidth.Val / columns.Val)) {
                         // Shift cover to the left to set up the gap to fill
                         coverBounds.X = 0;
                     } else {
                         // Not enough room for gap filling, center the cover
-                        if (fillCoverGap.Val) {
+                        if (fillGap) {
                             double scale = 0.7;
                             Console.WriteLine("Reducing cover size by a factor of {0} to create gap.", scale);
                             coverBounds.Width = (int)(coverBounds.Width * scale);
@@ -587,7 +588,6 @@ public class ContactSheet {
                         }
                     }
                 }
-
             }
 
             #endregion
@@ -626,7 +626,7 @@ public class ContactSheet {
         bool done = false;
         int rowWidth;
         Point curPoint = new(0, 0);
-        bool inGap = fillCoverGap.Val;
+        bool inGap = fillGap;
 
         for (rowIndex = 0; !done; ++rowIndex) {
 
@@ -659,7 +659,6 @@ public class ContactSheet {
                 rowHeight = ScaleRow(analyses[rowIndex], rowWidth);
                 minRowDims = MinDims(analyses[rowIndex]);
             }
-
 
             // Process at the end of the cover gap
             // Or at the end of the imagelist
@@ -713,7 +712,7 @@ public class ContactSheet {
                 } else {
                     // No gap images. Display the cover normally.
                     coverBounds.X = sheetWidth.Val / 2 - coverBounds.Width / 2;
-                    fillCoverGap.Val = false;
+                    fillGap = false;
                     Console.WriteLine("GAP FILL FAILED. Cover image is too small.");
                 }
                 // We're done with the gap
@@ -723,7 +722,6 @@ public class ContactSheet {
             }
 
             // Adjust the last rows to account for distortion
-
             if (rowIndex + 1 == analyses.Count ||
                 analyses[rowIndex + 1].Count == 0) {
                 int lastRowHeight = rowHeight;
@@ -799,51 +797,51 @@ public class ContactSheet {
         // Determine the overall sheet height
         ImageData last = analyses.Last(l => l.Count > 0)[0];
         int sheetHeight = last.Y + last.Height + headerHeight;
-        if (!fillCoverGap.Val) {
+        if (!fillGap) {
             sheetHeight += coverBounds.Height;
         }
 
         // Create the output image
-        Image sheet = new Bitmap(sheetWidth.Val, sheetHeight);
+        using Image sheetImage = new Bitmap(sheetWidth.Val, sheetHeight);
 
         // Set up the Graphics and resampling options
-        Graphics g = Graphics.FromImage(sheet);
-        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+        using Graphics sheetGraphics = Graphics.FromImage(sheetImage);
+        sheetGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+        sheetGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
         // Draw the header
-        if (header.Val && headerImage != null) {
+        if (headerImage != null) {
             Console.WriteLine("Drawing header...");
-            g.DrawImage(headerImage, 0, 0);
+            sheetGraphics.DrawImage(headerImage, 0, 0);
             headerImage.Dispose();
         }
+
         // Draw the cover
-        if (cover.Val && coverFile.Val != string.Empty) {
+        if (coverImage != null) {
             Console.WriteLine("Drawing cover...");
-            Rectangle bounds = coverBounds;
-            bounds.Y += headerHeight + borders.Val;
-            bounds.X += borders.Val;
-            bounds.Width -= (borders.Val * 2);
-            bounds.Height -= (borders.Val * 2);
+            coverBounds.Y += headerHeight + borders.Val;
+            coverBounds.X += borders.Val;
+            coverBounds.Width -= (borders.Val * 2);
+            coverBounds.Height -= (borders.Val * 2);
             if (preview.Val) {
-                g.FillRectangle(Brushes.White, bounds);
-                g.DrawRectangle(Pens.LightGreen, bounds);
-                g.DrawString(
+                sheetGraphics.FillRectangle(Brushes.White, coverBounds);
+                sheetGraphics.DrawRectangle(Pens.LightGreen, coverBounds);
+                sheetGraphics.DrawString(
                     "COVER",
                     new Font("Times New Roman", 14, FontStyle.Bold),
                     Brushes.Black,
-                    bounds.X + bounds.Width / 2,
-                    bounds.Y + bounds.Height / 2);
-            } else if (coverImage != null) {
-                g.DrawImage(coverImage, bounds);
+                    coverBounds.X + coverBounds.Width / 2,
+                    coverBounds.Y + coverBounds.Height / 2);
+            } else {
+                sheetGraphics.DrawImage(coverImage, coverBounds);
             }
             coverImage?.Dispose();
         }
 
         // Interpolation is being done by the draw function on separate graphics
         // objects, no need to use it here. Same for smoothing.
-        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Default;
-        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.Default;
+        sheetGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Default;
+        sheetGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.Default;
 
         // Draw the thumbnail images
         int index = 1;
@@ -855,12 +853,12 @@ public class ContactSheet {
         foreach (List<ImageData> row in analyses.Where(l => l.Count > 0)) {
             foreach (ImageData col in row) {
                 col.Y += headerHeight;
-                if (!fillCoverGap.Val) {
+                if (!fillGap) {
                     col.Y += coverBounds.Height;
                 }
 
                 // Create info for threaded load/draw operation
-                DrawThreadObj tdata = new(col, g) {
+                DrawThreadObj tdata = new(col, sheetGraphics) {
                     Index = index,
                     ImageTotal = imageCount,
                     FontSize = labels.Val ? labelFontSize.Val : 0,
@@ -882,7 +880,6 @@ public class ContactSheet {
         EncoderParameters myEncoderParameters = new(1);
         myEncoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, quality.Val);
 
-
         DateTime endTime = DateTime.Now;
         TimeSpan duration = endTime - startTime;
 
@@ -893,7 +890,7 @@ public class ContactSheet {
         Console.WriteLine("---------------------------------------------------------------------------");
         Console.WriteLine("Completed! It took {0}", duration);
         Console.WriteLine("---------------------------------------------------------------------------");
-        Console.WriteLine("Sheet Size: {0} images, {1} rows, {2}x{3}px", imageCount, analyses.Count(r => r.Count > 0), sheet.Size.Width, sheet.Size.Height);
+        Console.WriteLine("Sheet Size: {0} images, {1} rows, {2}x{3}px", imageCount, analyses.Count(r => r.Count > 0), sheetImage.Size.Width, sheetImage.Size.Height);
         Console.WriteLine("Maximum Images per Row: {0}", analyses.Max(r => r.Count));
         Console.WriteLine("Minimum Images per Row: {0}", analyses.Where(r => r.Count > 0).Min(r => r.Count));
         Console.WriteLine("Output Quality: {0}%{1}", quality.Val, interpolate.Val ? ", Using High-Quality Interpolation." : "");
@@ -918,7 +915,7 @@ public class ContactSheet {
                     }
                 }
                 if (jpgEncoder != null) {
-                    sheet.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
+                    sheetImage.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
                     Console.WriteLine("Saved. Size: {0:.00}Mb", new FileInfo(OutFilePath(suffix)).Length / (1024f * 1024f));
                 } else {
                     Console.Error.WriteLine("JPEG Encoder not found");
@@ -931,7 +928,7 @@ public class ContactSheet {
         } finally {
             Console.WriteLine("---------------------------------------------------------------------------");
             // Clean up
-            sheet.Dispose();
+            sheetImage.Dispose();
         }
 
         Console.WriteLine("Exit on Complete: {0}", exitOnComplete.Val);
