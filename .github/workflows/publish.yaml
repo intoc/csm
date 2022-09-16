@@ -36,7 +36,7 @@ jobs:
           tag=$(git describe --tags --abbrev=0)
           release_name="csm-$tag-${{ matrix.target }}"
           # Build everything
-          dotnet publish csm/csm.csproj --framework net6.0-windows --runtime "${{ matrix.target }}" -c Release -o "$release_name"
+          dotnet publish csm/csm.csproj --framework net6.0-windows --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name"
           # Pack files
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             # Pack to zip for Windows
@@ -49,6 +49,6 @@ jobs:
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
-          files: "csm*"
+          files: "csm-*"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

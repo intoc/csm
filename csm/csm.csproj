@@ -10,10 +10,18 @@
 		<FileVersion>0.2.3.1</FileVersion>
 		<StartupObject>csm.Program</StartupObject>
 		<ApplicationIcon>csm.ico</ApplicationIcon>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>
 	  <Content Include="csm.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="..\readme.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 	<ItemGroup>
