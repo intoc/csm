@@ -54,8 +54,9 @@ public class ContactSheet {
 
     // Draw status variables
     private DateTime startTime;
-    private int imageCount, drawnCount;
+    private int imageCount, drawnCount, progressStep;
     private readonly object graphicsLock = new();
+    private readonly object progressLock = new();
 
     #region Public Properties
 
@@ -847,6 +848,7 @@ public class ContactSheet {
         Console.WriteLine("Drawing sheet...");
 
         drawnCount = 0;
+        progressStep = 0;
 
         IList<Task> drawThumbTasks = new List<Task>();
         foreach (List<ImageData> row in analyses.Where(l => l.Count > 0)) {
@@ -1013,12 +1015,21 @@ public class ContactSheet {
         Console.WriteLine("{0}, {1} of {2} ",
             data.File.Split('\\').Last(), data.Index, data.ImageTotal);
 
-        // Update counters
-        Interlocked.Increment(ref drawnCount);
-
-        // Send progress to listeners
-        DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, imageCount, DateTime.Now - startTime));
+        // Send a limited number of progress updates to the listeners
+        lock (progressLock) {
+            // Update counters
+            int resolution = 10;
+            double progressFraction = ++drawnCount / (double)imageCount;
+            int step = (int)Math.Floor(progressFraction * resolution);
+            if (step > progressStep) {
+                ++progressStep;
+                // Send progress to listeners
+                DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, imageCount, DateTime.Now - startTime));
+            }
+        }
     }
+
+
 
     /// <summary>
     /// Shift a thumbnail image from an end of one row to another on the contact sheet
