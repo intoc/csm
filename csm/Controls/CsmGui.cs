@@ -1,5 +1,6 @@
 ﻿using csm.Logic;
 using csm.Models;
+using System.Diagnostics;
 
 namespace csm.Controls;
 public partial class CsmGui : Form {
@@ -80,7 +81,7 @@ public partial class CsmGui : Form {
             drawStatus.Text = "Drawing Finished!";
             // Open the folder
             if (cs.OpenOutputDir) {
-                System.Diagnostics.Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", Path.GetDirectoryName(cs.OutFilePath(0)) ?? string.Empty);
+                Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", Path.GetDirectoryName(cs.OutFilePath(0)) ?? string.Empty);
             }
         }
     }
@@ -99,7 +100,8 @@ public partial class CsmGui : Form {
                 Application.Exit();
             }
         } catch (Exception ex) {
-            MessageBox.Show(ex.Message);
+            Console.Error.WriteLine(ex);
+            ExceptionOccurred("Unhandled", ex);
         }
     }
 

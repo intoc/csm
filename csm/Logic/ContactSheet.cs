@@ -538,7 +538,7 @@ public class ContactSheet {
         int rowHeight;
         int fileIndex = 1;
         bool drawCover = cover.BoolValue;
-        bool fillGap = fillCoverGap.BoolValue;
+        bool fillGap = drawCover && fillCoverGap.BoolValue;
 
         lock (ImageList) {
 
@@ -559,7 +559,7 @@ public class ContactSheet {
 
             // Mark the start time
             startTime = DateTime.Now;
-            
+
             #region Cover Setup
 
             // Analyze the cover
@@ -728,15 +728,13 @@ public class ContactSheet {
             }
 
             // Adjust the last rows to account for distortion
-            if (rowIndex + 1 == analyses.Count ||
-                analyses[rowIndex + 1].Count == 0) {
-                int lastRowHeight = rowHeight;
-                int lastRowWidth = analyses[rowIndex].Last().X + analyses[rowIndex].Last().Width;
-                // If this is a single row sheet, don't try to get the previous row's height
-                if (rowIndex > 0) {
-                    lastRowHeight = analyses[rowIndex - 1][0].Height;
-                    lastRowWidth = analyses[rowIndex - 1].Last().X + analyses[rowIndex - 1].Last().Width;
-                }
+            if (rowIndex + 1 == analyses.Count || analyses[rowIndex + 1].Count == 0) {
+
+                // If this is a single row sheet, don't try to get the previous row's dimensions
+                bool isSingleRow = rowIndex == 0;
+                var lastRow = isSingleRow ? analyses[rowIndex] : analyses[rowIndex - 1];
+                int lastRowHeight = lastRow.First().Height;
+                int lastRowWidth = lastRow.Last().X + lastRow.Last().Width;
 
                 // Attempt to even out the last two rows so there aren't any massive images at the end
                 // Don't adjust if the last row was in the cover gap
@@ -784,6 +782,7 @@ public class ContactSheet {
             if (headerStats.BoolValue) {
                 // Determine largest image
                 var maxSize = analyses
+                    .Where(x => x.Count > 0)
                     .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
                     .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
                 headerText += string.Format("\n{0} images. Maximum dimensions {1}x{2}px", imageCount, maxSize.Width, maxSize.Height);
@@ -974,9 +973,9 @@ public class ContactSheet {
         } else {
             thumbG.DrawImage(image, thumb);
         }
-        
+
         image.Dispose();
-        
+
 
         // Draw image name labels
         if (data.FontSize > 0) {
