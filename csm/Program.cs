@@ -7,7 +7,7 @@ static class Program {
     static void Main(string[] args) {
 
         Logic.ContactSheet cs = new();
-        cs.ErrorOccurred += (message, ex) => Console.Error.WriteLine("{0} Exception: {1}", message, ex?.Message ?? "(none)");
+        cs.ErrorOccurred += LogError;
 
         // Check for a -help parameter and handle it
         if (cs.Help(args)) {
@@ -48,5 +48,8 @@ static class Program {
             cs.DrawAndSave().Wait();
         }
     }
+
+    static void LogError(string message, Exception? ex) => 
+        Console.Error.WriteLine("{0} Exception: {1}", message, ex?.Message ?? "(none)");
 
 }

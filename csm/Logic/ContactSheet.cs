@@ -25,7 +25,7 @@ public class ContactSheet {
     private const int DEFAULT_COLUMNS = 6;
     private const int DEFAULT_QUALITY = 90;
 
-    private DirectoryInfo? sourceDir;
+    private DirectoryInfo? sourceDirectoryInfo;
 
     private readonly BoolParam cover;
     private readonly BoolParam exitOnComplete;
@@ -54,7 +54,7 @@ public class ContactSheet {
 
     // Draw status variables
     private DateTime startTime;
-    private int imageCount, drawnCount, progressStep;
+    private int drawnCount, progressStep;
     private readonly object graphicsLock = new();
     private readonly object progressLock = new();
 
@@ -90,8 +90,8 @@ public class ContactSheet {
     /// </summary>
     public string? SourceDirectory {
         get {
-            if (sourceDir != null) {
-                return sourceDir.FullName;
+            if (sourceDirectoryInfo != null) {
+                return sourceDirectoryInfo.FullName;
             } else {
                 return string.Empty;
             }
@@ -100,7 +100,7 @@ public class ContactSheet {
             if (value == null) {
                 return;
             }
-            sourceDir = new DirectoryInfo(value);
+            sourceDirectoryInfo = new DirectoryInfo(value);
             SourceDirectoryChanged?.Invoke(Path.GetFullPath(value));
         }
     }
@@ -115,24 +115,24 @@ public class ContactSheet {
     public event DrawProgressEventHandler DrawProgressChanged = delegate { };
 
     /// <summary>
-    /// Fired when the settings file changes and is loaded
-    /// </summary>
-    public event SettingsChangedEventHandler SettingsChanged = delegate { };
-
-    /// <summary>
     /// Fired when there is a change to the contents of the image list
     /// </summary>
     public event ImageListChangedEventHandler ImageListChanged = delegate { };
 
     /// <summary>
-    /// Fired when an exception occurred
+    /// Fired when the settings file changes and is loaded
     /// </summary>
-    public event ExceptionEventHandler ErrorOccurred = delegate { };
+    public event SettingsChangedEventHandler SettingsChanged = delegate { };
 
     /// <summary>
     /// Fired when the source directory is changed
     /// </summary>
     public event SourceDirectoryChangedEventHandler SourceDirectoryChanged = delegate { };
+
+    /// <summary>
+    /// Fired when an exception occurred
+    /// </summary>
+    public event ExceptionEventHandler ErrorOccurred = delegate { };
 
     #endregion
 
@@ -255,29 +255,25 @@ public class ContactSheet {
         #endregion
 
         // Setup all instances where a file list reload is required
-        fileType.ParamChanged += new ParamChangedEventHandler(async (p) => await LoadFileList(p));
-        SourceDirectoryChanged += new SourceDirectoryChangedEventHandler(async (path) => {
-            Console.WriteLine($"SourceDirectory changed to {SourceDirectory}");
-            headerTitle.ParseVal(sourceDir?.Name);
+        fileType.ParamChanged += async (path) => await LoadFileList(path);
+        SourceDirectoryChanged += async (path) => {
+            Console.WriteLine($"SourceDirectory changed to {path}");
+            headerTitle.ParseVal(sourceDirectoryInfo?.Name);
             Console.WriteLine($"Directory Name -> Header Title: {headerTitle.ParsedValue}");
             if (cover.BoolValue) {
                 GuessCover(true);
             }
             await LoadFileList();
-        });
+        };
 
         // Setup all instances where a image list refresh is required without a full reload
-        var refreshImageListHandler = new ParamChangedEventHandler(RefreshImageList);
-        cover.ParamChanged += refreshImageListHandler;
-        coverFile.ParamChanged += refreshImageListHandler;
-        minDimInput.ParamChanged += refreshImageListHandler;
-        outputFilePath.ParamChanged += refreshImageListHandler;
+        cover.ParamChanged += RefreshImageList;
+        coverFile.ParamChanged += RefreshImageList;
+        minDimInput.ParamChanged += RefreshImageList;
+        outputFilePath.ParamChanged += RefreshImageList;
 
-        cover.ParamChanged += new ParamChangedEventHandler((p) => {
-            GuessCover(false);
-        });
-
-        coverPattern.ParamChanged += (param) => GuessCover(true);
+        cover.ParamChanged += (_) => GuessCover(false);
+        coverPattern.ParamChanged += (_) => GuessCover(true);
 
         // Load top-level params into list (ordered)
         Params = new List<Param> {
@@ -409,7 +405,7 @@ public class ContactSheet {
         // If the command line set the cover file pattern/name,
         // make sure it exists. If not, guess.
         if (force || fileParam.File == null) {
-            fileParam.Directory = sourceDir;
+            fileParam.Directory = sourceDirectoryInfo;
             changed = fileParam.Guess(patterns);
         }
         return changed;
@@ -437,7 +433,7 @@ public class ContactSheet {
     /// </summary>
     /// <param name="threaded">Do it in a new thread</param>
     public async Task LoadFileList(bool threaded = false) {
-        if (sourceDir == null) {
+        if (sourceDirectoryInfo == null) {
             return;
         }
         var loadAll = () => {
@@ -447,7 +443,7 @@ public class ContactSheet {
                 // Get a list of all the images in the directory, 
                 // Don't include hidden files
                 IEnumerable<string> files =
-                    from file in sourceDir.GetFiles()
+                    from file in sourceDirectoryInfo.GetFiles()
                     where fileType.ParsedValue == null || file.Extension.ToLower().Contains(fileType.ParsedValue.ToLower())
                     where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
                     select file.FullName;
@@ -536,34 +532,40 @@ public class ContactSheet {
         };
         Rectangle coverBounds = new();
         Image? coverImage = null;
+        int imageCount;
         int rowIndex = 0;
         int maxRowHeight = 0;
         int rowHeight;
         int fileIndex = 1;
+        bool drawCover = cover.BoolValue;
         bool fillGap = fillCoverGap.BoolValue;
 
         lock (ImageList) {
 
             images = ImageList.Where(i => i.Include);
+            imageCount = images.Count();
 
-            if (!images.Any()) {
+            if (imageCount == 0) {
                 ErrorOccurred?.Invoke($"No valid/selected {fileType.ParsedValue} Images in {SourceDirectory}!");
                 return false; // Don't exit the GUI
             }
 
             // Avoid stupidness
-            if (!cover.BoolValue || coverFile.File == null) {
-                cover.BoolValue = false;
+            if (drawCover && coverFile.File == null) {
+                ErrorOccurred?.Invoke("Can't draw the cover because there is no cover file set.");
+                drawCover = false;
                 fillGap = false;
             }
 
             // Mark the start time
             startTime = DateTime.Now;
+            // Begin image analysis
+            Console.WriteLine("Analyzing {0} files (Pass 1)", imageCount);
 
             #region Cover Setup
 
-            // Draw the cover
-            if (cover.BoolValue && coverFile.File != null) {
+            // Analyze the cover
+            if (drawCover && coverFile.File != null) {
                 coverImage = Image.FromFile(coverFile.File.FullName);
 
                 if (coverImage.Width > sheetWidth.IntValue) {
@@ -595,10 +597,6 @@ public class ContactSheet {
             }
 
             #endregion
-
-            // Begin image analysis
-            imageCount = images.Count();
-            Console.WriteLine("Analyzing {0} files (Pass 1)", imageCount);
 
             // First pass, add the same number of images to each row,
             // scale to width, record maximum row height
@@ -1021,12 +1019,12 @@ public class ContactSheet {
         lock (progressLock) {
             // Update counters
             int resolution = 10;
-            double progressFraction = ++drawnCount / (double)imageCount;
+            double progressFraction = ++drawnCount / (double)data.ImageTotal;
             int step = (int)Math.Floor(progressFraction * resolution);
             if (step > progressStep) {
                 ++progressStep;
                 // Send progress to listeners
-                DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, imageCount, DateTime.Now - startTime));
+                DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
             }
         }
     }
