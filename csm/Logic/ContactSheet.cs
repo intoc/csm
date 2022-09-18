@@ -1,7 +1,5 @@
 ﻿using csm.Models;
-using System.Diagnostics;
 using System.Drawing.Imaging;
-using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 using Path = System.IO.Path;
@@ -44,7 +42,7 @@ public class ContactSheet {
     /// <summary>
     /// The list of images found in the source directory
     /// </summary>
-    public List<ImageData> ImageList { get; } = new List<ImageData>();
+    public IList<ImageData> ImageList => imageSet.Images;
 
     /// <summary>
     /// Whether the GUI is enabled
@@ -107,6 +105,7 @@ public class ContactSheet {
     #region Private Fields
 
     private DirectoryInfo? sourceDirectoryInfo;
+    private IImageSet imageSet;
 
     private readonly BoolParam cover;
     private readonly BoolParam exitOnComplete;
@@ -263,6 +262,7 @@ public class ContactSheet {
         fileType.ParamChanged += async (path) => await LoadFileList(path);
         SourceDirectoryChanged += async (path) => {
             Console.WriteLine($"SourceDirectory changed to {path}");
+            imageSet = new ImageSet(new DirectoryFileSource(path));
             headerTitle.ParseVal(sourceDirectoryInfo?.Name);
             Console.WriteLine($"Directory Name -> Header Title: {headerTitle.ParsedValue}");
             if (cover.BoolValue) {
@@ -288,6 +288,8 @@ public class ContactSheet {
             labels,
             cover
         };
+
+        imageSet = new ImageSet(new DirectoryFileSource(SourceDirectory));
     }
 
     /// <summary>
@@ -426,99 +428,26 @@ public class ContactSheet {
     /// Load the file list and image information from the source directory if it's set
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need</param>
-    public async Task LoadFileList(Param p) {
-        Console.WriteLine("Reloading file list due to change in {0}", p.CmdParameter);
-        await LoadFileList(GuiEnabled);
-    }
-
-    /// <summary>
-    /// Load the file list and image information from the source directory if it's set
-    /// </summary>
-    /// <param name="threaded">Do it in a new thread</param>
-    public async Task LoadFileList(bool threaded = false) {
-        if (sourceDirectoryInfo == null) {
-            return;
+    public async Task LoadFileList(Param? p = null) {
+        if (p != null) {
+            Console.WriteLine("Reloading file list due to change in {0}", p.CmdParameter);
         }
-        var loadAll = () => {
-            lock (ImageList) {
-                var sw = Stopwatch.StartNew();
-
-                // Get a list of all the images in the directory, 
-                // Don't include hidden files
-                IEnumerable<string> files =
-                    from file in sourceDirectoryInfo.GetFiles()
-                    where fileType.ParsedValue == null || file.Extension.ToLower().Contains(fileType.ParsedValue.ToLower())
-                    where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
-                    select file.FullName;
-
-                // Load Image data into list
-                ImageList.Clear();
-
-                IList<Task> tasks = new List<Task>();
-                foreach (string path in files) {
-                    ImageData image = new(path);
-                    ImageList.Add(image);
-                    tasks.Add(Task.Factory.StartNew(() => LoadImageDataFromStream(image)));
-                }
-
-                Task.WaitAll(tasks.ToArray());
-
-                sw.Stop();
-                Debug.WriteLine("LoadFileList took {0}", sw.Elapsed);
-
-                RefreshImageList();
-            }
-        };
-        if (threaded) {
-            await Task.Factory.StartNew(loadAll);
-        } else {
-            loadAll();
-        }
-    }
-
-    /// <summary>
-    /// Initialize an <see cref="ImageData"/> instance by retrieving its dimensions from a file stream
-    /// </summary>
-    /// <param name="image">The <see cref="ImageData"/> to initialize</param>
-    private static void LoadImageDataFromStream(ImageData image) {
-        using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
-        using var fromStream = Image.FromStream(stream, false, false);
-        image.InitSize(new Size(fromStream.Width, fromStream.Height));
+        await imageSet.LoadImageListAsync(fileType.ParsedValue ?? ".jpg", minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
+        ImageListChanged?.Invoke();
     }
 
     /// <summary>
     /// Refresh the image data and whether they should be included in the output based on parameter changes
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need for the refresh</param>
-    public void RefreshImageList(Param p) {
-        if (!ImageList.Any()) {
+    public void RefreshImageList(Param? p = null) {
+        if (!imageSet.Images.Any()) {
             return;
         }
-        Console.WriteLine("Refreshing image list due to change in {0}", p.CmdParameter);
-        RefreshImageList();
-    }
-
-    /// <summary>
-    /// Refresh the image data and whether they should be included in the output based on parameter changes
-    /// </summary>
-    private void RefreshImageList() {
-        // Don't include images smaller than minDimInput
-        var isTooSmall = (ImageData image) => image.Width < minDimInput.IntValue && image.Height < minDimInput.IntValue;
-        // Don't include a previously generated contact sheet if we can avoid it
-        var isOldSheet = (string path) => {
-            string outfile = Path.GetFileName(OutFilePath());
-            string pathWithoutSuffix = path.Replace(@"(_\d*)?\.jpg", ".jpg");
-            return !string.IsNullOrEmpty(outfile) && pathWithoutSuffix.Equals(outfile);
-        };
-        // Don't include cover file
-        var isCover = (string fileName) => cover.BoolValue && fileName.Equals(coverFile.File?.Name);
-
-        foreach (ImageData image in ImageList) {
-            if (!image.InclusionPinned) {
-                image.Include = !(isTooSmall(image) || isOldSheet(image.FileName) || isCover(image.FileName));
-            }
+        if (p != null) {
+            Console.WriteLine("Refreshing image list due to change in {0}", p.CmdParameter);
         }
-
+        imageSet.RefreshImageList(minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
         ImageListChanged?.Invoke();
     }
 
@@ -548,7 +477,7 @@ public class ContactSheet {
 
         lock (ImageList) {
 
-            images = ImageList.Where(i => i.Include);
+            images = imageSet.Images.Where(i => i.Include);
             imageCount = images.Count();
 
             if (imageCount == 0) {
@@ -556,17 +485,17 @@ public class ContactSheet {
                 return false; // Don't exit the GUI
             }
 
+            // Mark the start time
+            startTime = DateTime.Now;
+
+            #region Cover Setup
+
             // Avoid stupidness
             if (drawCover && coverFile.File == null) {
                 ErrorOccurred?.Invoke("Can't draw the cover because there is no cover file set.");
                 drawCover = false;
                 fillGap = false;
             }
-
-            // Mark the start time
-            startTime = DateTime.Now;
-
-            #region Cover Setup
 
             // Analyze the cover
             if (drawCover && coverFile.File != null) {

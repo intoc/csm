@@ -114,7 +114,7 @@ public partial class FileList : Form {
         await cs.LoadFileList();
     }
 
-    private async void ReloadFiles(object sender, EventArgs e) => await cs.LoadFileList(true);
+    private async void ReloadFiles(object sender, EventArgs e) => await cs.LoadFileList();
 
     private void RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {
         if (files.Rows[e.RowIndex].DataBoundItem is ImageData image) {
