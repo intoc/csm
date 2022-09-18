@@ -119,8 +119,10 @@ public class FileParam : Param {
 
     protected override void Load(Param other) {
         if (other is FileParam otherFile) {
-            ParseVal(otherFile.FileName);
-            Ext = otherFile.Ext ?? Ext;
+            if (!ExcludeFromLoading) {
+                ParseVal(otherFile.FileName);
+                Ext = otherFile.Ext ?? Ext;
+            }
             LoadSubParams(other);
         }
     }

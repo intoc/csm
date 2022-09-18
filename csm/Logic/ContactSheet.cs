@@ -505,8 +505,11 @@ public class ContactSheet {
         // Don't include images smaller than minDimInput
         var isTooSmall = (ImageData image) => image.Width < minDimInput.IntValue && image.Height < minDimInput.IntValue;
         // Don't include a previously generated contact sheet if we can avoid it
-        var isOldSheet = (string path) => !string.IsNullOrEmpty(OutFilePath())
-            && Regex.IsMatch(path, $"{OutFilePath().Replace(".jpg", @"(_\d*)?\.jpg")}");
+        var isOldSheet = (string path) => {
+            string outfile = Path.GetFileName(OutFilePath());
+            string pathWithoutSuffix = path.Replace(@"(_\d*)?\.jpg", ".jpg");
+            return !string.IsNullOrEmpty(outfile) && pathWithoutSuffix.Equals(outfile);
+        };
         // Don't include cover file
         var isCover = (string fileName) => cover.BoolValue && fileName.Equals(coverFile.File?.Name);
 
