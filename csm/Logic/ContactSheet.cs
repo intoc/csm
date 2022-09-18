@@ -773,11 +773,6 @@ public class ContactSheet {
 
         #region Drawing
 
-        // Determine largest image
-        var maxSize = analyses
-            .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
-            .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
-
         // Set up the header
         Image? headerImage = null;
         int headerHeight = 0;
@@ -787,6 +782,10 @@ public class ContactSheet {
             SolidBrush br = new(Color.White);
             string headerText = headerTitle.ParsedValue ?? string.Empty;
             if (headerStats.BoolValue) {
+                // Determine largest image
+                var maxSize = analyses
+                    .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
+                    .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
                 headerText += string.Format("\n{0} images. Maximum dimensions {1}x{2}px", imageCount, maxSize.Width, maxSize.Height);
             }
 
