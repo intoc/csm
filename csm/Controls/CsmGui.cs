@@ -51,7 +51,7 @@ public partial class CsmGui : Form {
     }
 
     void ExceptionOccurred(string message, Exception? e) {
-        MessageBox.Show($"{message} {(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!", 
+        MessageBox.Show($"{message}\n\n{(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!", 
             MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 

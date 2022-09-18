@@ -505,8 +505,8 @@ public class ContactSheet {
         // Don't include images smaller than minDimInput
         var isTooSmall = (ImageData image) => image.Width < minDimInput.IntValue && image.Height < minDimInput.IntValue;
         // Don't include a previously generated contact sheet if we can avoid it
-        var isOldSheet = (string path) => !string.IsNullOrEmpty(outputFilePath.ParsedValue)
-            && Regex.IsMatch(path, $"{outputFilePath.ParsedValue.Replace(".jpg", @"(_\d*)?\.jpg")}");
+        var isOldSheet = (string path) => !string.IsNullOrEmpty(OutFilePath())
+            && Regex.IsMatch(path, $"{OutFilePath().Replace(".jpg", @"(_\d*)?\.jpg")}");
         // Don't include cover file
         var isCover = (string fileName) => cover.BoolValue && fileName.Equals(coverFile.File?.Name);
 
@@ -1108,12 +1108,7 @@ public class ContactSheet {
     /// <param name="row">The list of images in a row</param>
     /// <returns>A <see cref="Size"/> containing the calculated minimum Height and Width</returns>
     private static Size MinDims(List<ImageData> row) {
-        Size s = new(row[0].Width, row[0].Height);
-        foreach (ImageData img in row) {
-            s.Width = Math.Min(s.Width, img.Width);
-            s.Height = Math.Min(s.Height, img.Height);
-        }
-        return s;
+        return row.Any() ? new Size(row.Min(img => img.Width), row.Min(img => img.Height)) : new Size();
     }
 
     /// <summary>
