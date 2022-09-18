@@ -559,13 +559,13 @@ public class ContactSheet {
 
             // Mark the start time
             startTime = DateTime.Now;
-            // Begin image analysis
-            Console.WriteLine("Analyzing {0} files (Pass 1)", imageCount);
-
+            
             #region Cover Setup
 
             // Analyze the cover
             if (drawCover && coverFile.File != null) {
+                // Begin image analysis
+                Console.WriteLine("Analyzing cover...");
                 coverImage = Image.FromFile(coverFile.File.FullName);
 
                 if (coverImage.Width > sheetWidth.IntValue) {
@@ -594,9 +594,13 @@ public class ContactSheet {
                         }
                     }
                 }
+                Console.WriteLine("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverBounds);
             }
 
             #endregion
+
+            // Begin image analysis
+            Console.WriteLine("Analyzing {0} files (Pass 1)", imageCount);
 
             // First pass, add the same number of images to each row,
             // scale to width, record maximum row height
@@ -734,13 +738,10 @@ public class ContactSheet {
                     lastRowWidth = analyses[rowIndex - 1].Last().X + analyses[rowIndex - 1].Last().Width;
                 }
 
-                // Attempt to even out the last two rows so there aren't any massive
-                // images at the end
+                // Attempt to even out the last two rows so there aren't any massive images at the end
                 // Don't adjust if the last row was in the cover gap
                 bool lastRowInGap = rowIndex > 0 && analyses[rowIndex - 1].Last().Y < coverBounds.Height;
-                while (!lastRowInGap &&
-                    rowHeight > lastRowHeight * 2 &&
-                    analyses[rowIndex - 1].Count > 1) {
+                while (!lastRowInGap && rowHeight > lastRowHeight * 2 && analyses[rowIndex - 1].Count > 1) {
                     ShiftImage(analyses, rowIndex - 1, rowIndex);
                     lastRowHeight = ScaleRow(analyses[rowIndex - 1], lastRowWidth);
                     analyses[rowIndex][0].X = curPoint.X;
@@ -766,15 +767,16 @@ public class ContactSheet {
                 curPoint.Y += row[0].Height;
             }
         }
+
         // Update list watchers so they see the new sizes
         ImageListChanged?.Invoke();
 
         #region Drawing
-        // Detemermine the maximum image dimensions
-        Size maxSize = (from row in analyses
-                        where row.Count > 0
-                        select row.OrderBy(im => im.OriginalSize.Height).Last())
-                  .OrderBy(im => im.OriginalSize.Height).Last().OriginalSize;
+
+        // Determine largest image
+        var maxSize = analyses
+            .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
+            .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
 
         // Set up the header
         Image? headerImage = null;
@@ -785,7 +787,7 @@ public class ContactSheet {
             SolidBrush br = new(Color.White);
             string headerText = headerTitle.ParsedValue ?? string.Empty;
             if (headerStats.BoolValue) {
-                headerText += string.Format("\n(x{0}) max {1}x{2}px", imageCount, maxSize.Width, maxSize.Height);
+                headerText += string.Format("\n{0} images. Maximum dimensions {1}x{2}px", imageCount, maxSize.Width, maxSize.Height);
             }
 
             Font headerFont = new("Arial", headerFontSize.IntValue, headerBold.BoolValue ? FontStyle.Bold : FontStyle.Regular);
@@ -973,14 +975,14 @@ public class ContactSheet {
         } else {
             thumbG.DrawImage(image, thumb);
         }
-        if (image != null) {
-            image.Dispose();
-        }
+        
+        image.Dispose();
+        
 
         // Draw image name labels
         if (data.FontSize > 0) {
             // Set label to file name, no extension
-            string label = data.File.Split('\\').Last();
+            string label = data.Image.FileName;
             label = label[..label.LastIndexOf(".")];
             // Determine label size
             Font font = new(FontFamily.GenericSansSerif, data.FontSize);
@@ -1011,10 +1013,6 @@ public class ContactSheet {
         bmp.Dispose();
         thumbG.Dispose();
 
-        // Output status
-        Console.WriteLine("{0}, {1} of {2} ",
-            data.File.Split('\\').Last(), data.Index, data.ImageTotal);
-
         // Send a limited number of progress updates to the listeners
         lock (progressLock) {
             // Update counters
@@ -1026,6 +1024,9 @@ public class ContactSheet {
                 // Send progress to listeners
                 DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
             }
+            // Output status to console
+            Console.WriteLine("({0:P1}) {1} ({2}/{3}) {4}",
+                progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
         }
     }
 
