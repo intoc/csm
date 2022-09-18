@@ -45,8 +45,10 @@ public partial class FileList : Form {
     /// Invoked by the back end whenever the source directory changes
     /// </summary>
     /// <param name="path"></param>
-    void DirectoryChanged(string path) {
-        fileWatcher.Path = path;
+    void DirectoryChanged(string? path) {
+        if (path != null) {
+            fileWatcher.Path = path;
+        }
         fileWatcher.EnableRaisingEvents = !string.IsNullOrEmpty(path);
         Text = path?.Split('\\').Last() ?? "No Directory Selected";
         PinnedImages.Clear();

@@ -1,4 +1,5 @@
 ﻿using csm.Models;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Text.RegularExpressions;
@@ -8,7 +9,7 @@ using Path = System.IO.Path;
 
 namespace csm.Logic;
 
-public delegate void SourceDirectoryChangedEventHandler(string path);
+public delegate void SourceDirectoryChangedEventHandler(string? path);
 public delegate void DrawProgressEventHandler(DrawProgressEventArgs args);
 public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
 public delegate void ImageListChangedEventHandler();
@@ -19,44 +20,15 @@ public delegate void ExceptionEventHandler(string message, Exception? e = null);
 /// </summary>
 public class ContactSheet {
 
+    #region Private Constants
+
     private static readonly string[] coverNames = { "cover", "folder", "square", "front" };
     private static readonly string[] helpStrings = { "--help", "-help", "/?", "-?" };
     private const int DEFAULT_WIDTH = 900;
     private const int DEFAULT_COLUMNS = 6;
     private const int DEFAULT_QUALITY = 90;
 
-    private DirectoryInfo? sourceDirectoryInfo;
-
-    private readonly BoolParam cover;
-    private readonly BoolParam exitOnComplete;
-    private readonly BoolParam fillCoverGap;
-    private readonly BoolParam header;
-    private readonly BoolParam headerBold;
-    private readonly BoolParam headerStats;
-    private readonly BoolParam interpolate;
-    private readonly BoolParam labels;
-    private readonly BoolParam noGui;
-    private readonly BoolParam openOutputDirectoryOnComplete;
-    private readonly BoolParam preview;
-    private readonly FileParam coverFile;
-    private readonly IntParam borders;
-    private readonly IntParam columns;
-    private readonly IntParam headerFontSize;
-    private readonly IntParam labelFontSize;
-    private readonly IntParam minDimThumbnail;
-    private readonly IntParam minDimInput;
-    private readonly IntParam quality;
-    private readonly IntParam sheetWidth;
-    private readonly StringParam coverPattern;
-    private readonly StringParam fileType;
-    private readonly StringParam headerTitle;
-    private readonly StringParam outputFilePath;
-
-    // Draw status variables
-    private DateTime startTime;
-    private int drawnCount, progressStep;
-    private readonly object graphicsLock = new();
-    private readonly object progressLock = new();
+    #endregion
 
     #region Public Properties
 
@@ -68,12 +40,12 @@ public class ContactSheet {
     /// <summary>
     /// The path to the settings file
     /// </summary>
-    public string? SettingsFile { get; set; }
+    public string? SettingsFile { get; private set; }
 
     /// <summary>
     /// The list of images found in the source directory
     /// </summary>
-    public List<ImageData> ImageList { get; private set; }
+    public List<ImageData> ImageList { get; } = new List<ImageData>();
 
     /// <summary>
     /// Whether the GUI is enabled
@@ -90,18 +62,15 @@ public class ContactSheet {
     /// </summary>
     public string? SourceDirectory {
         get {
-            if (sourceDirectoryInfo != null) {
-                return sourceDirectoryInfo.FullName;
-            } else {
-                return string.Empty;
-            }
+            return sourceDirectoryInfo?.FullName;
         }
         set {
             if (value == null) {
-                return;
+                sourceDirectoryInfo = null;
+            } else {
+                sourceDirectoryInfo = new DirectoryInfo(value);
             }
-            sourceDirectoryInfo = new DirectoryInfo(value);
-            SourceDirectoryChanged?.Invoke(Path.GetFullPath(value));
+            SourceDirectoryChanged?.Invoke(sourceDirectoryInfo?.FullName);
         }
     }
 
@@ -136,6 +105,43 @@ public class ContactSheet {
 
     #endregion
 
+    #region Private Fields
+
+    private DirectoryInfo? sourceDirectoryInfo;
+
+    private readonly BoolParam cover;
+    private readonly BoolParam exitOnComplete;
+    private readonly BoolParam fillCoverGap;
+    private readonly BoolParam header;
+    private readonly BoolParam headerBold;
+    private readonly BoolParam headerStats;
+    private readonly BoolParam interpolate;
+    private readonly BoolParam labels;
+    private readonly BoolParam noGui;
+    private readonly BoolParam openOutputDirectoryOnComplete;
+    private readonly BoolParam preview;
+    private readonly FileParam coverFile;
+    private readonly IntParam borders;
+    private readonly IntParam columns;
+    private readonly IntParam headerFontSize;
+    private readonly IntParam labelFontSize;
+    private readonly IntParam minDimThumbnail;
+    private readonly IntParam minDimInput;
+    private readonly IntParam quality;
+    private readonly IntParam sheetWidth;
+    private readonly StringParam coverPattern;
+    private readonly StringParam fileType;
+    private readonly StringParam headerTitle;
+    private readonly StringParam outputFilePath;
+
+    // Draw status variables
+    private DateTime startTime;
+    private int drawnCount, progressStep;
+    private readonly object graphicsLock = new();
+    private readonly object progressLock = new();
+
+    #endregion
+
     /// <summary>
     /// Create a contact sheet instance
     /// </summary>
@@ -143,9 +149,9 @@ public class ContactSheet {
 
         // Set parameter fields and defaults
 
-        noGui = new BoolParam("-nogui", false);
+        #region General Parameters
 
-        #region General
+        noGui = new BoolParam("-nogui", false);
 
         fileType = new StringParam("-filetype", ".jpg", "Extension") {
             MaxChars = 4
@@ -207,7 +213,7 @@ public class ContactSheet {
 
         #endregion
 
-        #region Labels
+        #region Label Parameters
 
         labels = new BoolParam("-labels", false);
         labelFontSize = new IntParam("-lsize", 8, "pt") {
@@ -218,7 +224,7 @@ public class ContactSheet {
 
         #endregion
 
-        #region Header
+        #region Header Parameters
 
         header = new BoolParam("-header", false);
         headerFontSize = new IntParam("-hsize", 12, "pt") {
@@ -238,7 +244,7 @@ public class ContactSheet {
 
         #endregion
 
-        #region Cover
+        #region Cover Parameters
 
         cover = new BoolParam("-cover", false);
         coverPattern = new StringParam("-cregx", @"cover\.", "Regex") {
@@ -275,7 +281,7 @@ public class ContactSheet {
         cover.ParamChanged += (_) => GuessCover(false);
         coverPattern.ParamChanged += (_) => GuessCover(true);
 
-        // Load top-level params into list (ordered)
+        // Load top-level params into externaly visible Param list (ordered)
         Params = new List<Param> {
             noGui,
             generalParams,
@@ -283,10 +289,6 @@ public class ContactSheet {
             labels,
             cover
         };
-
-        ImageList = new List<ImageData>();
-
-        drawnCount = 0;
     }
 
     /// <summary>
