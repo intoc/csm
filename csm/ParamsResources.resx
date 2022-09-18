@@ -244,7 +244,7 @@
     <value>Output File</value>
   </data>
   <data name="outfile_note" xml:space="preserve">
-    <value>File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list).</value>
+    <value>File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. Use {title} to include the header title in the file name. (Changing this option reloads the file list).</value>
   </data>
   <data name="preview_desc" xml:space="preserve">
     <value>Preview Layout Only</value>

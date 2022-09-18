@@ -297,6 +297,8 @@ public class ContactSheet {
     public string OutFilePath(int suffix = 0) {
         string? path = outputFilePath.ParsedValue;
 
+        path = path?.Replace("{title}", headerTitle.Value);
+
         if (suffix > 0) {
             path = path?.Replace(".jpg", $"_{suffix}.jpg");
         }
