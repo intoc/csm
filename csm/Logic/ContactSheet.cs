@@ -1,5 +1,4 @@
 ﻿using csm.Models;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Text.RegularExpressions;
