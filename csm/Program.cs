@@ -27,7 +27,7 @@ static class Program {
         }
 
         cs.LoadSettingsFromCommandLine(args);
-
+        
         // Prompt for arguments graphically
         if (cs.GuiEnabled) {
             // Load default settings file if none was supplied from the CLA
@@ -45,12 +45,12 @@ static class Program {
             gui.Activate();
         } else {
             // Parameters are as they were entered, just go
-            cs.DrawAndSave().Wait();
+            cs.DrawAndSave(true).Wait();
             cs.Dispose();
         }
     }
 
-    static void LogError(string message, Exception? ex) => 
+    static void LogError(string message, Exception? ex) =>
         Console.Error.WriteLine("{0} Exception: {1}", message, ex?.Message ?? "(none)");
 
 }

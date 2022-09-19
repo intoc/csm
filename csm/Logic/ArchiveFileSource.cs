@@ -1,8 +1,5 @@
 ﻿namespace csm.Logic {
     public abstract class ArchiveFileSource : AbstractFileSource {
-
-        public override bool IsReady => File.Exists(_archiveFilePath);
-
         public override string? FullPath => Path.GetFullPath(_archiveFilePath);
 
         public override string? Name => Path.GetFileNameWithoutExtension(_archiveFilePath);
@@ -11,28 +8,26 @@
         protected readonly DirectoryInfo _tempDir;
 
         private bool _extracted = false;
-        private readonly object _externalLock;
         private readonly object _dirLock = new();
 
-        protected ArchiveFileSource(string path, object lockObject) {
+        protected ArchiveFileSource(string path) {
             _archiveFilePath = path;
             _tempDir = new DirectoryInfo(Path.Combine(Path.GetTempPath(), $"csm_{Guid.NewGuid()}"));
             if (!_tempDir.Exists) {
                 _tempDir.Create();
             }
-            _externalLock = lockObject;
         }
 
-        public static ArchiveFileSource Build(string path, object lockObject) {
+        public static ArchiveFileSource Build(string path) {
             var info = new FileInfo(path);
             if (ZipFileSource.Supports(info.Extension)) {
-                return new ZipFileSource(path, lockObject);
+                return new ZipFileSource(path);
             } 
             if (RarFileSource.Supports(info.Extension)) {
-                return new RarFileSource(path, lockObject);
+                return new RarFileSource(path);
             }
             if (SevenZipFileSource.Supports(info.Extension)) {
-                return new SevenZipFileSource(path, lockObject);
+                return new SevenZipFileSource(path);
             }
             throw new NotImplementedException($"{info.Extension} file source not implemented");
         }
@@ -48,6 +43,18 @@
                 }
                 base.Dispose(disposing);
             }
+        }
+
+        public override async Task Initialize(Action callback) {
+            await Task.Run(() => {
+                lock (_dirLock) {
+                    if (!_extracted) {
+                        Extract();
+                        _extracted = true;
+                    }
+                }
+                callback();
+            });
         }
 
         public override async Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null) {

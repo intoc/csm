@@ -3,7 +3,7 @@ using Aspose.Zip.SevenZip;
 
 namespace csm.Logic {
     public class SevenZipFileSource : ArchiveFileSource {
-        public SevenZipFileSource(string path, object lockObject) : base(path, lockObject) {
+        public SevenZipFileSource(string path) : base(path) {
         }
 
         public static bool Supports(string extension) => extension == ".7z";

@@ -32,11 +32,11 @@ namespace csm.Logic {
         /// <param name="outFileName">Output file name to ignore</param>
         /// <param name="coverFileName">Cover file name to ignore</param>
         public async Task LoadImageListAsync(string fileType, int minDim, string? outFileName, string? coverFileName) {
-            if (!(_imageSource?.IsReady ?? false)) {
-                return;
-            }
             await Task.Run(() => {
                 lock (Images) {
+                    if (_imageSource == null) {
+                        return;
+                    }
                     var sw = Stopwatch.StartNew();
 
                     var getFilesTask = _imageSource.GetFilesAsync();

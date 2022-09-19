@@ -69,14 +69,15 @@ public class FileParam : Param {
         try {
             var regexes = patterns.Select(p => new Regex(p));
             FileInfo? match = regexes.Select(r =>
-                files.FirstOrDefault(f => r.IsMatch(f.ToString())))
-                    .FirstOrDefault();
+                files.FirstOrDefault(f => r.IsMatch(f.ToString()))).FirstOrDefault();
             if (match != null) {
-                File = match;
-                changed = origFile != Path;
+                changed = origFile != match.FullName;
                 if (changed) {
+                    File = match;
                     Console.WriteLine("Matched {0} on {1}", Desc, File.FullName);
                     Changed();
+                } else {
+                    Console.WriteLine("Matched on the same cover file as before");
                 }
                 return changed;
             }

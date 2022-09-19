@@ -1,8 +1,6 @@
 ﻿namespace csm.Logic {
 
     public abstract class AbstractFileSource : IFileSource {
-        public abstract bool IsReady { get; }
-
         public abstract string? FullPath { get; }
 
         public abstract string? Name { get; }
@@ -15,6 +13,8 @@
         protected virtual void Dispose(bool disposing) {
             // Don't do anything by default
         }
+
+        public abstract Task Initialize(Action callback);
 
         public abstract Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null);
 

@@ -59,7 +59,7 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     public string? Source {
         get {
-            return (fileSource?.IsReady ?? false) ? fileSource.FullPath : null;
+            return fileSource?.FullPath;
         }
         set {
             var oldSource = fileSource;
@@ -67,14 +67,14 @@ public sealed class ContactSheet : IDisposable {
                 fileSource = new DirectoryFileSource(value);
             } else if (File.Exists(value)){
                 try {
-                    fileSource = ArchiveFileSource.Build(value, ImageList);
+                    fileSource = ArchiveFileSource.Build(value);
                 } catch (Exception ex) {
                     ErrorOccurred?.Invoke("Can't load archive.", ex);
                 }
             }
             if (oldSource?.FullPath != fileSource?.FullPath) {
                 oldSource?.Dispose();
-                SourceChanged?.Invoke(fileSource?.FullPath);
+                fileSource?.Initialize(() => SourceChanged?.Invoke(fileSource?.FullPath));
             } else {
                 // It's the same source, we don't need the new one
                 fileSource?.Dispose();
@@ -428,7 +428,13 @@ public sealed class ContactSheet : IDisposable {
         // If the command line set the cover file pattern/name,
         // make sure it exists. If not, guess.
         if (force || fileParam.File == null) {
-            changed = await fileParam.Guess(fileSource, patterns);
+            await Task.Run(() => {
+                lock (fileParam) {
+                    var task = fileParam.Guess(fileSource, patterns);
+                    task.Wait();
+                    changed = task.Result;
+                }
+            });
         }
         return changed;
     }
@@ -472,7 +478,7 @@ public sealed class ContactSheet : IDisposable {
     /// Run the image analysis and contact sheet creation process
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
-    public async Task<bool> DrawAndSave() {
+    public async Task<bool> DrawAndSave(bool waitForImages = false) {
         if (string.IsNullOrEmpty(Source)) {
             ErrorOccurred?.Invoke("No directory selected!");
             return false; // Don't exit the GUI
@@ -492,7 +498,24 @@ public sealed class ContactSheet : IDisposable {
         bool drawCover = cover.BoolValue;
         bool fillGap = drawCover && fillCoverGap.BoolValue;
 
-        lock (ImageList) {
+        // Wait for the image list to be ready
+        int waits = 10;
+        while (waitForImages) {
+            lock (imageSet.Images) {
+                if (imageSet.Images.Any()) {
+                    break;
+                }
+            }
+            Console.WriteLine("DrawAndSave waiting {0}...", waits);
+            Thread.Sleep(500);
+            if (--waits == 0) {
+                Console.WriteLine("DrawAndSave wait period expired.");
+                return false;
+            }
+        }
+
+        lock (imageSet.Images) {
+            Console.WriteLine("DrawAndSave starting");
 
             images = imageSet.Images.Where(i => i.Include);
             imageCount = images.Count();

@@ -39,11 +39,20 @@ public partial class CsmGui : Form {
         cs.DrawProgressChanged += new DrawProgressEventHandler(DrawProgressChanged);
         cs.SettingsChanged += new SettingsChangedEventHandler(SettingsChanged);
         cs.ErrorOccurred += new ExceptionEventHandler(ExceptionOccurred);
-        cs.SourceChanged += (path) => directoryLabel.Invoke(() => directoryLabel.Text = directoryLabelText(path));
+        cs.SourceChanged += (path) => Invoke(() => {
+            directoryLabel.Text = directoryLabelText(path);
+            SetButtonsEnabled(true);
+        });
 
         settingsLabel.Text = cs.SettingsFile;
 
         fileListWindow = new FileList(cs);
+    }
+
+    private void SetButtonsEnabled(bool value) {
+        btnRun.Enabled = value;
+        btnArchive.Enabled = value;
+        btnFolder.Enabled = value;
     }
 
     void Exit(object? sender, EventArgs e) {
@@ -51,7 +60,7 @@ public partial class CsmGui : Form {
     }
 
     void ExceptionOccurred(string message, Exception? e) {
-        MessageBox.Show($"{message}\n\n{(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!", 
+        MessageBox.Show($"{message}\n\n{(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!",
             MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
@@ -125,6 +134,7 @@ public partial class CsmGui : Form {
             Filter = "Archive files (*.zip, *.rar, *.7z)|*.zip;*.rar;*.7z"
         };
         if (ofd.ShowDialog() == DialogResult.OK) {
+            SetButtonsEnabled(false);
             cs.Source = ofd.FileName;
         }
     }
@@ -135,6 +145,7 @@ public partial class CsmGui : Form {
             SelectedPath = GetDirectoryFromSource()
         };
         if (folder.ShowDialog() == DialogResult.OK) {
+            SetButtonsEnabled(false);
             cs.Source = folder.SelectedPath;
         }
     }
@@ -142,7 +153,7 @@ public partial class CsmGui : Form {
     private void ChooseArchive(object sender, EventArgs e) => ChooseArchive();
 
     private void ChooseFolder(object sender, EventArgs e) => ChooseFolder();
-    
+
 
     private void LoadSettings(object sender, EventArgs e) {
         OpenFileDialog ofd = new() {

@@ -9,11 +9,13 @@
             }
         }
 
-        public override bool IsReady => _directory != null;
-
         public override string? FullPath => _directory?.FullName;
 
         public override string? Name => _directory?.Name;
+
+        public override async Task Initialize(Action callback) {
+            await Task.Run(callback);
+        }
 
         public override async Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null) {
             if (_directory == null) {

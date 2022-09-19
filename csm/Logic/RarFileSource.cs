@@ -3,7 +3,7 @@
 namespace csm.Logic {
     public class RarFileSource : ArchiveFileSource {
 
-        public RarFileSource(string path, object lockObject) : base(path, lockObject) {
+        public RarFileSource(string path) : base(path) {
         }
 
         public static bool Supports(string extension) => extension == ".rar";

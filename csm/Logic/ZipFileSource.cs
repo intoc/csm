@@ -3,7 +3,7 @@
 namespace csm.Logic {
     public class ZipFileSource : ArchiveFileSource {
 
-        public ZipFileSource(string path, object lockObject) : base(path, lockObject) { }
+        public ZipFileSource(string path) : base(path) { }
 
         public static bool Supports(string extension) => extension == ".zip";
 
