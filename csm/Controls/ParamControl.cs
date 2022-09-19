@@ -1,6 +1,6 @@
 ﻿using csm.Models;
+using Serilog;
 using System.ComponentModel;
-using System.Diagnostics;
 
 namespace csm.Controls;
 
@@ -40,7 +40,7 @@ public partial class ParamControl : UserControl {
             }
         }
         p.ParamChanged += new ParamChangedEventHandler((param) => {
-            Debug.WriteLine("ParamControl Update {0}: {1}", param.CmdParameter, param.Value);
+            Log.Debug("ParamControl Update {0}: {1}", param.CmdParameter, param.Value);
             RefreshValue(param);
         });
     }

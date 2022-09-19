@@ -1,4 +1,5 @@
 ﻿using csm.Logic;
+using Serilog;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
@@ -64,7 +65,7 @@ public class FileParam : Param {
     public async Task<bool> Guess(IFileSource source, string[] patterns) {
         string? origFile = Path;
         bool changed = false;
-        Console.WriteLine("Guessing {0} using match patterns: {1}", Desc, string.Join(", ", patterns));
+        Log.Information("Guessing {0} using match patterns: {1}", Desc, string.Join(", ", patterns));
         var files = (await source.GetFilesAsync($"*{Ext}")).ToList();
         try {
             var regexes = patterns.Select(p => new Regex(p));
@@ -74,18 +75,18 @@ public class FileParam : Param {
                 changed = origFile != match.Path;
                 if (changed) {
                     File = match;
-                    Console.WriteLine("Matched {0} on {1}", Desc, File.Path);
+                    Log.Information("Matched {0} on {1}", Desc, File.Path);
                     Changed();
                 } else {
-                    Console.WriteLine("Matched on the same cover file as before");
+                    Log.Information("Matched on the same cover file as before");
                 }
                 return changed;
             }
         } catch (Exception ex) {
-            Console.Error.WriteLine("Error occurred during pattern matching: {0}", ex.Message);
+            Log.Error(ex, "Error occurred during pattern matching");
         }
         if (files.Any()) {
-            Console.WriteLine("No match found for {0}, using first file in the directory.", Desc);
+            Log.Information("No match found for {0}, using first file in the directory.", Desc);
             File = files.First();
         }
         changed = origFile != Path;

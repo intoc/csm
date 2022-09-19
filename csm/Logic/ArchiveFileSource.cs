@@ -1,4 +1,7 @@
 ﻿using csm.Models;
+using Serilog;
+using System.Diagnostics;
+
 namespace csm.Logic {
     public abstract class ArchiveFileSource : AbstractFileSource {
         public override string? FullPath => Path.GetFullPath(_archiveFilePath);
@@ -36,11 +39,11 @@ namespace csm.Logic {
         protected override void Dispose(bool disposing) {
             lock (_dirLock) {
                 if (_tempDir.Exists) {
-                    Console.WriteLine("Deleting {0}", _tempDir.FullName);
+                    Log.Debug("Deleting {0}", _tempDir.FullName);
                     lock (_dirLock) {
                         _tempDir.Delete(true);
                     }
-                    Console.WriteLine("Deleted {0}", _tempDir.FullName);
+                    Log.Debug("Deleted {0}", _tempDir.FullName);
                 }
                 base.Dispose(disposing);
             }
@@ -50,7 +53,7 @@ namespace csm.Logic {
             Task.Run(() => {
                 lock (_dirLock) {
                     if (!_extracted) {
-                        Extract();
+                        ExtractWithStats();
                         _extracted = true;
                     }
                     callback?.Invoke();
@@ -63,7 +66,7 @@ namespace csm.Logic {
             await Task.Run(() => {
                 lock (_dirLock) {
                     if (!_extracted) {
-                        Extract();
+                        ExtractWithStats();
                         _extracted = true;
                     }
                     files = GetFiles(_tempDir, pattern);
@@ -73,5 +76,13 @@ namespace csm.Logic {
         }
 
         protected abstract void Extract();
+
+        private void ExtractWithStats() {
+            Stopwatch sw = Stopwatch.StartNew();
+            Log.Information("{0} - Extracting rar file to {1}", GetType().Name, _tempDir.FullName);
+            Extract();
+            sw.Stop();
+            Log.Information("{0} - Extraction complete. Time: {1}", GetType().Name, sw.Elapsed);
+        }
     }
 }

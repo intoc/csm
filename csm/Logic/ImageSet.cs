@@ -1,4 +1,5 @@
 ﻿using csm.Models;
+using Serilog;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
@@ -66,7 +67,7 @@ namespace csm.Logic {
                     Task.WaitAll(tasks.ToArray());
 
                     sw.Stop();
-                    Debug.WriteLine("ImageSet.LoadImageListAsync took {0}", sw.Elapsed);
+                    Log.Debug("{0}.{1} took {2}", GetType().Name, "LoadImageListAsync", sw.Elapsed);
 
                     RefreshImageList(minDim, outFileName, coverFileName);
                     Loaded = true;

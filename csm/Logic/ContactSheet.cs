@@ -1,4 +1,5 @@
 ﻿using csm.Models;
+using Serilog;
 using System.Drawing.Imaging;
 using System.Xml;
 using System.Xml.Serialization;
@@ -275,10 +276,10 @@ public sealed class ContactSheet : IDisposable {
         // Setup all instances where a file list reload is required
         fileType.ParamChanged += async (path) => await LoadFileList(path);
         SourceChanged += async (path) => {
-            Console.WriteLine($"Source changed to {path}");
+            Log.Information("Source changed to {0}", path);
             imageSet.Source = fileSource ?? new DirectoryFileSource();
             headerTitle.ParseVal(fileSource?.Name);
-            Console.WriteLine($"Directory Name -> Header Title: {headerTitle.ParsedValue}");
+            Log.Information("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
             if (cover.BoolValue) {
                 await GuessCover(true);
             }
@@ -295,14 +296,14 @@ public sealed class ContactSheet : IDisposable {
             if (!cover.BoolValue) {
                 return;
             }
-            Console.WriteLine("Guessing Cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
+            Log.Debug("Guessing Cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
             await GuessCover(false);
         };
         coverPattern.ParamChanged += async (param) => {
             if (!cover.BoolValue) {
                 return;
             }
-            Console.WriteLine("Guessing Cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
+            Log.Debug("Guessing Cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
             await GuessCover(true);
         };
 
@@ -367,7 +368,7 @@ public sealed class ContactSheet : IDisposable {
             var deserializedList = ser.Deserialize(xmlReader) as List<Param> ?? new List<Param>();
             xmlReader.Close();
 
-            Console.WriteLine("Loading Params from {0}", SettingsFile);
+            Log.Information("Loading Params from {0}", SettingsFile);
 
             foreach (var param in Params) {
                 param.Load(deserializedList);
@@ -419,10 +420,10 @@ public sealed class ContactSheet : IDisposable {
             new XmlSerializer(Params.GetType()).Serialize(w, Params);
             w.Close();
             SettingsFile = path;
-            Console.WriteLine("Saved settings to {0}", SettingsFile);
+            Log.Information("Saved settings to {0}", SettingsFile);
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(SettingsFile, "Saved", true));
         } catch (Exception e) {
-            Console.WriteLine("Save failed! :: {0}", e);
+            Log.Information("Save failed! :: {0}", e);
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(path, "Save Failed", false));
         }
     }
@@ -469,7 +470,7 @@ public sealed class ContactSheet : IDisposable {
     /// <param name="p">The <see cref="Param"/> that caused the need</param>
     public async Task LoadFileList(Param? p = null) {
         if (p != null) {
-            Console.WriteLine("Reloading file list due to change in {0}", p.CmdParameter);
+            Log.Information("Reloading file list due to change in {0}", p.CmdParameter);
         }
         await imageSet.LoadImageListAsync(fileType.ParsedValue ?? ".jpg", minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
         ImageListChanged?.Invoke();
@@ -484,7 +485,7 @@ public sealed class ContactSheet : IDisposable {
             return;
         }
         if (p != null) {
-            Console.WriteLine("Refreshing image list due to change in {0}", p.CmdParameter);
+            Log.Information("Refreshing image list due to change in {0}", p.CmdParameter);
         }
         imageSet.RefreshImageList(minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
         ImageListChanged?.Invoke();
@@ -516,7 +517,7 @@ public sealed class ContactSheet : IDisposable {
 
         // Wait for the image list to be ready
         if (waitForLoad) {
-            Console.WriteLine("DrawAndSave waiting...");
+            Log.Information("DrawAndSave waiting...");
         }
         while (waitForLoad) {
             lock (imageSet.Images) {
@@ -528,7 +529,7 @@ public sealed class ContactSheet : IDisposable {
         }
 
         lock (imageSet.Images) {
-            Console.WriteLine("DrawAndSave starting");
+            Log.Information("DrawAndSave starting");
 
             images = imageSet.Images.Where(i => i.Include);
             imageCount = images.Count();
@@ -553,7 +554,7 @@ public sealed class ContactSheet : IDisposable {
             // Analyze the cover
             if (drawCover && coverFile.File != null) {
                 // Begin image analysis
-                Console.WriteLine("Analyzing cover...");
+                Log.Information("Analyzing cover...");
                 coverImage = Image.FromFile(coverFile.File.Path);
 
                 if (coverImage.Width > sheetWidth.IntValue) {
@@ -574,7 +575,7 @@ public sealed class ContactSheet : IDisposable {
                         // Not enough room for gap filling, center the cover
                         if (fillGap) {
                             double scale = 0.7;
-                            Console.WriteLine("Reducing cover size by a factor of {0} to create gap.", scale);
+                            Log.Information("Reducing cover size by a factor of {0} to create gap.", scale);
                             coverBounds.Width = (int)(coverBounds.Width * scale);
                             coverBounds.Height = (int)(coverBounds.Height * scale);
                         } else {
@@ -582,13 +583,13 @@ public sealed class ContactSheet : IDisposable {
                         }
                     }
                 }
-                Console.WriteLine("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverBounds);
+                Log.Information("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverBounds);
             }
 
             #endregion
 
             // Begin image analysis
-            Console.WriteLine("Analyzing {0} files (Pass 1)", imageCount);
+            Log.Information("Analyzing {0} files (Pass 1)", imageCount);
 
             // First pass, add the same number of images to each row,
             // scale to width, record maximum row height
@@ -611,7 +612,7 @@ public sealed class ContactSheet : IDisposable {
             }
         }
 
-        Console.WriteLine("Analyzing {0} Rows (Pass 2), maxRowHeight: {1}", analyses.Count, maxRowHeight);
+        Log.Information("Analyzing {0} Rows (Pass 2), maxRowHeight: {1}", analyses.Count, maxRowHeight);
 
         Size minRowDims;
 
@@ -667,7 +668,7 @@ public sealed class ContactSheet : IDisposable {
                         ShiftImage(analyses, rowIndex, rowIndex + 1);
                     }
                     // Remove this empty row
-                    Console.WriteLine("Removing row " + rowIndex);
+                    Log.Information("Removing row " + rowIndex);
                     analyses.Remove(analyses[rowIndex]);
 
                     // Since we removed a row, the next row is now this one.
@@ -697,7 +698,7 @@ public sealed class ContactSheet : IDisposable {
                         analyses[i][0].Y = curPoint.Y;
                         // Scale row width to the new gap
                         rowHeight = ScaleRow(analyses[i], sheetWidth.IntValue - coverBounds.Width);
-                        Console.WriteLine("In Gap, Final Scaling, Row {0}", i);
+                        Log.Information("In Gap, Final Scaling, Row {0}", i);
                         // Next row
                         curPoint.Y += rowHeight;
                     }
@@ -733,13 +734,13 @@ public sealed class ContactSheet : IDisposable {
                     analyses[rowIndex][0].X = curPoint.X;
                     analyses[rowIndex][0].Y += lastRowHeight;
                     rowHeight = ScaleRow(analyses[rowIndex], rowWidth);
-                    Console.WriteLine("Row {0} Rescaled, {1} images. Height: {2}px", rowIndex - 1, analyses[rowIndex - 1].Count, lastRowHeight);
+                    Log.Information("Row {0} Rescaled, {1} images. Height: {2}px", rowIndex - 1, analyses[rowIndex - 1].Count, lastRowHeight);
                 }
                 done = true;
             }
 
             if (rowIndex >= 0) {
-                Console.WriteLine("Row {0}: {1} images. Height: {2}px. Y: {3}", rowIndex, analyses[rowIndex].Count, rowHeight, analyses[rowIndex][0].Y);
+                Log.Information("Row {0}: {1} images. Height: {2}px. Y: {3}", rowIndex, analyses[rowIndex].Count, rowHeight, analyses[rowIndex][0].Y);
             }
         }
 
@@ -801,14 +802,14 @@ public sealed class ContactSheet : IDisposable {
 
         // Draw the header
         if (headerImage != null) {
-            Console.WriteLine("Drawing header...");
+            Log.Information("Drawing header...");
             sheetGraphics.DrawImage(headerImage, 0, 0);
             headerImage.Dispose();
         }
 
         // Draw the cover
         if (coverImage != null) {
-            Console.WriteLine("Drawing cover...");
+            Log.Information("Drawing cover...");
             coverBounds.Y += headerHeight + borders.IntValue;
             coverBounds.X += borders.IntValue;
             coverBounds.Width -= (borders.IntValue * 2);
@@ -835,7 +836,7 @@ public sealed class ContactSheet : IDisposable {
 
         // Draw the thumbnail images
         int index = 1;
-        Console.WriteLine("Drawing sheet...");
+        Log.Information("Drawing sheet...");
 
         drawnCount = 0;
         progressStep = 0;
@@ -878,41 +879,41 @@ public sealed class ContactSheet : IDisposable {
 
         #region Finish
 
-        Console.WriteLine("---------------------------------------------------------------------------");
-        Console.WriteLine("Completed! It took {0}", duration);
-        Console.WriteLine("---------------------------------------------------------------------------");
-        Console.WriteLine("Sheet Size: {0} images, {1} rows, {2}x{3}px", imageCount, analyses.Count(r => r.Count > 0), sheetImage.Size.Width, sheetImage.Size.Height);
-        Console.WriteLine("Maximum Images per Row: {0}", analyses.Max(r => r.Count));
-        Console.WriteLine("Minimum Images per Row: {0}", analyses.Where(r => r.Count > 0).Min(r => r.Count));
-        Console.WriteLine("Output Quality: {0}%{1}", quality.IntValue, interpolate.BoolValue ? ", Using High-Quality Interpolation." : "");
-        Console.WriteLine("---------------------------------------------------------------------------");
+        Log.Information("---------------------------------------------------------------------------");
+        Log.Information("Completed! It took {0}", duration);
+        Log.Information("---------------------------------------------------------------------------");
+        Log.Information("Sheet Size: {0} images, {1} rows, {2}x{3}px", imageCount, analyses.Count(r => r.Count > 0), sheetImage.Size.Width, sheetImage.Size.Height);
+        Log.Information("Maximum Images per Row: {0}", analyses.Max(r => r.Count));
+        Log.Information("Minimum Images per Row: {0}", analyses.Where(r => r.Count > 0).Min(r => r.Count));
+        Log.Information("Output Quality: {0}%{1}", quality.IntValue, interpolate.BoolValue ? ", Using High-Quality Interpolation." : "");
+        Log.Information("---------------------------------------------------------------------------");
 
         try {
             lock (ImageList) {
                 int suffix = 0;
                 string outPath = OutFilePath(suffix);
-                Console.WriteLine("Saving to {0}... ", outPath);
+                Log.Information("Saving to {0}... ", outPath);
                 if (File.Exists(outPath)) {
-                    Console.Write("File exists. Attempting to delete... ");
+                    Log.Information("File exists. Attempting to delete... ");
                     try {
                         File.Delete(outPath);
-                        Console.WriteLine("deleted.");
+                        Log.Information("Deleted.");
                     } catch (IOException ioEx) {
-                        Console.WriteLine("can't delete: {0}", ioEx.Message);
+                        Log.Information("can't delete: {0}", ioEx.Message);
                         while (File.Exists(outPath)) {
                             outPath = OutFilePath(++suffix);
-                            Console.WriteLine("Trying a new output file name: {0}", outPath);
+                            Log.Information("Trying a new output file name: {0}", outPath);
                         }
                     }
                 }
                 if (jpgEncoder != null) {
                     string? dir = Path.GetDirectoryName(OutFilePath(suffix));
                     if (dir != null && !Directory.Exists(dir)) {
-                        Console.WriteLine("Creating Directory: {0}", dir);
+                        Log.Information("Creating Directory: {0}", dir);
                         Directory.CreateDirectory(dir);
                     }
                     sheetImage.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
-                    Console.WriteLine("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / (1024f));
+                    Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / (1024f));
                 } else {
                     ErrorOccurred?.Invoke("JPEG Encoder not found.");
                 }
@@ -920,12 +921,12 @@ public sealed class ContactSheet : IDisposable {
         } catch (System.Runtime.InteropServices.ExternalException e) {
             ErrorOccurred?.Invoke("Can't Save Sheet", e);
         } finally {
-            Console.WriteLine("---------------------------------------------------------------------------");
+            Log.Information("---------------------------------------------------------------------------");
             // Clean up
             sheetImage.Dispose();
         }
         if (!noGui.BoolValue) {
-            Console.WriteLine("Exit on Complete: {0}", exitOnComplete.BoolValue);
+            Log.Information("Exit on Complete: {0}", exitOnComplete.BoolValue);
         }
         return exitOnComplete.BoolValue;
 
@@ -1017,7 +1018,7 @@ public sealed class ContactSheet : IDisposable {
                 DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
             }
             // Output status to console
-            Console.WriteLine("({0:P1}) {1} ({2}/{3}) {4}",
+            Log.Information("({0:P1}) {1} ({2}/{3}) {4}",
                 progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
         }
     }

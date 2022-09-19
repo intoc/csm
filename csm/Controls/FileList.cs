@@ -1,7 +1,7 @@
 ﻿using csm.Logic;
 using csm.Models;
+using Serilog;
 using System.ComponentModel;
-using System.Diagnostics;
 
 namespace csm.Controls;
 
@@ -52,7 +52,7 @@ public partial class FileList : Form {
     /// </summary>
     /// <param name="path"></param>
     void SourceChanged(string? path) {
-        Debug.WriteLine("FileList-SourceChanged");
+        Log.Debug("FileList-SourceChanged");
         if (!string.IsNullOrEmpty(path) && Directory.Exists(path)) {
             fileWatcher.Path = path;
             fileWatcher.EnableRaisingEvents = true;
@@ -68,7 +68,7 @@ public partial class FileList : Form {
     /// </summary>
     /// <param name="args"></param>
     void ImageListChanged() {
-        Debug.WriteLine("FileList-ImageListChanged");
+        Log.Debug("FileList-ImageListChanged");
         Invoke(new MethodInvoker(UpdateList));
     }
 
@@ -77,7 +77,7 @@ public partial class FileList : Form {
     /// </summary>
     /// <param name="args"></param>
     void UpdateList() {
-        Debug.WriteLine("FileList-UpdateList");
+        Log.Debug("FileList-UpdateList");
         if (binder.DataSource == null && cs.ImageList.Any()) {
             binder.DataSource = new BindingList<ImageData>(cs.ImageList);
         } else {
