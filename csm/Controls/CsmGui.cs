@@ -122,7 +122,7 @@ public partial class CsmGui : Form {
             CheckPathExists = true,
             CheckFileExists = true,
             DefaultExt = "zip",
-            Filter = "zip files (*.zip)|*.zip"
+            Filter = "Archive files (*.zip, *.rar, *.7z)|*.zip;*.rar;*.7z"
         };
         if (ofd.ShowDialog() == DialogResult.OK) {
             cs.Source = ofd.FileName;

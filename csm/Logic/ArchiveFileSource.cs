@@ -25,8 +25,10 @@
 
         public static ArchiveFileSource Build(string path, object lockObject) {
             var info = new FileInfo(path);
-            if (info.Extension == ".zip") {
+            if (ZipFileSource.Supports(info.Extension)) {
                 return new ZipFileSource(path, lockObject);
+            } else if (RarFileSource.Supports(info.Extension)) {
+                return new RarFileSource(path, lockObject);
             }
             throw new NotImplementedException($"{info.Extension} file source not implemented");
         }

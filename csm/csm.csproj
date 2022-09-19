@@ -25,6 +25,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="Aspose.Zip" Version="22.8.0" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Update="ParamsResources.Designer.cs">
 			<DesignTime>True</DesignTime>
 			<AutoGen>True</AutoGen>
