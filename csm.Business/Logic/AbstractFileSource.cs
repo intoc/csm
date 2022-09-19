@@ -1,6 +1,7 @@
-﻿using csm.Models;
+﻿using csm.Business.Models;
+using System.Drawing;
 
-namespace csm.Logic {
+namespace csm.Business.Logic {
 
     public abstract class AbstractFileSource : IFileSource {
         public abstract string? FullPath { get; }

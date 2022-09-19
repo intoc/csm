@@ -1,8 +1,8 @@
-﻿using csm.Logic;
-using csm.Models;
+﻿using csm.Business.Logic;
+using csm.Business.Models;
 using System.Diagnostics;
 
-namespace csm.Controls;
+namespace csm.WinForms.Controls;
 public partial class CsmGui : Form {
 
     private readonly ContactSheet cs;

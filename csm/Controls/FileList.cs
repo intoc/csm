@@ -1,9 +1,9 @@
-﻿using csm.Logic;
-using csm.Models;
+﻿using csm.Business.Logic;
+using csm.Business.Models;
 using Serilog;
 using System.ComponentModel;
 
-namespace csm.Controls;
+namespace csm.WinForms.Controls;
 
 public partial class FileList : Form {
 

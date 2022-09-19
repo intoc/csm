@@ -1,11 +1,12 @@
-﻿using csm.Models;
+﻿using csm.Business.Models;
 using Serilog;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.Xml;
 using System.Xml.Serialization;
 using Path = System.IO.Path;
 
-namespace csm.Logic;
+namespace csm.Business.Logic;
 
 public delegate void SourceChangedEventHandler(string? path);
 public delegate void DrawProgressEventHandler(DrawProgressEventArgs args);
@@ -568,7 +569,7 @@ public sealed class ContactSheet : IDisposable {
                     coverBounds.Width = coverImage.Width;
                     coverBounds.Height = coverImage.Height;
 
-                    if (fillGap && (sheetWidth.IntValue - coverBounds.Width) >= (sheetWidth.IntValue / columns.IntValue)) {
+                    if (fillGap && sheetWidth.IntValue - coverBounds.Width >= sheetWidth.IntValue / columns.IntValue) {
                         // Shift cover to the left to set up the gap to fill
                         coverBounds.X = 0;
                     } else {
@@ -579,7 +580,7 @@ public sealed class ContactSheet : IDisposable {
                             coverBounds.Width = (int)(coverBounds.Width * scale);
                             coverBounds.Height = (int)(coverBounds.Height * scale);
                         } else {
-                            coverBounds.X = (sheetWidth.IntValue / 2) - (coverBounds.Width / 2);
+                            coverBounds.X = sheetWidth.IntValue / 2 - coverBounds.Width / 2;
                         }
                     }
                 }
@@ -645,8 +646,8 @@ public sealed class ContactSheet : IDisposable {
             // greater than or equal to the minimum dimension param.
             rowHeight = ScaleRow(analyses[rowIndex], rowWidth);
             minRowDims = MinDims(analyses[rowIndex]);
-            while ((analyses[rowIndex].Count > 1) &&
-                    (rowHeight < (maxRowHeight * 0.85) ||
+            while (analyses[rowIndex].Count > 1 &&
+                    (rowHeight < maxRowHeight * 0.85 ||
                      minRowDims.Width < minDimThumbnail.IntValue ||
                      minRowDims.Height < minDimThumbnail.IntValue ||
                      analyses[rowIndex].Count > columns.IntValue)) {
@@ -657,10 +658,10 @@ public sealed class ContactSheet : IDisposable {
 
             // Process at the end of the cover gap
             // Or at the end of the imagelist
-            int overFlow = (curPoint.Y + rowHeight) - coverBounds.Height;
+            int overFlow = curPoint.Y + rowHeight - coverBounds.Height;
             if (inGap && (overFlow > 0 ||
-                (rowIndex + 1 == analyses.Count ||
-                    analyses[rowIndex + 1].Count == 0))) {
+                rowIndex + 1 == analyses.Count ||
+                    analyses[rowIndex + 1].Count == 0)) {
                 if (overFlow > rowHeight / 3) {
                     // This row is too tall to fit in the gap.
                     // Move all images in the row to the next one
@@ -686,7 +687,7 @@ public sealed class ContactSheet : IDisposable {
                     double h2 = analyses[rowIndex][0].Y + analyses[rowIndex][0].Height;
                     double w2 = rowWidth;
 
-                    double f1 = (h2 * sheetWidth.IntValue) / ((h1 * w2) + (h2 * w1));
+                    double f1 = h2 * sheetWidth.IntValue / (h1 * w2 + h2 * w1);
 
                     coverBounds.Width = (int)Math.Round(coverBounds.Width * f1);
                     coverBounds.Height = (int)Math.Round(coverBounds.Height * f1);
@@ -812,8 +813,8 @@ public sealed class ContactSheet : IDisposable {
             Log.Information("Drawing cover...");
             coverBounds.Y += headerHeight + borders.IntValue;
             coverBounds.X += borders.IntValue;
-            coverBounds.Width -= (borders.IntValue * 2);
-            coverBounds.Height -= (borders.IntValue * 2);
+            coverBounds.Width -= borders.IntValue * 2;
+            coverBounds.Height -= borders.IntValue * 2;
             if (preview.BoolValue) {
                 sheetGraphics.FillRectangle(Brushes.White, coverBounds);
                 sheetGraphics.DrawRectangle(Pens.LightGreen, coverBounds);
@@ -913,7 +914,7 @@ public sealed class ContactSheet : IDisposable {
                         Directory.CreateDirectory(dir);
                     }
                     sheetImage.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
-                    Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / (1024f));
+                    Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
                 } else {
                     ErrorOccurred?.Invoke("JPEG Encoder not found.");
                 }

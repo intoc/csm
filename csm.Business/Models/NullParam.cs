@@ -2,7 +2,7 @@
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace csm.Models;
+namespace csm.Business.Models;
 
 [Serializable]
 public class NullParam : Param {
@@ -28,9 +28,9 @@ public class NullParam : Param {
         SubParams.Add(p);
     }
 
-    public override void ParseVal(string? value) {}
+    public override void ParseVal(string? value) { }
 
-    protected override void AppendHelpString(StringBuilder help, bool isMarkDown) { 
+    protected override void AppendHelpString(StringBuilder help, bool isMarkDown) {
         // Don't append anything
     }
 }

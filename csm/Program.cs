@@ -1,4 +1,7 @@
-﻿using Serilog;
+﻿using csm.Business.Logic;
+using csm.Business.Models;
+using csm.WinForms.Controls;
+using Serilog;
 
 namespace csm;
 static class Program {
@@ -14,7 +17,7 @@ static class Program {
             .CreateLogger();
 
         try {
-            using Logic.ContactSheet cs = new();
+            using ContactSheet cs = new();
             cs.ErrorOccurred += (msg, ex) => Log.Error(ex, msg);
 
             // Check for a -help parameter and handle it
@@ -31,7 +34,7 @@ static class Program {
             // Load a settings file if path is provided
             var sFileArgAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
             if (sFileArgAndValue != null) {
-                cs.LoadSettingsFromFile(Models.Param.GetValueFromCmdParamAndValue(sFileArgAndValue));
+                cs.LoadSettingsFromFile(Param.GetValueFromCmdParamAndValue(sFileArgAndValue));
             }
 
             cs.LoadSettingsFromCommandLine(args);
@@ -44,7 +47,7 @@ static class Program {
                     cs.LoadSettingsFromCommandLine(args);
                 }
 
-                Controls.CsmGui gui = new(cs);
+                CsmGui gui = new(cs);
                 gui.FormClosed += async (sender, args) => {
                     await Log.CloseAndFlushAsync();
                 };

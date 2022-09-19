@@ -1,8 +1,8 @@
-﻿using csm.Models;
+﻿using csm.Business.Models;
 using Serilog;
 using System.ComponentModel;
 
-namespace csm.Controls;
+namespace csm.WinForms.Controls;
 
 public partial class ParamControl : UserControl {
     private Param parameter;

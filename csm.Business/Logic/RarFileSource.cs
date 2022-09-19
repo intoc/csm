@@ -1,6 +1,6 @@
 ﻿using Aspose.Zip.Rar;
 
-namespace csm.Logic {
+namespace csm.Business.Logic {
     public class RarFileSource : ArchiveFileSource {
 
         public RarFileSource(string path) : base(path) { }

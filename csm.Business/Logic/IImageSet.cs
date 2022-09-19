@@ -1,6 +1,6 @@
-﻿using csm.Models;
+﻿using csm.Business.Models;
 
-namespace csm.Logic {
+namespace csm.Business.Logic {
 
     internal interface IImageSet {
 

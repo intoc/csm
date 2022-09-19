@@ -1,7 +1,7 @@
 ﻿
 using Aspose.Zip.SevenZip;
 
-namespace csm.Logic {
+namespace csm.Business.Logic {
     public class SevenZipFileSource : ArchiveFileSource {
         public SevenZipFileSource(string path) : base(path) {
         }

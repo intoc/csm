@@ -1,9 +1,9 @@
-﻿using csm.Models;
+﻿using csm.Business.Models;
 using Serilog;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace csm.Logic {
+namespace csm.Business.Logic {
     public class ImageSet : IImageSet {
 
         public IList<ImageData> Images => _images;
@@ -21,7 +21,7 @@ namespace csm.Logic {
         public bool Loaded { get; private set; }
 
         private IFileSource? _imageSource;
-       
+
         private readonly IList<ImageData> _images = new List<ImageData>();
 
         public ImageSet(IFileSource? fileSource = null) {

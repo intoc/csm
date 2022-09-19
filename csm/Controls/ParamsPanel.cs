@@ -1,6 +1,6 @@
-﻿using csm.Models;
+﻿using csm.Business.Models;
 
-namespace csm.Controls;
+namespace csm.WinForms.Controls;
 public partial class ParamsPanel : UserControl {
 
 

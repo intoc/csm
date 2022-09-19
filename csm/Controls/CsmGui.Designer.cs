@@ -1,4 +1,4 @@
-﻿namespace csm.Controls;
+﻿namespace csm.WinForms.Controls;
 
 partial class CsmGui
 {
@@ -48,7 +48,7 @@ partial class CsmGui
             this.directoryPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.directoryLabelLabel = new System.Windows.Forms.Label();
             this.directoryLabel = new System.Windows.Forms.Label();
-            this.paramsPanel = new csm.Controls.ParamsPanel();
+            this.paramsPanel = new csm.WinForms.Controls.ParamsPanel();
             this.buttonPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.btnRun = new System.Windows.Forms.Button();
             this.btnFiles = new System.Windows.Forms.Button();
@@ -409,7 +409,7 @@ partial class CsmGui
     private System.Windows.Forms.Button btnRun;
     private System.Windows.Forms.Button btnSave;
     private System.Windows.Forms.Label settingsLabel;
-    private csm.Controls.ParamsPanel paramsPanel;
+    private csm.WinForms.Controls.ParamsPanel paramsPanel;
     private System.Windows.Forms.Button btnFiles;
     private System.Windows.Forms.Button btnArchive;
     private System.Windows.Forms.ToolStripMenuItem drawSheetToolStripMenuItem;

@@ -1,8 +1,8 @@
-﻿using csm.Models;
+﻿using csm.Business.Models;
 using Serilog;
 using System.Diagnostics;
 
-namespace csm.Logic {
+namespace csm.Business.Logic {
     public abstract class ArchiveFileSource : AbstractFileSource {
         public override string? FullPath => Path.GetFullPath(_archiveFilePath);
 

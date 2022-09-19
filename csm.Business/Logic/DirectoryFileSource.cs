@@ -1,6 +1,6 @@
-﻿using csm.Models;
+﻿using csm.Business.Models;
 
-namespace csm.Logic {
+namespace csm.Business.Logic {
     public class DirectoryFileSource : AbstractFileSource {
 
         private readonly DirectoryInfo? _directory;

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace csm.Models; 
+namespace csm.Business.Models;
 public class DrawProgressEventArgs : EventArgs {
     public int Percentage { get; private set; }
     public int Progress { get; private set; }

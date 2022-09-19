@@ -1,9 +1,10 @@
-﻿using System.Resources;
+﻿using csm.Business;
+using System.Resources;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace csm.Models;
+namespace csm.Business.Models;
 public delegate void ParamChangedEventHandler(Param source);
 
 [Serializable]

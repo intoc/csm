@@ -1,4 +1,5 @@
-using csm.Models;
+using csm.Business.Logic;
+using csm.Business.Models;
 using Moq;
 
 namespace csm.Logic.UnitTests;

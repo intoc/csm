@@ -1,4 +1,6 @@
-﻿namespace csm.Models;
+﻿using System.Drawing;
+
+namespace csm.Business.Models;
 internal class DrawThreadObj {
 
     public DrawThreadObj(ImageData image, Graphics g) {

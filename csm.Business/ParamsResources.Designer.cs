@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace csm {
+namespace csm.Business {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace csm {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("csm.ParamsResources", typeof(ParamsResources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("csm.Business.ParamsResources", typeof(ParamsResources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

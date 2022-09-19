@@ -1,4 +1,4 @@
-﻿namespace csm.Controls;
+﻿namespace csm.WinForms.Controls;
 
 partial class ParamsPanel
 {

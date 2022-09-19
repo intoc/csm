@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-
-namespace csm.Models; 
+﻿namespace csm.Business.Models;
 public class SettingsChangedEventArgs : EventArgs {
     public string SettingsFile { get; private set; }
     public string Message { get; private set; }

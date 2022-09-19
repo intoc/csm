@@ -1,10 +1,10 @@
-﻿using csm.Logic;
+﻿using csm.Business.Logic;
 using Serilog;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace csm.Models;
+namespace csm.Business.Models;
 
 [Serializable]
 public class FileParam : Param {
@@ -99,7 +99,7 @@ public class FileParam : Param {
         // the path is not (supposedly) in the current directory,
         // and the current directory exists
         unParsedVal = value;
-        
+
         // Try a full-path parse
         if (System.IO.File.Exists(value)) {
             FileInfo f = new(value);

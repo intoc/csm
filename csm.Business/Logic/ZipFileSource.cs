@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace csm.Logic {
+namespace csm.Business.Logic {
     public class ZipFileSource : ArchiveFileSource {
 
         public ZipFileSource(string path) : base(path) { }

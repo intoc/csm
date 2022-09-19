@@ -1,8 +1,7 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Serialization;
 
-namespace csm.Models;
+namespace csm.Business.Models;
 [Serializable()]
 public class IntParam : Param {
 
