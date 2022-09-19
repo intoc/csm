@@ -62,25 +62,25 @@ public sealed class ContactSheet : IDisposable {
             return (fileSource?.IsReady ?? false) ? fileSource.FullPath : null;
         }
         set {
-            if (value != null && Source == Path.GetFullPath(value)) {
-                return;
-            }
-            if (fileSource != null) {
-                fileSource.Dispose();
-            }
-            bool changed = true;
+            var oldSource = fileSource;
             if (Directory.Exists(value)) {
                 fileSource = new DirectoryFileSource(value);
             } else if (File.Exists(value)){
                 try {
                     fileSource = ArchiveFileSource.Build(value, ImageList);
                 } catch (Exception ex) {
-                    ErrorOccurred?.Invoke("Can't load archive", ex);
-                    changed = false;
+                    ErrorOccurred?.Invoke("Can't load archive.", ex);
                 }
             }
-            if (changed) {
+            if (oldSource?.FullPath != fileSource?.FullPath) {
+                oldSource?.Dispose();
                 SourceChanged?.Invoke(fileSource?.FullPath);
+            } else {
+                // It's the same source, we don't need the new one
+                fileSource?.Dispose();
+                if (oldSource != null) {
+                    fileSource = oldSource;
+                }
             }
         }
     }
