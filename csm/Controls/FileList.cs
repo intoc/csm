@@ -15,8 +15,14 @@ public partial class FileList : Form {
     public FileList(ContactSheet sheet) {
         InitializeComponent();
         cs = sheet;
-        if (cs.SourceDirectory != null) {
-            fileWatcher.Path = cs.SourceDirectory;
+        if (cs.Source != null) {
+            if (Directory.Exists(cs.Source)) {
+                fileWatcher.Path = cs.Source;
+                fileWatcher.EnableRaisingEvents = true;
+                Text = Path.GetDirectoryName(cs.Source);
+            } else if (File.Exists(cs.Source)) {
+                Text = Path.GetFileName(cs.Source);
+            }
         }
         if (cs.ImageList.Any()) {
             binder.DataSource = new BindingList<ImageData>(cs.ImageList);
@@ -32,7 +38,7 @@ public partial class FileList : Form {
         cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
         Rectangle bounds = Owner.Bounds;
         Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
-        cs.SourceDirectoryChanged += DirectoryChanged;
+        cs.SourceChanged += SourceChanged;
         fileWatcher.NotifyFilter = NotifyFilters.FileName;
         fileWatcher.Changed += ReloadFiles;
         fileWatcher.Deleted += ReloadFiles;
@@ -42,15 +48,18 @@ public partial class FileList : Form {
     }
 
     /// <summary>
-    /// Invoked by the back end whenever the source directory changes
+    /// Invoked by the back end whenever the source changes
     /// </summary>
     /// <param name="path"></param>
-    void DirectoryChanged(string? path) {
-        if (path != null) {
+    void SourceChanged(string? path) {
+        Debug.WriteLine("FileList-SourceChanged");
+        if (!string.IsNullOrEmpty(path) && Directory.Exists(path)) {
             fileWatcher.Path = path;
+            fileWatcher.EnableRaisingEvents = true;
+        } else {
+            fileWatcher.EnableRaisingEvents = false;
         }
-        fileWatcher.EnableRaisingEvents = !string.IsNullOrEmpty(path);
-        Text = path?.Split('\\').Last() ?? "No Directory Selected";
+        Text = path?.Split('\\').Last() ?? "No Source Selected";
         PinnedImages.Clear();
     }
 

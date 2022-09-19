@@ -28,7 +28,7 @@ public partial class CsmGui : Form {
         drawStatus.Text = string.Empty;
         settingsFileStatus.Text = string.Empty;
         var directoryLabelText = (string? path) => string.IsNullOrEmpty(path) ? "None Selected" : path;
-        directoryLabel.Text = directoryLabelText(sheet.SourceDirectory);
+        directoryLabel.Text = directoryLabelText(sheet.Source);
 
         cs = sheet;
 
@@ -39,7 +39,7 @@ public partial class CsmGui : Form {
         cs.DrawProgressChanged += new DrawProgressEventHandler(DrawProgressChanged);
         cs.SettingsChanged += new SettingsChangedEventHandler(SettingsChanged);
         cs.ErrorOccurred += new ExceptionEventHandler(ExceptionOccurred);
-        cs.SourceDirectoryChanged += (path) => directoryLabel.Text = directoryLabelText(path);
+        cs.SourceChanged += (path) => directoryLabel.Invoke(() => directoryLabel.Text = directoryLabelText(path));
 
         settingsLabel.Text = cs.SettingsFile;
 
@@ -105,19 +105,44 @@ public partial class CsmGui : Form {
         }
     }
 
-    public void ChangeDirectory() {
-        FolderBrowserDialog folder = new() {
-            Description = "Select the folder containing the images:",
-            SelectedPath = cs.SourceDirectory
+    private string GetDirectoryFromSource() {
+        string? directory = null;
+        if (Directory.Exists(cs.Source)) {
+            directory = cs.Source;
+        } else if (cs.Source != null) {
+            directory = Directory.GetParent(cs.Source)?.FullName;
+        }
+        return directory ?? string.Empty;
+    }
+
+    public void ChooseArchive() {
+        OpenFileDialog ofd = new() {
+            Title = "Select the archive containing the images",
+            InitialDirectory = GetDirectoryFromSource(),
+            CheckPathExists = true,
+            CheckFileExists = true,
+            DefaultExt = "zip",
+            Filter = "zip files (*.zip)|*.zip"
         };
-        if (folder.ShowDialog() == DialogResult.OK) {
-            cs.SourceDirectory = folder.SelectedPath;
+        if (ofd.ShowDialog() == DialogResult.OK) {
+            cs.Source = ofd.FileName;
         }
     }
 
-    private void ChangeDirectory(object sender, EventArgs e) {
-        ChangeDirectory();
+    public void ChooseFolder() {
+        FolderBrowserDialog folder = new() {
+            Description = "Select the folder containing the images",
+            SelectedPath = GetDirectoryFromSource()
+        };
+        if (folder.ShowDialog() == DialogResult.OK) {
+            cs.Source = folder.SelectedPath;
+        }
     }
+
+    private void ChooseArchive(object sender, EventArgs e) => ChooseArchive();
+
+    private void ChooseFolder(object sender, EventArgs e) => ChooseFolder();
+    
 
     private void LoadSettings(object sender, EventArgs e) {
         OpenFileDialog ofd = new() {
@@ -160,6 +185,10 @@ public partial class CsmGui : Form {
         Point p = PointToClient(Cursor.Position);
         ToolStripMenuItem i = (ToolStripMenuItem)menu.GetItemAt(p);
         i?.ShowDropDown();
+    }
+
+    private void CsmGui_FormClosed(object sender, FormClosedEventArgs e) {
+        cs.Dispose();
     }
 
 }

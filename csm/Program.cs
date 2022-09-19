@@ -14,16 +14,16 @@ static class Program {
             return;
         }
 
+        // Search all arguments for a path, use the first one that shows up
+        var path = args.FirstOrDefault(a => Directory.Exists(a) || File.Exists(a));
+        if (path != null) {
+            cs.Source = path;
+        }
+
         // Load a settings file if path is provided
         var sFileArgAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
         if (sFileArgAndValue != null) {
             cs.LoadSettingsFromFile(Models.Param.GetValueFromCmdParamAndValue(sFileArgAndValue));
-        }
-
-        // Search all arguments for a path, use the first one that shows up
-        var path = args.FirstOrDefault(a => Directory.Exists(a));
-        if (path != null) {
-            cs.SourceDirectory = path;
         }
 
         cs.LoadSettingsFromCommandLine(args);
@@ -46,6 +46,7 @@ static class Program {
         } else {
             // Parameters are as they were entered, just go
             cs.DrawAndSave().Wait();
+            cs.Dispose();
         }
     }
 

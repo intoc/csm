@@ -6,7 +6,7 @@ using Path = System.IO.Path;
 
 namespace csm.Logic;
 
-public delegate void SourceDirectoryChangedEventHandler(string? path);
+public delegate void SourceChangedEventHandler(string? path);
 public delegate void DrawProgressEventHandler(DrawProgressEventArgs args);
 public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
 public delegate void ImageListChangedEventHandler();
@@ -15,7 +15,7 @@ public delegate void ExceptionEventHandler(string message, Exception? e = null);
 /// <summary>
 /// Creates contact sheets
 /// </summary>
-public class ContactSheet {
+public sealed class ContactSheet : IDisposable {
 
     #region Private Constants
 
@@ -55,19 +55,27 @@ public class ContactSheet {
     public bool OpenOutputDir => openOutputDirectoryOnComplete.BoolValue;
 
     /// <summary>
-    /// The source directory path
+    /// The source path
     /// </summary>
-    public string? SourceDirectory {
+    public string? Source {
         get {
-            return sourceDirectoryInfo?.FullName;
+            return (fileSource?.IsReady ?? false) ? fileSource.FullPath : null;
         }
         set {
-            if (value == null) {
-                sourceDirectoryInfo = null;
-            } else {
-                sourceDirectoryInfo = new DirectoryInfo(value);
+            if (value != null && Source == Path.GetFullPath(value)) {
+                return;
             }
-            SourceDirectoryChanged?.Invoke(sourceDirectoryInfo?.FullName);
+            if (fileSource != null) {
+                fileSource.Dispose();
+            }
+            if (Directory.Exists(value)) {
+                fileSource = new DirectoryFileSource(value);
+            } else if (value != null && value.EndsWith(".zip")){
+                fileSource = new ZipFileSource(value, ImageList);
+            } else {
+                fileSource = new DirectoryFileSource();
+            }
+            SourceChanged?.Invoke(fileSource.FullPath);
         }
     }
 
@@ -93,7 +101,7 @@ public class ContactSheet {
     /// <summary>
     /// Fired when the source directory is changed
     /// </summary>
-    public event SourceDirectoryChangedEventHandler SourceDirectoryChanged = delegate { };
+    public event SourceChangedEventHandler SourceChanged = delegate { };
 
     /// <summary>
     /// Fired when an exception occurred
@@ -104,8 +112,8 @@ public class ContactSheet {
 
     #region Private Fields
 
-    private DirectoryInfo? sourceDirectoryInfo;
-    private IImageSet imageSet;
+    private IFileSource fileSource;
+    private readonly IImageSet imageSet = new ImageSet();
 
     private readonly BoolParam cover;
     private readonly BoolParam exitOnComplete;
@@ -260,13 +268,13 @@ public class ContactSheet {
 
         // Setup all instances where a file list reload is required
         fileType.ParamChanged += async (path) => await LoadFileList(path);
-        SourceDirectoryChanged += async (path) => {
-            Console.WriteLine($"SourceDirectory changed to {path}");
-            imageSet = new ImageSet(new DirectoryFileSource(path));
-            headerTitle.ParseVal(sourceDirectoryInfo?.Name);
+        SourceChanged += async (path) => {
+            Console.WriteLine($"Source changed to {path}");
+            imageSet.Source = fileSource ?? new DirectoryFileSource();
+            headerTitle.ParseVal(fileSource?.Name);
             Console.WriteLine($"Directory Name -> Header Title: {headerTitle.ParsedValue}");
             if (cover.BoolValue) {
-                GuessCover(true);
+                await GuessCover(true);
             }
             await LoadFileList();
         };
@@ -277,8 +285,8 @@ public class ContactSheet {
         minDimInput.ParamChanged += RefreshImageList;
         outputFilePath.ParamChanged += RefreshImageList;
 
-        cover.ParamChanged += (_) => GuessCover(false);
-        coverPattern.ParamChanged += (_) => GuessCover(true);
+        cover.ParamChanged += async (_) => await GuessCover(false);
+        coverPattern.ParamChanged += async (_) => await GuessCover(true);
 
         // Load top-level params into externaly visible Param list (ordered)
         Params = new List<Param> {
@@ -289,7 +297,8 @@ public class ContactSheet {
             cover
         };
 
-        imageSet = new ImageSet(new DirectoryFileSource(SourceDirectory));
+        fileSource = new DirectoryFileSource(Source);
+        imageSet.Source = fileSource;
     }
 
     /// <summary>
@@ -309,11 +318,14 @@ public class ContactSheet {
         if (Path.IsPathRooted(path)) {
             return path;
         }
-        if (SourceDirectory == null || path == null) {
+        if (Source == null || path == null) {
             return string.Empty;
         }
-        return Path.GetFullPath(Path.Combine(SourceDirectory, path));
-
+        var outputDirectory = Path.GetDirectoryName(Source);
+        if (outputDirectory != null) { 
+            return Path.GetFullPath(Path.Combine(outputDirectory, path));
+        }
+        return string.Empty;
     }
 
     /// <summary>
@@ -401,7 +413,7 @@ public class ContactSheet {
     /// <param name="patterns">The patterns (Regular Expressions)</param>
     /// <param name="force">If true, proceeds even if <paramref name="fileParam"/> already has a file set</param>
     /// <returns>Whether the the guess was executed and succeeded</returns>
-    private bool GuessFile(FileParam fileParam, string[] patterns, bool force) {
+    private async Task<bool> GuessFile(FileParam fileParam, string[] patterns, bool force) {
         if (string.IsNullOrEmpty(fileType.ParsedValue)) {
             return false;
         }
@@ -410,8 +422,7 @@ public class ContactSheet {
         // If the command line set the cover file pattern/name,
         // make sure it exists. If not, guess.
         if (force || fileParam.File == null) {
-            fileParam.Directory = sourceDirectoryInfo;
-            changed = fileParam.Guess(patterns);
+            changed = await fileParam.Guess(fileSource, patterns);
         }
         return changed;
     }
@@ -420,8 +431,8 @@ public class ContactSheet {
     /// Guess the cover file path
     /// </summary>
     /// <param name="force">Proceed even if the cover file path has already been set</param>
-    private void GuessCover(bool force) => GuessFile(coverFile,
-        !string.IsNullOrEmpty(coverPattern.ParsedValue) ? new string[] { coverPattern.ParsedValue } : coverNames,
+    private async Task GuessCover(bool force) => await GuessFile(coverFile,
+        !string.IsNullOrEmpty(coverPattern.ParsedValue) ? new string[] { coverPattern.ParsedValue } : coverNames, 
         force);
 
     /// <summary>
@@ -456,7 +467,7 @@ public class ContactSheet {
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
     public async Task<bool> DrawAndSave() {
-        if (string.IsNullOrEmpty(SourceDirectory)) {
+        if (string.IsNullOrEmpty(Source)) {
             ErrorOccurred?.Invoke("No directory selected!");
             return false; // Don't exit the GUI
         }
@@ -481,7 +492,7 @@ public class ContactSheet {
             imageCount = images.Count();
 
             if (imageCount == 0) {
-                ErrorOccurred?.Invoke($"No valid/selected {fileType.ParsedValue} Images in {SourceDirectory}!");
+                ErrorOccurred?.Invoke($"No valid/selected {fileType.ParsedValue} Images in {Source}!");
                 return false; // Don't exit the GUI
             }
 
@@ -1073,5 +1084,11 @@ public class ContactSheet {
             return true;
         }
         return false;
+    }
+
+    public void Dispose() {
+        if (fileSource != null) {
+            fileSource.Dispose();
+        }
     }
 }

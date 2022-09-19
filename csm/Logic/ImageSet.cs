@@ -6,11 +6,21 @@ namespace csm.Logic {
 
         public IList<ImageData> Images => _images;
 
-        private readonly IFileSource _imageSource;
+        public IFileSource? Source { 
+            get => _imageSource; 
+            set {
+                if (_imageSource != null) {
+                    _imageSource.Dispose();
+                }
+                _imageSource = value;
+            }
+        }
+
+        private IFileSource? _imageSource;
        
         private readonly IList<ImageData> _images = new List<ImageData>();
 
-        public ImageSet(IFileSource fileSource) {
+        public ImageSet(IFileSource? fileSource = null) {
             _imageSource = fileSource;
         }
 
@@ -22,17 +32,21 @@ namespace csm.Logic {
         /// <param name="outFileName">Output file name to ignore</param>
         /// <param name="coverFileName">Cover file name to ignore</param>
         public async Task LoadImageListAsync(string fileType, int minDim, string? outFileName, string? coverFileName) {
-            if (!_imageSource.IsReady) {
+            if (!(_imageSource?.IsReady ?? false)) {
                 return;
             }
-            await Task.Factory.StartNew(() => {
+            await Task.Run(() => {
                 lock (Images) {
                     var sw = Stopwatch.StartNew();
 
-                    // Get a list of all the images in the directory, 
+                    var getFilesTask = _imageSource.GetFilesAsync();
+                    getFilesTask.Wait();
+                    var allFiles = getFilesTask.Result;
+
+                    // Get a list of all the images in the source
                     // Don't include hidden files
                     IEnumerable<string> files =
-                        from file in _imageSource.GetFiles()
+                        from file in allFiles
                         where file.Extension.ToLower().Contains(fileType.ToLower())
                         where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
                         select file.FullName;

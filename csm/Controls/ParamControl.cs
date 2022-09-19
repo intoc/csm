@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 
 namespace csm.Controls;
+
 public partial class ParamControl : UserControl {
     private Param parameter;
 
@@ -97,9 +98,9 @@ public partial class ParamControl : UserControl {
 
     public void RefreshValue(Param p) {
         if (p is BoolParam param) {
-            checkBox.Checked = param.BoolValue;
+            checkBox.Invoke(() => checkBox.Checked = param.BoolValue);
         } else {
-            text.Text = p.Value;
+            text.Invoke(() => text.Text = p.Value);
         }
     }
 

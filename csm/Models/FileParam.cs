@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using csm.Logic;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -60,14 +61,11 @@ public class FileParam : Param {
         ParseVal(val);
     }
 
-    public bool Guess(string[] patterns) {
+    public async Task<bool> Guess(IFileSource source, string[] patterns) {
         string? origFile = Path;
         bool changed = false;
-        if (Directory == null) {
-            return false;
-        }
         Console.WriteLine("Guessing {0} using match patterns: {1}", Desc, string.Join(", ", patterns));
-        FileInfo[] files = Directory.GetFiles($"*{Ext}");
+        var files = (await source.GetFilesAsync($"*{Ext}")).ToList();
         try {
             var regexes = patterns.Select(p => new Regex(p));
             FileInfo? match = regexes.Select(r =>
@@ -85,9 +83,9 @@ public class FileParam : Param {
         } catch (Exception ex) {
             Console.Error.WriteLine("Error occurred during pattern matching: {0}", ex.Message);
         }
-        if (files.Length > 0) {
+        if (files.Any()) {
             Console.WriteLine("No match found for {0}, using first file in the directory.", Desc);
-            File = files[0];
+            File = files.First();
         }
         changed = origFile != Path;
         Changed(changed);
@@ -99,22 +97,16 @@ public class FileParam : Param {
         // the path is not (supposedly) in the current directory,
         // and the current directory exists
         unParsedVal = value;
-        if (!string.IsNullOrEmpty(value) && !value.Contains('\\') && Directory != null) {
-            var files = Directory.GetFiles($"*{Ext}");
-            File = files.FirstOrDefault(f =>
-                   f.ToString() == value || f.ToString().ToLower().Contains(value.ToLower()));
+        
+        // Try a full-path parse
+        if (System.IO.File.Exists(value)) {
+            File = new FileInfo(value);
+            Directory = File.Directory;
         } else {
-            // Try a full-path parse
-            if (System.IO.File.Exists(value)) {
-                File = new FileInfo(value);
-                Directory = File.Directory;
-            } else {
-                // No file
-                File = null;
-            }
+            // No file
+            File = null;
         }
         Changed(unParsedVal != FileName);
-        
     }
 
     protected override void Load(Param other) {

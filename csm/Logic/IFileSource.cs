@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace csm.Logic {
-    internal interface IFileSource {
+﻿namespace csm.Logic {
+    public interface IFileSource : IDisposable {
 
         bool IsReady { get; }
 
-        IEnumerable<FileInfo> GetFiles();
+        string? FullPath { get; }
+
+        string? Name { get; }
+
+        Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null);
 
     }
 }

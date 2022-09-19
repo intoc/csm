@@ -52,9 +52,11 @@ partial class CsmGui
             this.buttonPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.btnRun = new System.Windows.Forms.Button();
             this.btnFiles = new System.Windows.Forms.Button();
-            this.btnDir = new System.Windows.Forms.Button();
+            this.btnArchive = new System.Windows.Forms.Button();
+            this.btnFolder = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.settingsLabel = new System.Windows.Forms.Label();
+            this.chooseArchiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip.SuspendLayout();
             this.menu.SuspendLayout();
             this.pnlMain.SuspendLayout();
@@ -165,6 +167,7 @@ partial class CsmGui
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.changeDirectoryToolStripMenuItem,
+            this.chooseArchiveToolStripMenuItem,
             this.viewFilesToolStripMenuItem,
             this.drawSheetToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
@@ -175,15 +178,15 @@ partial class CsmGui
             // 
             this.changeDirectoryToolStripMenuItem.Name = "changeDirectoryToolStripMenuItem";
             this.changeDirectoryToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
-            this.changeDirectoryToolStripMenuItem.Size = new System.Drawing.Size(208, 22);
-            this.changeDirectoryToolStripMenuItem.Text = "Change Directory";
-            this.changeDirectoryToolStripMenuItem.Click += new System.EventHandler(this.ChangeDirectory);
+            this.changeDirectoryToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.changeDirectoryToolStripMenuItem.Text = "Choose Folder";
+            this.changeDirectoryToolStripMenuItem.Click += new System.EventHandler(this.ChooseFolder);
             // 
             // viewFilesToolStripMenuItem
             // 
             this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
             this.viewFilesToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
-            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(208, 22);
+            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
             this.viewFilesToolStripMenuItem.Text = "View Files";
             this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.ViewFiles);
             // 
@@ -191,7 +194,7 @@ partial class CsmGui
             // 
             this.drawSheetToolStripMenuItem.Name = "drawSheetToolStripMenuItem";
             this.drawSheetToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.drawSheetToolStripMenuItem.Size = new System.Drawing.Size(208, 22);
+            this.drawSheetToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
             this.drawSheetToolStripMenuItem.Text = "Draw Sheet";
             this.drawSheetToolStripMenuItem.Click += new System.EventHandler(this.RunSheet);
             // 
@@ -231,21 +234,21 @@ partial class CsmGui
             this.directoryLabelLabel.Location = new System.Drawing.Point(6, 2);
             this.directoryLabelLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.directoryLabelLabel.Name = "directoryLabelLabel";
-            this.directoryLabelLabel.Size = new System.Drawing.Size(106, 15);
+            this.directoryLabelLabel.Size = new System.Drawing.Size(92, 15);
             this.directoryLabelLabel.TabIndex = 6;
-            this.directoryLabelLabel.Text = "Current Directory";
+            this.directoryLabelLabel.Text = "Current Source";
             this.directoryLabelLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // directoryLabel
             // 
             this.directoryLabel.AutoSize = true;
             this.directoryLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.directoryLabel.Location = new System.Drawing.Point(120, 2);
+            this.directoryLabel.Location = new System.Drawing.Point(106, 2);
             this.directoryLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.directoryLabel.Name = "directoryLabel";
-            this.directoryLabel.Size = new System.Drawing.Size(98, 15);
+            this.directoryLabel.Size = new System.Drawing.Size(86, 15);
             this.directoryLabel.TabIndex = 5;
-            this.directoryLabel.Text = "Current Directory";
+            this.directoryLabel.Text = "Current Source";
             this.directoryLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // paramsPanel
@@ -269,7 +272,8 @@ partial class CsmGui
             this.buttonPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.buttonPanel.Controls.Add(this.btnRun);
             this.buttonPanel.Controls.Add(this.btnFiles);
-            this.buttonPanel.Controls.Add(this.btnDir);
+            this.buttonPanel.Controls.Add(this.btnFolder);
+            this.buttonPanel.Controls.Add(this.btnArchive);
             this.buttonPanel.Controls.Add(this.btnSave);
             this.buttonPanel.Controls.Add(this.settingsLabel);
             this.buttonPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
@@ -301,20 +305,31 @@ partial class CsmGui
             this.btnFiles.UseVisualStyleBackColor = true;
             this.btnFiles.Click += new System.EventHandler(this.ViewFiles);
             // 
-            // btnDir
+            // btnArchive
             // 
-            this.btnDir.Location = new System.Drawing.Point(144, 3);
-            this.btnDir.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnDir.Name = "btnDir";
-            this.btnDir.Size = new System.Drawing.Size(120, 27);
-            this.btnDir.TabIndex = 6;
-            this.btnDir.Text = "Change Directory";
-            this.btnDir.UseVisualStyleBackColor = true;
-            this.btnDir.Click += new System.EventHandler(this.ChangeDirectory);
+            this.btnArchive.Location = new System.Drawing.Point(272, 3);
+            this.btnArchive.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnArchive.Name = "btnArchive";
+            this.btnArchive.Size = new System.Drawing.Size(120, 27);
+            this.btnArchive.TabIndex = 6;
+            this.btnArchive.Text = "Choose Archive";
+            this.btnArchive.UseVisualStyleBackColor = true;
+            this.btnArchive.Click += new System.EventHandler(this.ChooseArchive);
+            // 
+            // btnFolder
+            // 
+            this.btnFolder.Location = new System.Drawing.Point(144, 3);
+            this.btnFolder.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnFolder.Name = "btnFolder";
+            this.btnFolder.Size = new System.Drawing.Size(120, 27);
+            this.btnFolder.TabIndex = 7;
+            this.btnFolder.Text = "Choose Folder";
+            this.btnFolder.UseVisualStyleBackColor = true;
+            this.btnFolder.Click += new System.EventHandler(this.ChooseFolder);
             // 
             // btnSave
             // 
-            this.btnSave.Location = new System.Drawing.Point(272, 3);
+            this.btnSave.Location = new System.Drawing.Point(400, 3);
             this.btnSave.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(96, 27);
@@ -326,12 +341,20 @@ partial class CsmGui
             // settingsLabel
             // 
             this.settingsLabel.AutoSize = true;
-            this.settingsLabel.Location = new System.Drawing.Point(376, 9);
+            this.settingsLabel.Location = new System.Drawing.Point(504, 9);
             this.settingsLabel.Margin = new System.Windows.Forms.Padding(4, 9, 4, 0);
             this.settingsLabel.Name = "settingsLabel";
             this.settingsLabel.Size = new System.Drawing.Size(76, 15);
             this.settingsLabel.TabIndex = 4;
             this.settingsLabel.Text = "settingsLabel";
+            // 
+            // chooseArchiveToolStripMenuItem
+            // 
+            this.chooseArchiveToolStripMenuItem.Name = "chooseArchiveToolStripMenuItem";
+            this.chooseArchiveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
+            this.chooseArchiveToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.chooseArchiveToolStripMenuItem.Text = "Choose Archive";
+            this.chooseArchiveToolStripMenuItem.Click += new System.EventHandler(this.ChooseArchive);
             // 
             // CsmGui
             // 
@@ -351,6 +374,7 @@ partial class CsmGui
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
             this.Text = "iCSM";
             this.Activated += new System.EventHandler(this.Activate);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.CsmGui_FormClosed);
             this.statusStrip.ResumeLayout(false);
             this.statusStrip.PerformLayout();
             this.menu.ResumeLayout(false);
@@ -387,11 +411,13 @@ partial class CsmGui
     private System.Windows.Forms.Label settingsLabel;
     private csm.Controls.ParamsPanel paramsPanel;
     private System.Windows.Forms.Button btnFiles;
-    private System.Windows.Forms.Button btnDir;
+    private System.Windows.Forms.Button btnArchive;
     private System.Windows.Forms.ToolStripMenuItem drawSheetToolStripMenuItem;
     private System.Windows.Forms.ToolStripStatusLabel elapsedTime;
     private System.Windows.Forms.Label directoryLabel;
     private System.Windows.Forms.Panel pnlMain;
     private System.Windows.Forms.Label directoryLabelLabel;
     private System.Windows.Forms.FlowLayoutPanel directoryPanel;
+    private Button btnFolder;
+    private ToolStripMenuItem chooseArchiveToolStripMenuItem;
 }

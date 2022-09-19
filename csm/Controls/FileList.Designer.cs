@@ -26,8 +26,8 @@ partial class FileList {
     /// </summary>
     private void InitializeComponent() {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             this.statusBar = new System.Windows.Forms.StatusStrip();
             this.lblImageCount = new System.Windows.Forms.ToolStripStatusLabel();
             this.pnlCenter = new System.Windows.Forms.Panel();
@@ -119,8 +119,8 @@ partial class FileList {
             // 
             this.WidthCol.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
             this.WidthCol.DataPropertyName = "Width";
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-            this.WidthCol.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+            this.WidthCol.DefaultCellStyle = dataGridViewCellStyle3;
             this.WidthCol.HeaderText = "Width";
             this.WidthCol.Name = "WidthCol";
             this.WidthCol.ReadOnly = true;
@@ -130,8 +130,8 @@ partial class FileList {
             // 
             this.HeightCol.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
             this.HeightCol.DataPropertyName = "Height";
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
-            this.HeightCol.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleRight;
+            this.HeightCol.DefaultCellStyle = dataGridViewCellStyle4;
             this.HeightCol.HeaderText = "Height";
             this.HeightCol.Name = "HeightCol";
             this.HeightCol.ReadOnly = true;
@@ -230,7 +230,7 @@ partial class FileList {
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "No Directory Selected";
+            this.Text = "No Source Selected";
             this.Load += new System.EventHandler(this.FileListLoaded);
             this.statusBar.ResumeLayout(false);
             this.statusBar.PerformLayout();
