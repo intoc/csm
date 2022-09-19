@@ -53,7 +53,7 @@ static class Program {
     }
 
     static void LogError(string message, Exception? ex) {
-        StringBuilder error = new StringBuilder(message);
+        StringBuilder error = new(message);
         if (ex != null) {
             error.AppendLine();
             error.AppendLine(ex.ToString());
