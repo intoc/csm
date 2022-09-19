@@ -15,7 +15,7 @@ static class Program {
 
         try {
             Logic.ContactSheet cs = new();
-            cs.ErrorOccurred += LogError;
+            cs.ErrorOccurred += (msg, ex) => Log.Error(ex, msg);
 
             // Check for a -help parameter and handle it
             if (cs.Help(args)) {
@@ -65,9 +65,4 @@ static class Program {
             Log.CloseAndFlush();
         }
     }
-
-    static void LogError(string message, Exception? ex) {
-        Log.Error(ex, message);
-    }
-
 }
