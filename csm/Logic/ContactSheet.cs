@@ -66,7 +66,7 @@ public sealed class ContactSheet : IDisposable {
             var oldSource = fileSource;
             if (Directory.Exists(value)) {
                 fileSource = new DirectoryFileSource(value);
-            } else if (File.Exists(value)){
+            } else if (File.Exists(value)) {
                 try {
                     fileSource = ArchiveFileSource.Build(value);
                 } catch (Exception ex) {
@@ -345,7 +345,7 @@ public sealed class ContactSheet : IDisposable {
         if (Directory.Exists(Source)) {
             outputDirectory = Directory.GetParent(Source)?.FullName;
         }
-        if (outputDirectory != null) { 
+        if (outputDirectory != null) {
             return Path.GetFullPath(Path.Combine(outputDirectory, path));
         }
         return string.Empty;
@@ -461,7 +461,7 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="force">Proceed even if the cover file path has already been set</param>
     private async Task GuessCover(bool force) => await GuessFile(coverFile,
-        !string.IsNullOrEmpty(coverPattern.ParsedValue) ? new string[] { coverPattern.ParsedValue } : coverNames, 
+        !string.IsNullOrEmpty(coverPattern.ParsedValue) ? new string[] { coverPattern.ParsedValue } : coverNames,
         force);
 
     /// <summary>
@@ -1136,8 +1136,6 @@ public sealed class ContactSheet : IDisposable {
     }
 
     public void Dispose() {
-        if (fileSource != null) {
-            fileSource.Dispose();
-        }
+        fileSource?.Dispose();
     }
 }
