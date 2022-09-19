@@ -1,5 +1,6 @@
 ﻿using csm.Models;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace csm.Logic {
     public class ImageSet : IImageSet {
@@ -105,7 +106,7 @@ namespace csm.Logic {
             if (outFileName == null) {
                 return false;
             }
-            string pathWithoutSuffix = image.FileName.Replace(@"(_\d*)?\.jpg", ".jpg");
+            string pathWithoutSuffix = Regex.Replace(image.FileName, @"(_\d*)?\.jpg", ".jpg");
             return pathWithoutSuffix.Equals(outFileName);
         }
 

@@ -11,7 +11,7 @@ namespace csm.Models {
 
         public string Path { get; private set; }
 
-        public ImageFile(string path, bool hidden) {
+        public ImageFile(string path, bool hidden = false) {
             Path = path;
             Hidden = hidden;
         }

@@ -102,7 +102,7 @@ public class FileParam : Param {
         // Try a full-path parse
         if (System.IO.File.Exists(value)) {
             FileInfo f = new(value);
-            File = new ImageFile(value, (f.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden);
+            File = new ImageFile(value);
             Directory = f.Directory;
         } else {
             // No file
