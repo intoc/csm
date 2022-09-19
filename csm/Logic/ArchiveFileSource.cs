@@ -23,6 +23,14 @@
             _externalLock = lockObject;
         }
 
+        public static ArchiveFileSource Build(string path, object lockObject) {
+            var info = new FileInfo(path);
+            if (info.Extension == ".zip") {
+                return new ZipFileSource(path, lockObject);
+            }
+            throw new NotImplementedException($"{info.Extension} file source not implemented");
+        }
+
         protected override void Dispose(bool disposing) {
             lock (_dirLock) {
                 if (_tempDir.Exists) {

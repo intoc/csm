@@ -68,14 +68,20 @@ public sealed class ContactSheet : IDisposable {
             if (fileSource != null) {
                 fileSource.Dispose();
             }
+            bool changed = true;
             if (Directory.Exists(value)) {
                 fileSource = new DirectoryFileSource(value);
-            } else if (value != null && value.EndsWith(".zip")){
-                fileSource = new ZipFileSource(value, ImageList);
-            } else {
-                fileSource = new DirectoryFileSource();
+            } else if (File.Exists(value)){
+                try {
+                    fileSource = ArchiveFileSource.Build(value, ImageList);
+                } catch (Exception ex) {
+                    ErrorOccurred?.Invoke("Can't load archive", ex);
+                    changed = false;
+                }
             }
-            SourceChanged?.Invoke(fileSource.FullPath);
+            if (changed) {
+                SourceChanged?.Invoke(fileSource?.FullPath);
+            }
         }
     }
 
