@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿using System.Diagnostics;
+using System.IO.Compression;
 
 namespace csm.Logic {
     internal sealed class ZipFileSource : IFileSource {
@@ -27,12 +28,11 @@ namespace csm.Logic {
         public void Dispose() {
             lock (_dirLock) {
                 if (_tempDir.Exists) {
-                    Console.WriteLine("Deleting {0}", _tempDir.FullName);
-                    Task.Run(() => {
-                        lock (_dirLock) {
-                            _tempDir.Delete(true);
-                        }
-                    });
+                    Debug.WriteLine("Deleting {0}", _tempDir.FullName);
+                    lock (_dirLock) {
+                        _tempDir.Delete(true);
+                    }
+                    Debug.WriteLine("Deleted {0}", _tempDir.FullName);
                 }
             }
         }
