@@ -53,6 +53,9 @@ public partial class CsmGui : Form {
         btnRun.Enabled = value;
         btnArchive.Enabled = value;
         btnFolder.Enabled = value;
+        chooseFolderToolStripMenuItem.Enabled = value;
+        chooseArchiveToolStripMenuItem.Enabled = value;
+        drawSheetToolStripMenuItem.Enabled = value;
     }
 
     void Exit(object? sender, EventArgs e) {

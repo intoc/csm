@@ -41,7 +41,7 @@ partial class CsmGui
             this.saveSettingsAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.changeDirectoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.chooseFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.drawSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pnlMain = new System.Windows.Forms.Panel();
@@ -166,7 +166,7 @@ partial class CsmGui
             // toolsToolStripMenuItem
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.changeDirectoryToolStripMenuItem,
+            this.chooseFolderToolStripMenuItem,
             this.chooseArchiveToolStripMenuItem,
             this.viewFilesToolStripMenuItem,
             this.drawSheetToolStripMenuItem});
@@ -176,11 +176,11 @@ partial class CsmGui
             // 
             // changeDirectoryToolStripMenuItem
             // 
-            this.changeDirectoryToolStripMenuItem.Name = "changeDirectoryToolStripMenuItem";
-            this.changeDirectoryToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
-            this.changeDirectoryToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
-            this.changeDirectoryToolStripMenuItem.Text = "Choose Folder";
-            this.changeDirectoryToolStripMenuItem.Click += new System.EventHandler(this.ChooseFolder);
+            this.chooseFolderToolStripMenuItem.Name = "changeDirectoryToolStripMenuItem";
+            this.chooseFolderToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
+            this.chooseFolderToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.chooseFolderToolStripMenuItem.Text = "Choose Folder";
+            this.chooseFolderToolStripMenuItem.Click += new System.EventHandler(this.ChooseFolder);
             // 
             // viewFilesToolStripMenuItem
             // 
@@ -403,7 +403,7 @@ partial class CsmGui
     private System.Windows.Forms.ToolStripStatusLabel drawStatus;
     private System.Windows.Forms.ToolStripStatusLabel settingsFileStatus;
     private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
-    private System.Windows.Forms.ToolStripMenuItem changeDirectoryToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem chooseFolderToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem viewFilesToolStripMenuItem;
     private System.Windows.Forms.FlowLayoutPanel buttonPanel;
     private System.Windows.Forms.Button btnRun;

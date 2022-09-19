@@ -14,7 +14,7 @@
             // Don't do anything by default
         }
 
-        public abstract Task Initialize(Action callback);
+        public abstract void Initialize(Action? callback = null);
 
         public abstract Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null);
 

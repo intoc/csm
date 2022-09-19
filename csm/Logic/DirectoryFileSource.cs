@@ -13,8 +13,8 @@
 
         public override string? Name => _directory?.Name;
 
-        public override async Task Initialize(Action callback) {
-            await Task.Run(callback);
+        public override void Initialize(Action? callback = null) {
+            callback?.Invoke();
         }
 
         public override async Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null) {

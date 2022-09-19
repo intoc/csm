@@ -7,7 +7,7 @@
 
         Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null);
 
-        Task Initialize(Action callback);
+        void Initialize(Action? callback = null);
 
     }
 }

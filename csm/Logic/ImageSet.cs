@@ -6,8 +6,8 @@ namespace csm.Logic {
 
         public IList<ImageData> Images => _images;
 
-        public IFileSource? Source { 
-            get => _imageSource; 
+        public IFileSource? Source {
+            get => _imageSource;
             set {
                 if (_imageSource != null) {
                     _imageSource.Dispose();
@@ -15,6 +15,8 @@ namespace csm.Logic {
                 _imageSource = value;
             }
         }
+
+        public bool Loaded { get; private set; }
 
         private IFileSource? _imageSource;
        
@@ -67,6 +69,7 @@ namespace csm.Logic {
                     Debug.WriteLine("ImageSet.LoadImageListAsync took {0}", sw.Elapsed);
 
                     RefreshImageList(minDim, outFileName, coverFileName);
+                    Loaded = true;
                 }
             });
         }

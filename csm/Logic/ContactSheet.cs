@@ -291,8 +291,20 @@ public sealed class ContactSheet : IDisposable {
         minDimInput.ParamChanged += RefreshImageList;
         outputFilePath.ParamChanged += RefreshImageList;
 
-        cover.ParamChanged += async (_) => await GuessCover(false);
-        coverPattern.ParamChanged += async (_) => await GuessCover(true);
+        cover.ParamChanged += async (param) => {
+            if (!cover.BoolValue) {
+                return;
+            }
+            Console.WriteLine("Guessing cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
+            await GuessCover(false);
+        };
+        coverPattern.ParamChanged += async (param) => {
+            if (!cover.BoolValue) {
+                return;
+            }
+            Console.WriteLine("Guessing cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
+            await GuessCover(true);
+        };
 
         // Load top-level params into externaly visible Param list (ordered)
         Params = new List<Param> {
@@ -328,6 +340,10 @@ public sealed class ContactSheet : IDisposable {
             return string.Empty;
         }
         var outputDirectory = Path.GetDirectoryName(Source);
+        // Use the parent directory if the output path is a directory
+        if (Directory.Exists(Source)) {
+            outputDirectory = Directory.GetParent(Source)?.FullName;
+        }
         if (outputDirectory != null) { 
             return Path.GetFullPath(Path.Combine(outputDirectory, path));
         }
@@ -478,7 +494,7 @@ public sealed class ContactSheet : IDisposable {
     /// Run the image analysis and contact sheet creation process
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
-    public async Task<bool> DrawAndSave(bool waitForImages = false) {
+    public async Task<bool> DrawAndSave(bool waitForLoad = false) {
         if (string.IsNullOrEmpty(Source)) {
             ErrorOccurred?.Invoke("No directory selected!");
             return false; // Don't exit the GUI
@@ -499,19 +515,16 @@ public sealed class ContactSheet : IDisposable {
         bool fillGap = drawCover && fillCoverGap.BoolValue;
 
         // Wait for the image list to be ready
-        int waits = 10;
-        while (waitForImages) {
+        if (waitForLoad) {
+            Console.WriteLine("DrawAndSave waiting...");
+        }
+        while (waitForLoad) {
             lock (imageSet.Images) {
-                if (imageSet.Images.Any()) {
+                if (imageSet.Loaded) {
                     break;
                 }
             }
-            Console.WriteLine("DrawAndSave waiting {0}...", waits);
-            Thread.Sleep(500);
-            if (--waits == 0) {
-                Console.WriteLine("DrawAndSave wait period expired.");
-                return false;
-            }
+            Thread.Sleep(250);
         }
 
         lock (imageSet.Images) {

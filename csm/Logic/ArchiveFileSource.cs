@@ -22,7 +22,7 @@
             var info = new FileInfo(path);
             if (ZipFileSource.Supports(info.Extension)) {
                 return new ZipFileSource(path);
-            } 
+            }
             if (RarFileSource.Supports(info.Extension)) {
                 return new RarFileSource(path);
             }
@@ -45,15 +45,15 @@
             }
         }
 
-        public override async Task Initialize(Action callback) {
-            await Task.Run(() => {
+        public override void Initialize(Action? callback = null) {
+            Task.Run(() => {
                 lock (_dirLock) {
                     if (!_extracted) {
                         Extract();
                         _extracted = true;
                     }
+                    callback?.Invoke();
                 }
-                callback();
             });
         }
 

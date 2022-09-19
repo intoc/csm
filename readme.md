@@ -50,7 +50,7 @@ then the current executable directory will be used. Parameters may be in any ord
 | `-exit` | Exit on Complete | true/false | false | Close the GUI when the sheet is finished. Doesn't apply to the command-line.  |
 | `-openoutdir` | Open Output Directory on Complete | true/false | true | Open the output directory in Windows Explorer when completed (GUI mode only).  |
 | `-preview` | Preview Layout Only | true/false | false | Only draw the layout, not the images. Near instantaneous.  |
-| `-outfile` | Output File | File Path | ContactSheet.jpg | File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. (Changing this option reloads the file list).  |
+| `-outfile` | Output File | File Path | ContactSheet.jpg | File name or path of the output contact sheet file. Path can be absolute or relative to the source's parent directory. (Changing this option reloads the file list).  |
 | `-header` | Show Header | true/false | false | Shows the title of the sheet and other info at the top of the sheet.  |
 | `-hsize` | Header Font Size | pt | 12 | The font size of the header text.  |
 | `-hbold` | Bold Header | true/false | false | Makes the header text bold.  |

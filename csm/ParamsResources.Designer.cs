@@ -439,7 +439,7 @@ namespace csm {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to File name or path of the output contact sheet file. Path can be absolute or relative to the source directory. Use {title} to include the header title in the file name. (Changing this option reloads the file list)..
+        ///   Looks up a localized string similar to File name or path of the output contact sheet file. Path can be absolute or relative to the source&apos;s parent directory. Use {title} to include the header title in the file name. (Changing this option reloads the file list)..
         /// </summary>
         internal static string outfile_note {
             get {
