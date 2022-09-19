@@ -38,7 +38,7 @@ namespace csm.Logic {
         /// Initialize an <see cref="ImageData"/> instance by retrieving its dimensions from a file stream
         /// </summary>
         /// <param name="image">The <see cref="ImageData"/> to initialize</param>
-        public void LoadImageDataFromStream(ImageData image) {
+        public void LoadImageDimensions(ImageData image) {
             using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
             using var fromStream = Image.FromStream(stream, false, false);
             image.InitSize(new Size(fromStream.Width, fromStream.Height));

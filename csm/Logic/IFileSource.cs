@@ -11,7 +11,7 @@ namespace csm.Logic {
 
         void Initialize(Action? callback = null);
 
-        void LoadImageDataFromStream(ImageData image);
+        void LoadImageDimensions(ImageData image);
 
     }
 }

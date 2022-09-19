@@ -59,7 +59,7 @@ namespace csm.Logic {
                     foreach (string path in files) {
                         ImageData image = new(path);
                         _images.Add(image);
-                        tasks.Add(Task.Run(() => _imageSource.LoadImageDataFromStream(image)));
+                        tasks.Add(Task.Run(() => _imageSource.LoadImageDimensions(image)));
                     }
 
                     Task.WaitAll(tasks.ToArray());
