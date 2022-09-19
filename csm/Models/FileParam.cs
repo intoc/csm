@@ -83,7 +83,7 @@ public class FileParam : Param {
         } catch (Exception ex) {
             Console.Error.WriteLine("Error occurred during pattern matching: {0}", ex.Message);
         }
-        if (files.Any()) {
+        if (files.Any() && File == null) {
             Console.WriteLine("No match found for {0}, using first file in the directory.", Desc);
             File = files.First();
         }

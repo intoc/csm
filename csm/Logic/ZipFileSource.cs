@@ -38,23 +38,25 @@ namespace csm.Logic {
         }
 
         public async Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null) {
+            IEnumerable<FileInfo> files = new List<FileInfo>();
             await Task.Run(() => {
                 lock (_dirLock) {
                     Extract();
+                    files = GetFiles(_tempDir, pattern);
                 }
             });
-            return await GetFilesAsync(_tempDir, pattern);
+            return files;
         }
 
-        private async Task<IEnumerable<FileInfo>> GetFilesAsync(DirectoryInfo directory, string? pattern) {
+        private IEnumerable<FileInfo> GetFiles(DirectoryInfo directory, string? pattern) {
             IEnumerable<FileInfo> files;
             if (pattern != null) {
-                files = await Task.Run(() => directory.EnumerateFiles(pattern));
+                files = directory.EnumerateFiles(pattern);
             } else {
-                files = await Task.Run(() => directory.EnumerateFiles());
+                files = directory.EnumerateFiles();
             }
             foreach (var sub in directory.GetDirectories()) {
-                files = files.Concat(await GetFilesAsync(sub, pattern));
+                files = files.Concat(GetFiles(sub, pattern));
             }
             return files;
         }
