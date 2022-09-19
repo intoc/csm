@@ -1,7 +1,7 @@
 # Intelligent Contact Sheet Maker - csm
 This program is used to make good-looking "Contact Sheets," or image files containing
 thumbnail representations of a list of images. It has a GUI and command-line interface. You can start the GUI
-by simply running csm.exe.
+by simply running csm.exe. Supported inputs are directories, .zip, .7z, and .rar files.
 
 ## Main GUI
 If you want to save your settings, you can click `Save Settings`, `File -> Save Settings`, 
@@ -74,3 +74,5 @@ The source path will be passed in automatically if you drag the folder or archiv
 - The csm GUI will always try to load *default.xml* at start if `-sfile` isn't specified in the command line arguments, but you can load other files afterwards.
 - Use `{title}` in `-outfile` to include the archive/directory/header title in the output file name or path. For example,
 `-outfile="../{title} CS.jpg"` will put the output file in the parent directory of the directory containing the source file or directory, with a name like "My Favorite Photos CS.jpg".
+- All file sources are checked for images recursively. If your sources contain small files that
+you don't want to include in the output, use the `-mindiminput` parameter to filter out small images.
