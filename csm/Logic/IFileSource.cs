@@ -1,13 +1,17 @@
-﻿namespace csm.Logic {
+﻿using csm.Models;
+
+namespace csm.Logic {
     public interface IFileSource : IDisposable {
 
         string? FullPath { get; }
 
         string? Name { get; }
 
-        Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null);
+        Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);
 
         void Initialize(Action? callback = null);
+
+        void LoadImageDataFromStream(ImageData image);
 
     }
 }

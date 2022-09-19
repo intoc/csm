@@ -1,4 +1,6 @@
-﻿namespace csm.Logic {
+﻿using csm.Models;
+
+namespace csm.Logic {
     public class DirectoryFileSource : AbstractFileSource {
 
         private readonly DirectoryInfo? _directory;
@@ -17,9 +19,9 @@
             callback?.Invoke();
         }
 
-        public override async Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null) {
+        public override async Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null) {
             if (_directory == null) {
-                return Enumerable.Empty<FileInfo>();
+                return Enumerable.Empty<ImageFile>();
             }
             return await Task.Run(() => GetFiles(_directory, pattern));
         }

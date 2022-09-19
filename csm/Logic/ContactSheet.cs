@@ -554,7 +554,7 @@ public sealed class ContactSheet : IDisposable {
             if (drawCover && coverFile.File != null) {
                 // Begin image analysis
                 Console.WriteLine("Analyzing cover...");
-                coverImage = Image.FromFile(coverFile.File.FullName);
+                coverImage = Image.FromFile(coverFile.File.Path);
 
                 if (coverImage.Width > sheetWidth.IntValue) {
                     coverBounds.Width = sheetWidth.IntValue;

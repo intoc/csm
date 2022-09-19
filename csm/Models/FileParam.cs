@@ -13,7 +13,7 @@ public class FileParam : Param {
     public string? FileName {
         get {
             if (File != null) {
-                return File.Name;
+                return new FileInfo(File.Path).Name;
             } else {
                 return unParsedVal;
             }
@@ -35,7 +35,7 @@ public class FileParam : Param {
     public string? Path {
         get {
             if (File != null) {
-                return File.FullName;
+                return File.Path;
             } else {
                 return unParsedVal;
             }
@@ -49,7 +49,7 @@ public class FileParam : Param {
     public string Ext { get; set; } = string.Empty;
 
     [XmlIgnore]
-    public FileInfo? File { get; set; }
+    public ImageFile? File { get; set; }
 
     [XmlIgnore]
     public DirectoryInfo? Directory { get; set; }
@@ -68,13 +68,13 @@ public class FileParam : Param {
         var files = (await source.GetFilesAsync($"*{Ext}")).ToList();
         try {
             var regexes = patterns.Select(p => new Regex(p));
-            FileInfo? match = regexes.Select(r =>
-                files.FirstOrDefault(f => r.IsMatch(f.ToString()))).FirstOrDefault();
+            ImageFile? match = regexes.Select(r =>
+                files.FirstOrDefault(f => r.IsMatch(f.Path))).FirstOrDefault();
             if (match != null) {
-                changed = origFile != match.FullName;
+                changed = origFile != match.Path;
                 if (changed) {
                     File = match;
-                    Console.WriteLine("Matched {0} on {1}", Desc, File.FullName);
+                    Console.WriteLine("Matched {0} on {1}", Desc, File.Path);
                     Changed();
                 } else {
                     Console.WriteLine("Matched on the same cover file as before");
@@ -101,8 +101,9 @@ public class FileParam : Param {
         
         // Try a full-path parse
         if (System.IO.File.Exists(value)) {
-            File = new FileInfo(value);
-            Directory = File.Directory;
+            FileInfo f = new(value);
+            File = new ImageFile(value, (f.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden);
+            Directory = f.Directory;
         } else {
             // No file
             File = null;

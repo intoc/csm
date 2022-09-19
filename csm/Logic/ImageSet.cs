@@ -2,7 +2,7 @@
 using System.Diagnostics;
 
 namespace csm.Logic {
-    internal class ImageSet : IImageSet {
+    public class ImageSet : IImageSet {
 
         public IList<ImageData> Images => _images;
 
@@ -41,7 +41,7 @@ namespace csm.Logic {
                     }
                     var sw = Stopwatch.StartNew();
 
-                    var getFilesTask = _imageSource.GetFilesAsync();
+                    var getFilesTask = _imageSource.GetFilesAsync($"*{fileType}");
                     getFilesTask.Wait();
                     var allFiles = getFilesTask.Result;
 
@@ -49,9 +49,8 @@ namespace csm.Logic {
                     // Don't include hidden files
                     IEnumerable<string> files =
                         from file in allFiles
-                        where file.Extension.ToLower().Contains(fileType.ToLower())
-                        where (file.Attributes & FileAttributes.Hidden) != FileAttributes.Hidden
-                        select file.FullName;
+                        where !file.Hidden
+                        select file.Path;
 
                     // Load Image data into list
                     _images.Clear();
@@ -60,7 +59,7 @@ namespace csm.Logic {
                     foreach (string path in files) {
                         ImageData image = new(path);
                         _images.Add(image);
-                        tasks.Add(Task.Factory.StartNew(() => LoadImageDataFromStream(image)));
+                        tasks.Add(Task.Run(() => _imageSource.LoadImageDataFromStream(image)));
                     }
 
                     Task.WaitAll(tasks.ToArray());
@@ -86,16 +85,6 @@ namespace csm.Logic {
                     image.Include = !(IsImageTooSmall(image, minDim) || IsOldSheet(image, outFileName) || IsCover(image, coverFileName));
                 }
             }
-        }
-
-        /// <summary>
-        /// Initialize an <see cref="ImageData"/> instance by retrieving its dimensions from a file stream
-        /// </summary>
-        /// <param name="image">The <see cref="ImageData"/> to initialize</param>
-        private static void LoadImageDataFromStream(ImageData image) {
-            using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
-            using var fromStream = Image.FromStream(stream, false, false);
-            image.InitSize(new Size(fromStream.Width, fromStream.Height));
         }
 
         /// <summary>

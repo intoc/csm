@@ -1,4 +1,5 @@
-﻿namespace csm.Logic {
+﻿using csm.Models;
+namespace csm.Logic {
     public abstract class ArchiveFileSource : AbstractFileSource {
         public override string? FullPath => Path.GetFullPath(_archiveFilePath);
 
@@ -57,8 +58,8 @@
             });
         }
 
-        public override async Task<IEnumerable<FileInfo>> GetFilesAsync(string? pattern = null) {
-            IEnumerable<FileInfo> files = new List<FileInfo>();
+        public override async Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null) {
+            IEnumerable<ImageFile> files = new List<ImageFile>();
             await Task.Run(() => {
                 lock (_dirLock) {
                     if (!_extracted) {
