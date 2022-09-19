@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace csm.Logic {
+﻿namespace csm.Logic {
     public abstract class ArchiveFileSource : AbstractFileSource {
 
         public override bool IsReady => File.Exists(_archiveFilePath);
@@ -11,10 +9,10 @@ namespace csm.Logic {
 
         protected readonly string _archiveFilePath;
         protected readonly DirectoryInfo _tempDir;
-        protected bool _extracted = false;
 
-        protected readonly object _externalLock;
-        protected readonly object _dirLock = new();
+        private bool _extracted = false;
+        private readonly object _externalLock;
+        private readonly object _dirLock = new();
 
         protected ArchiveFileSource(string path, object lockObject) {
             _archiveFilePath = path;
@@ -42,7 +40,10 @@ namespace csm.Logic {
             IEnumerable<FileInfo> files = new List<FileInfo>();
             await Task.Run(() => {
                 lock (_dirLock) {
-                    Extract();
+                    if (!_extracted) {
+                        Extract();
+                        _extracted = true;
+                    }
                     files = GetFiles(_tempDir, pattern);
                 }
             });
