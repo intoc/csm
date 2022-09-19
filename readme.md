@@ -50,7 +50,7 @@ then the current executable directory will be used. Parameters may be in any ord
 | `-exit` | Exit on Complete | true/false | false | Close the GUI when the sheet is finished. Doesn't apply to the command-line.  |
 | `-openoutdir` | Open Output Directory on Complete | true/false | true | Open the output directory in Windows Explorer when completed (GUI mode only).  |
 | `-preview` | Preview Layout Only | true/false | false | Only draw the layout, not the images. Near instantaneous.  |
-| `-outfile` | Output File | File Path | ContactSheet.jpg | File name or path of the output contact sheet file. Path can be absolute or relative to the source's parent directory. (Changing this option reloads the file list).  |
+| `-outfile` | Output File | File Path | ContactSheet.jpg | File name or path of the output contact sheet file. Path can be absolute or relative to the source's parent directory. Use {title} to include the header title in the file name. (Changing this option reloads the file list). |
 | `-header` | Show Header | true/false | false | Shows the title of the sheet and other info at the top of the sheet.  |
 | `-hsize` | Header Font Size | pt | 12 | The font size of the header text.  |
 | `-hbold` | Bold Header | true/false | false | Makes the header text bold.  |
@@ -72,3 +72,5 @@ shortcut to csm.exe, then right-click the shortcut and select Properties. Once t
 parameters to the end of the `Target` field, e.g. `C:\csm\csm.exe -nogui=true -sfile=mysettings.xml`.
 The source path will be passed in automatically if you drag the folder or archive onto the shortcut.
 - The csm GUI will always try to load *default.xml* at start if `-sfile` isn't specified in the command line arguments, but you can load other files afterwards.
+- Use `{title}` in `-outfile` to include the archive/directory/header title in the output file name or path. For example,
+`-outfile="../{title} CS.jpg"` will put the output file in the parent directory of the directory containing the source file or directory, with a name like "My Favorite Photos CS.jpg".

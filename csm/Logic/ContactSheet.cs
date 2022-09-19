@@ -906,6 +906,11 @@ public sealed class ContactSheet : IDisposable {
                     }
                 }
                 if (jpgEncoder != null) {
+                    string? dir = Path.GetDirectoryName(OutFilePath(suffix));
+                    if (dir != null && !Directory.Exists(dir)) {
+                        Console.WriteLine("Creating Directory: {0}", dir);
+                        Directory.CreateDirectory(dir);
+                    }
                     sheetImage.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
                     Console.WriteLine("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / (1024f));
                 } else {
