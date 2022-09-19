@@ -295,14 +295,14 @@ public sealed class ContactSheet : IDisposable {
             if (!cover.BoolValue) {
                 return;
             }
-            Console.WriteLine("Guessing cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
+            Console.WriteLine("Guessing Cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
             await GuessCover(false);
         };
         coverPattern.ParamChanged += async (param) => {
             if (!cover.BoolValue) {
                 return;
             }
-            Console.WriteLine("Guessing cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
+            Console.WriteLine("Guessing Cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
             await GuessCover(true);
         };
 
@@ -496,7 +496,7 @@ public sealed class ContactSheet : IDisposable {
     /// <returns>Whether the process is set to exit on complete</returns>
     public async Task<bool> DrawAndSave(bool waitForLoad = false) {
         if (string.IsNullOrEmpty(Source)) {
-            ErrorOccurred?.Invoke("No directory selected!");
+            ErrorOccurred?.Invoke("No/invalid Source selected!");
             return false; // Don't exit the GUI
         }
 
@@ -924,8 +924,9 @@ public sealed class ContactSheet : IDisposable {
             // Clean up
             sheetImage.Dispose();
         }
-
-        Console.WriteLine("Exit on Complete: {0}", exitOnComplete.BoolValue);
+        if (!noGui.BoolValue) {
+            Console.WriteLine("Exit on Complete: {0}", exitOnComplete.BoolValue);
+        }
         return exitOnComplete.BoolValue;
 
         #endregion

@@ -30,7 +30,7 @@ namespace csm.Logic {
             if (SevenZipFileSource.Supports(info.Extension)) {
                 return new SevenZipFileSource(path);
             }
-            throw new NotImplementedException($"{info.Extension} file source not implemented");
+            throw new NotImplementedException($"({info.Extension}) file source not supported.");
         }
 
         protected override void Dispose(bool disposing) {

@@ -1,4 +1,6 @@
-﻿namespace csm;
+﻿using System.Text;
+
+namespace csm;
 static class Program {
 
     private const string DEFAULT_SETTINGS_FILE = "default.xml";
@@ -27,7 +29,7 @@ static class Program {
         }
 
         cs.LoadSettingsFromCommandLine(args);
-        
+
         // Prompt for arguments graphically
         if (cs.GuiEnabled) {
             // Load default settings file if none was supplied from the CLA
@@ -50,7 +52,13 @@ static class Program {
         }
     }
 
-    static void LogError(string message, Exception? ex) =>
-        Console.Error.WriteLine("{0} Exception: {1}", message, ex?.Message ?? "(none)");
+    static void LogError(string message, Exception? ex) {
+        StringBuilder error = new StringBuilder(message);
+        if (ex != null) {
+            error.AppendLine();
+            error.AppendLine(ex.ToString());
+        }
+        Console.Error.WriteLine(error);
+    }
 
 }
