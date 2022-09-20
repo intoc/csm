@@ -488,6 +488,16 @@ public sealed class ContactSheet : IDisposable {
     }
 
     /// <summary>
+    /// Scales a <see cref="Rectangle"/> by the given factor
+    /// </summary>
+    /// <param name="rect">The <see cref="Rectangle"/></param>
+    /// <param name="scale">The scale factor</param>
+    private static void ScaleRect(Rectangle rect, double scale) {
+        rect.Width = (int)(rect.Width * scale);
+        rect.Height = (int)(rect.Height * scale);
+    }
+
+    /// <summary>
     /// Run the image analysis and contact sheet creation process
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
@@ -555,13 +565,23 @@ public sealed class ContactSheet : IDisposable {
                 coverBounds = new Rectangle { Width = coverImage.Width, Height = coverImage.Height };
                 double maxCoverImageScaleForGap = Math.Round(0.75 * columns.IntValue) / columns.IntValue;
 
-                if (fillGap && coverBounds.Width >= (sheetWidth.IntValue * maxCoverImageScaleForGap)) {
-                    // We want a gap right? Make the cover smaller.
-                    Log.Information("Cover image is too large. Reducing size to {0:0.00}xSheetWidth to create a gap.", maxCoverImageScaleForGap);
-                    double scale = (sheetWidth.IntValue * maxCoverImageScaleForGap) / coverBounds.Width;
-                    coverBounds.Width = (int)(coverBounds.Width * scale);
-                    coverBounds.Height = (int)(coverBounds.Height * scale);
-                    coverBounds.X = 0;
+                if (fillGap) {
+                    if (coverBounds.Width >= (sheetWidth.IntValue * maxCoverImageScaleForGap)) {
+                        // We want a gap right? Make the cover smaller.
+                        Log.Information("Cover image is too large. Reducing size to {0:0.00}xSheetWidth to create a gap.", maxCoverImageScaleForGap);
+                        ScaleRect(coverBounds, (sheetWidth.IntValue * maxCoverImageScaleForGap) / coverBounds.Width);
+                    } else {
+                        // Otherwise the image is already small enough for gap filling
+                        Log.Information("Cover image size allows for a natural gap.");
+                    }
+                } else if (coverBounds.Width < sheetWidth.IntValue) {
+                    // Center images smaller than the sheet width
+                    Log.Information("Centering cover image.");
+                    coverBounds.X = (sheetWidth.IntValue - coverBounds.Width) / 2;
+                } else {
+                    // Scale the image down to sheet width
+                    Log.Information("Cover image is too large. Reducing size to fit SheetWidth.");
+                    ScaleRect(coverBounds, (double)sheetWidth.IntValue / coverBounds.Width);
                 }
                 Log.Information("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverBounds);
             }
