@@ -21,7 +21,7 @@ public sealed class ContactSheet : IDisposable {
 
     #region Private Constants
 
-    private static readonly string[] coverNames = { "cover", "folder", "square", "front" };
+    private static readonly string[] coverNames = { "cover", "folder", "square", "front", "big", "max" };
     private static readonly string[] helpStrings = { "--help", "-help", "/?", "-?" };
     private const int DEFAULT_WIDTH = 900;
     private const int DEFAULT_COLUMNS = 6;
@@ -431,9 +431,8 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="force">Proceed even if the cover file path has already been set</param>
     private async Task GuessCover(bool force) {
-        await imageSet.GuessFile(coverFile, fileType.Value,
-            !string.IsNullOrEmpty(coverPattern.ParsedValue) ? new string[] { coverPattern.ParsedValue } : coverNames,
-            force);
+        string[] patterns = string.IsNullOrEmpty(coverPattern.ParsedValue) ? coverNames : new string[] { coverPattern.ParsedValue };
+        await imageSet.GuessFile(coverFile, fileType.Value, patterns, force);
     }
 
     /// <summary>
