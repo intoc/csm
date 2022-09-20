@@ -17,7 +17,7 @@ static class Program {
             .CreateLogger();
 
         try {
-            using ContactSheet cs = new();
+            ContactSheet cs = new();
             cs.ErrorOccurred += (msg, ex) => Log.Error(ex, msg);
 
             // Check for a -help parameter and handle it

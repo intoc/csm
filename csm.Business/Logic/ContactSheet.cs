@@ -492,7 +492,7 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="rect">The <see cref="Rectangle"/></param>
     /// <param name="scale">The scale factor</param>
-    private static void ScaleRect(Rectangle rect, double scale) {
+    private static void ScaleRect(ref Rectangle rect, double scale) {
         rect.Width = (int)(rect.Width * scale);
         rect.Height = (int)(rect.Height * scale);
     }
@@ -569,7 +569,8 @@ public sealed class ContactSheet : IDisposable {
                     if (coverBounds.Width >= (sheetWidth.IntValue * maxCoverImageScaleForGap)) {
                         // We want a gap right? Make the cover smaller.
                         Log.Information("Cover image is too large. Reducing size to {0:0.00}xSheetWidth to create a gap.", maxCoverImageScaleForGap);
-                        ScaleRect(coverBounds, (sheetWidth.IntValue * maxCoverImageScaleForGap) / coverBounds.Width);
+                        double scale = (sheetWidth.IntValue * maxCoverImageScaleForGap) / coverBounds.Width;
+                        ScaleRect(ref coverBounds, scale);
                     } else {
                         // Otherwise the image is already small enough for gap filling
                         Log.Information("Cover image size allows for a natural gap.");
@@ -581,7 +582,7 @@ public sealed class ContactSheet : IDisposable {
                 } else {
                     // Scale the image down to sheet width
                     Log.Information("Cover image is too large. Reducing size to fit SheetWidth.");
-                    ScaleRect(coverBounds, (double)sheetWidth.IntValue / coverBounds.Width);
+                    ScaleRect(ref coverBounds, (double)sheetWidth.IntValue / coverBounds.Width);
                 }
                 Log.Information("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverBounds);
             }
@@ -783,15 +784,18 @@ public sealed class ContactSheet : IDisposable {
                 // Determine how much space the stats will take up in the header
                 stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px";
                 statsSize = headerG.MeasureString(stats, statsFont, sheetWidth.IntValue - (padding * 2));
+                statsSize.Height += padding * 2 + 1;
             }
 
             // Draw the header
-            headerHeight = (int)Math.Ceiling(headerSize.Height + statsSize.Height) + (padding * 2);
+            headerHeight = (int)Math.Ceiling(headerSize.Height + statsSize.Height + padding * 2);
             Rectangle headerRegion = new(padding, padding, sheetWidth.IntValue, headerHeight);
             headerG.DrawString(headerText, headerFont, br, headerRegion);
             if (stats != null) {
+                int statsTop = (int)headerSize.Height + padding * 2 + 1;
+                headerG.DrawLine(new Pen(Color.DarkSlateGray, 1), new Point(padding, statsTop), new Point(sheetWidth.IntValue - padding, statsTop));
                 headerG.DrawString(stats, statsFont, br, 
-                    new Rectangle(padding, (int)headerSize.Height + padding, sheetWidth.IntValue, (int)statsSize.Height));
+                    new Rectangle(padding, statsTop + padding, sheetWidth.IntValue - padding * 2, (int)statsSize.Height));
             }
         }
 
