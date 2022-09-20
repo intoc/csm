@@ -65,7 +65,7 @@ public class ImageSetTests {
     }
 
     [Fact]
-    public async Task GuessFile_MatchesOnFirstMatchingPatternAndFile() {
+    public async Task GuessFile_MatchesOnFirstMatchingFile() {
         Mock<IFileSource> source = new();
         ImageSet set = new() {
             Source = source.Object
@@ -79,7 +79,7 @@ public class ImageSetTests {
 
         FileParam fParam = new("-cfile", source.Object);
 
-        await set.GuessFile(fParam, ".jpg", new string[] { @"cover\.jpg", @"clean\.jpg" });
+        await set.GuessFile(fParam, ".jpg", @"cover\.jpg");
 
         Assert.Equal("cover.jpg", fParam.Path);
     }
@@ -99,7 +99,7 @@ public class ImageSetTests {
 
         FileParam fParam = new("-cfile", source.Object);
 
-        await set.GuessFile(fParam, ".jpg", new string[] { @"cover\.png", @"cover\.gif" });
+        await set.GuessFile(fParam, ".jpg", @"(cover\.png|cover\.gif)");
 
         Assert.Equal("cover-clean.jpg", fParam.Path);
     }
@@ -115,12 +115,13 @@ public class ImageSetTests {
                 new ImageFile("cover.jpg")
             });
 
-        FileParam fParam = new("-cfile", source.Object);
-        fParam.File = new ImageFile("original.jpg");
+        FileParam fParam = new("-cfile", source.Object) {
+            File = new ImageFile("original.jpg")
+        };
 
         bool force = true;
 
-        await set.GuessFile(fParam, ".jpg", new string[] { @"cover\.jpg", @"cover\.gif" }, force);
+        await set.GuessFile(fParam, ".jpg", @"(cover\.jpg|cover\.gif)", force);
 
         Assert.Equal("cover.jpg", fParam.Path);
     }
@@ -136,12 +137,13 @@ public class ImageSetTests {
                 new ImageFile("cover.jpg")
             });
 
-        FileParam fParam = new("-cfile", source.Object);
-        fParam.File = new ImageFile("original.jpg");
+        FileParam fParam = new("-cfile", source.Object) {
+            File = new ImageFile("original.jpg")
+        };
 
         bool force = false;
 
-        await set.GuessFile(fParam, ".jpg", new string[] { @"cover\.jpg", @"cover\.gif" }, force);
+        await set.GuessFile(fParam, ".jpg", @"(cover\.jpg|cover\.gif)", force);
 
         Assert.Equal("original.jpg", fParam.Path);
     }

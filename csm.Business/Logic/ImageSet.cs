@@ -90,12 +90,12 @@ namespace csm.Business.Logic {
         }
 
         /// <summary>
-        /// Attempts to match a file in the file source on a set of regular expressions
+        /// Attempts to match a file in the file source using a regular expression
         /// </summary>
         /// <param name="param">The <see cref="FileParam"/> that is being guessed</param>
-        /// <param name="patterns">The regular expresses</param>
+        /// <param name="pattern">The regular expression</param>
         /// <returns>If a match was found</returns>
-        public async Task<bool> GuessFile(FileParam param, string? fileType, string[] patterns, bool force = false) {
+        public async Task<bool> GuessFile(FileParam param, string? fileType, string pattern, bool force = false) {
 
             if (_imageSource == null || string.IsNullOrEmpty(fileType)) {
                 return false;
@@ -109,12 +109,11 @@ namespace csm.Business.Logic {
 
             string? origPath = param.Path;
             bool changed = false;
-            Log.Information("Guessing {0} using match patterns: {1}", param.Desc, string.Join(", ", patterns));
+            Log.Information("Guessing {0} using match pattern: {1}", param.Desc, pattern);
             var files = (await _imageSource.GetFilesAsync($"*{fileType}")).ToList();
             try {
-                var regexes = patterns.Select(p => new Regex(p));
-                ImageFile? match = regexes.Select(r =>
-                    files.FirstOrDefault(f => r.IsMatch(f.Path))).FirstOrDefault();
+                var regex = new Regex(pattern);
+                ImageFile? match = files.FirstOrDefault(f => regex.IsMatch(f.Path));
                 if (match != null) {
                     changed = origPath != match.Path;
                     if (changed) {
@@ -125,8 +124,10 @@ namespace csm.Business.Logic {
                     }
                     return changed;
                 }
+            } catch (RegexParseException ex) {
+                Log.Error("Error occurred during cover file pattern matching: {0}", ex.Message);
             } catch (Exception ex) {
-                Log.Error(ex, "Error occurred during pattern matching");
+                Log.Error(ex, "Error occurred while guessing cover.");
             }
             if (files.Any()) {
                 Log.Information("No match found for {0}, using first file in the directory.", param.Desc);
