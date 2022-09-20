@@ -17,12 +17,7 @@ public partial class CsmGui : Form {
     /// </summary>
     public CsmGui(ContactSheet sheet) {
         InitializeComponent();
-        Application.EnableVisualStyles();
-
-        // Set up ESC exit
-        Button btnCancel = new();
-        CancelButton = btnCancel;
-        btnCancel.Click += new EventHandler(Exit);
+        SetButtonsEnabled(false);
 
         // Initialize status elements
         drawStatus.Text = string.Empty;
