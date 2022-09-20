@@ -11,6 +11,7 @@
 		<StartupObject>csm.Program</StartupObject>
 		<ApplicationIcon>csm.ico</ApplicationIcon>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<SignAssembly>False</SignAssembly>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -24,6 +25,12 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\csm.Business\csm.Business.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="help.cmd">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
