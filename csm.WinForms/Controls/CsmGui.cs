@@ -159,7 +159,7 @@ public partial class CsmGui : Form {
         };
 
         if (ofd.ShowDialog() == DialogResult.OK) {
-            cs.LoadSettingsFromFile(ofd.FileName);
+            cs.LoadParamsFromFile(ofd.FileName);
         }
     }
 

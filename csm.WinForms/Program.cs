@@ -32,19 +32,19 @@ static class Program {
             }
 
             // Load a settings file if path is provided
-            var sFileArgAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
-            if (sFileArgAndValue != null) {
-                cs.LoadSettingsFromFile(Param.GetValueFromCmdParamAndValue(sFileArgAndValue));
+            var sFileParamAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
+            if (sFileParamAndValue != null) {
+                cs.LoadParamsFromFile(Param.GetValueFromCmdParamAndValue(sFileParamAndValue));
             }
 
-            cs.LoadSettingsFromCommandLine(args);
+            cs.LoadParamsFromCommandLine(args);
 
             // Prompt for arguments graphically
             if (cs.GuiEnabled) {
                 // Load default settings file if none was supplied from the CLA
-                if (cs.SettingsFile == null && cs.LoadSettingsFromFile(DEFAULT_SETTINGS_FILE)) {
+                if (cs.SettingsFile == null && cs.LoadParamsFromFile(DEFAULT_SETTINGS_FILE)) {
                     // Load parameters from command line arguments again to override the settings file
-                    cs.LoadSettingsFromCommandLine(args);
+                    cs.LoadParamsFromCommandLine(args);
                 }
 
                 CsmGui gui = new(cs);

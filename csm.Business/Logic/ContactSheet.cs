@@ -350,10 +350,10 @@ public sealed class ContactSheet : IDisposable {
     }
 
     /// <summary>
-    /// Load settings from a settings xml file
+    /// Load Params from a settings xml file
     /// </summary>
     /// <param name="filename">The filename/path</param>
-    public bool LoadSettingsFromFile(string filename) {
+    public bool LoadParamsFromFile(string filename) {
         try {
             SettingsFile = Path.GetFullPath(filename);
             if (!File.Exists(SettingsFile)) {
@@ -382,10 +382,10 @@ public sealed class ContactSheet : IDisposable {
     }
 
     /// <summary>
-    /// Load parameters from command-line arguments
+    /// Load Params from command-line arguments
     /// </summary>
     /// <param name="args">Command-line arguments</param>
-    public void LoadSettingsFromCommandLine(string[] args) {
+    public void LoadParamsFromCommandLine(string[] args) {
 
         // Get any command line arguments
         foreach (string a in args) {
