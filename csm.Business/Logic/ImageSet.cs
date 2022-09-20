@@ -95,14 +95,22 @@ namespace csm.Business.Logic {
         /// <param name="param">The <see cref="FileParam"/> that is being guessed</param>
         /// <param name="patterns">The regular expresses</param>
         /// <returns>If a match was found</returns>
-        public async Task<bool> GuessFile(FileParam param, string[] patterns) {
-            if (_imageSource == null) {
+        public async Task<bool> GuessFile(FileParam param, string? fileType, string[] patterns, bool force = false) {
+
+            if (_imageSource == null || string.IsNullOrEmpty(fileType)) {
                 return false;
             }
+            
+            // If the command line set the cover file pattern/name,
+            // make sure it exists. If not, guess.
+            if (!(force || param.File == null)) {
+                return false;
+            }
+
             string? origPath = param.Path;
             bool changed = false;
             Log.Information("Guessing {0} using match patterns: {1}", param.Desc, string.Join(", ", patterns));
-            var files = (await _imageSource.GetFilesAsync($"*{param.Ext}")).ToList();
+            var files = (await _imageSource.GetFilesAsync($"*{fileType}")).ToList();
             try {
                 var regexes = patterns.Select(p => new Regex(p));
                 ImageFile? match = regexes.Select(r =>

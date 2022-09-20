@@ -83,7 +83,7 @@ public partial class ParamControl : UserControl {
 
     void BtnFileChooser_Click(object? sender, EventArgs e) {
         OpenFileDialog ofd = new() {
-            InitialDirectory = ((FileParam)parameter).Directory?.ToString()
+            InitialDirectory = ((FileParam)parameter).File?.Directory?.ToString()
         };
 
         if (ofd.ShowDialog() == DialogResult.OK) {

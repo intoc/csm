@@ -17,7 +17,7 @@ public partial class CsmGui : Form {
     /// </summary>
     public CsmGui(ContactSheet sheet) {
         InitializeComponent();
-        SetButtonsEnabled(false);
+        SetButtonsEnabled(false, sheet.Source == null);
 
         // Initialize status elements
         drawStatus.Text = string.Empty;
@@ -36,7 +36,7 @@ public partial class CsmGui : Form {
         cs.ErrorOccurred += new ExceptionEventHandler(ExceptionOccurred);
         cs.SourceChanged += (path) => Invoke(() => {
             directoryLabel.Text = directoryLabelText(path);
-            SetButtonsEnabled(true);
+            SetButtonsEnabled(true, true);
         });
 
         settingsLabel.Text = cs.SettingsFile;
@@ -44,13 +44,13 @@ public partial class CsmGui : Form {
         fileListWindow = new FileList(cs);
     }
 
-    private void SetButtonsEnabled(bool value) {
-        btnRun.Enabled = value;
-        btnArchive.Enabled = value;
-        btnFolder.Enabled = value;
-        chooseFolderToolStripMenuItem.Enabled = value;
-        chooseArchiveToolStripMenuItem.Enabled = value;
-        drawSheetToolStripMenuItem.Enabled = value;
+    private void SetButtonsEnabled(bool run, bool choose) {
+        btnRun.Enabled = run;
+        btnArchive.Enabled = choose;
+        btnFolder.Enabled = choose;
+        chooseFolderToolStripMenuItem.Enabled = choose;
+        chooseArchiveToolStripMenuItem.Enabled = choose;
+        drawSheetToolStripMenuItem.Enabled = choose;
     }
 
     void Exit(object? sender, EventArgs e) {
@@ -132,7 +132,7 @@ public partial class CsmGui : Form {
             Filter = "Archive files (*.zip, *.rar, *.7z)|*.zip;*.rar;*.7z"
         };
         if (ofd.ShowDialog() == DialogResult.OK) {
-            SetButtonsEnabled(false);
+            SetButtonsEnabled(false, false);
             cs.Source = ofd.FileName;
         }
     }
@@ -143,7 +143,7 @@ public partial class CsmGui : Form {
             SelectedPath = GetDirectoryFromSource()
         };
         if (folder.ShowDialog() == DialogResult.OK) {
-            SetButtonsEnabled(false);
+            SetButtonsEnabled(false, false);
             cs.Source = folder.SelectedPath;
         }
     }

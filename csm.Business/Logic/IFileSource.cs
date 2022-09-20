@@ -13,5 +13,9 @@ namespace csm.Business.Logic {
 
         void LoadImageDimensions(ImageData image);
 
+        bool FileExists(string? path);
+
+        ImageFile? GetFile(string? path);
+
     }
 }

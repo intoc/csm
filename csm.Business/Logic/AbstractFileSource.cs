@@ -28,7 +28,7 @@ namespace csm.Business.Logic {
             } else {
                 fileInfos = directory.EnumerateFiles();
             }
-            var files = fileInfos.Select(f => new ImageFile(f.FullName, (f.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden));
+            var files = fileInfos.Select(f => new ImageFile(f));
             foreach (var sub in directory.GetDirectories()) {
                 files = files.Concat(GetFiles(sub, pattern));
             }
@@ -43,6 +43,17 @@ namespace csm.Business.Logic {
             using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
             using var fromStream = Image.FromStream(stream, false, false);
             image.InitSize(new Size(fromStream.Width, fromStream.Height));
+        }
+
+        public bool FileExists(string? path) {
+            return File.Exists(path);
+        }
+
+        public ImageFile? GetFile(string? path) {
+            if (path == null) {
+                return null;
+            }
+            return new ImageFile(new FileInfo(path));
         }
     }
 }

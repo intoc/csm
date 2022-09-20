@@ -264,7 +264,7 @@ public sealed class ContactSheet : IDisposable {
         coverPattern = new StringParam("-cregx", @"cover\.", "Regex") {
             MaxChars = 20
         };
-        coverFile = new FileParam("-cfile", null) {
+        coverFile = new FileParam("-cfile", new DirectoryFileSource()) {
             ExcludeFromLoading = true
         };
         cover.AddSubParam(coverPattern);
@@ -427,38 +427,14 @@ public sealed class ContactSheet : IDisposable {
     }
 
     /// <summary>
-    /// Guess a the path for a <see cref="FileParam"/> based on the configured
-    /// file type and supplied patterns.
-    /// </summary>
-    /// <param name="fileParam">The <see cref="FileParam"/></param>
-    /// <param name="patterns">The patterns (Regular Expressions)</param>
-    /// <param name="force">If true, proceeds even if <paramref name="fileParam"/> already has a file set</param>
-    private async Task GuessFile(FileParam fileParam, string[] patterns, bool force) {
-        if (string.IsNullOrEmpty(fileType.ParsedValue)) {
-            return;
-        }
-        bool changed = false;
-        fileParam.Ext = fileType.ParsedValue;
-        // If the command line set the cover file pattern/name,
-        // make sure it exists. If not, guess.
-        if (force || fileParam.File == null) {
-            await Task.Run(() => {
-                lock (fileParam) {
-                    var task = imageSet.GuessFile(fileParam, patterns);
-                    task.Wait();
-                    changed = task.Result;
-                }
-            });
-        }
-    }
-
-    /// <summary>
     /// Guess the cover file path
     /// </summary>
     /// <param name="force">Proceed even if the cover file path has already been set</param>
-    private async Task GuessCover(bool force) => await GuessFile(coverFile,
-        !string.IsNullOrEmpty(coverPattern.ParsedValue) ? new string[] { coverPattern.ParsedValue } : coverNames,
-        force);
+    private async Task GuessCover(bool force) {
+        await imageSet.GuessFile(coverFile, fileType.Value,
+            !string.IsNullOrEmpty(coverPattern.ParsedValue) ? new string[] { coverPattern.ParsedValue } : coverNames,
+            force);
+    }
 
     /// <summary>
     /// Load the file list and image information from the source directory if it's set

@@ -13,7 +13,7 @@ internal interface IImageSet {
 
     void RefreshImageList(int minDim, string? outFileName, string? coverFileName);
 
-    Task<bool> GuessFile(FileParam param, string[] patterns);
+    Task<bool> GuessFile(FileParam param, string? fileType, string[] patterns, bool force = false);
 
   
 }

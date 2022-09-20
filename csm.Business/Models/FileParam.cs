@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using csm.Business.Logic;
+using System.Xml;
 using System.Xml.Serialization;
 
 namespace csm.Business.Models;
@@ -9,38 +10,20 @@ public class FileParam : Param {
 
     [XmlIgnore]
     public string? FileName {
-        get {
-            if (File != null) {
-                return new FileInfo(File.Path).Name;
-            } else {
-                return unParsedVal;
-            }
-        }
-        set {
-            Path = value;
-        }
+        get => File?.FileName ?? unParsedVal;
+        set => Path = value;
     }
 
     [XmlAttribute]
     public override string? Value {
         get => FileName;
-        set {
-            FileName = value;
-        }
+        set => FileName = value;
     }
 
     [XmlIgnore]
     public string? Path {
-        get {
-            if (File != null) {
-                return File.Path;
-            } else {
-                return unParsedVal;
-            }
-        }
-        set {
-            ParseVal(value);
-        }
+        get => File?.Path ?? unParsedVal;
+        set => ParseVal(value);
     }
 
     [XmlAttribute]
@@ -49,27 +32,24 @@ public class FileParam : Param {
     [XmlIgnore]
     public ImageFile? File { get; set; }
 
-    [XmlIgnore]
-    public DirectoryInfo? Directory { get; set; }
+    private readonly IFileSource _fileSource;
 
-    public FileParam() : base() { }
+    public FileParam() : base() { 
+        _fileSource = new DirectoryFileSource();
+    }
 
-    public FileParam(string arg, string? val, DirectoryInfo? dir = null) : base(arg, "file") {
-        Directory = dir;
+    public FileParam(string arg, IFileSource fileSource, string? val = null) : base(arg, "file") {
+        _fileSource = fileSource;
         ParseVal(val);
     }
 
     public override void ParseVal(string? value) {
-        // Use the current directory if the path is not null,
-        // the path is not (supposedly) in the current directory,
-        // and the current directory exists
         unParsedVal = value;
 
         // Try a full-path parse
-        if (System.IO.File.Exists(value)) {
-            FileInfo f = new(value);
-            File = new ImageFile(value);
-            Directory = f.Directory;
+        if (_fileSource.FileExists(value)) {
+            File = _fileSource.GetFile(value);
+            Ext = File?.Extension ?? string.Empty;
         } else {
             // No file
             File = null;
@@ -81,7 +61,6 @@ public class FileParam : Param {
         if (other is FileParam otherFile) {
             if (!ExcludeFromLoading) {
                 ParseVal(otherFile.FileName);
-                Ext = otherFile.Ext ?? Ext;
             }
             LoadSubParams(other);
         }
