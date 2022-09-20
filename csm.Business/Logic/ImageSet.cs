@@ -90,6 +90,46 @@ namespace csm.Business.Logic {
         }
 
         /// <summary>
+        /// Attempts to match a file in the file source on a set of regular expressions
+        /// </summary>
+        /// <param name="param">The <see cref="FileParam"/> that is being guessed</param>
+        /// <param name="patterns">The regular expresses</param>
+        /// <returns>If a match was found</returns>
+        public async Task<bool> GuessFile(FileParam param, string[] patterns) {
+            if (_imageSource == null) {
+                return false;
+            }
+            string? origPath = param.Path;
+            bool changed = false;
+            Log.Information("Guessing {0} using match patterns: {1}", param.Desc, string.Join(", ", patterns));
+            var files = (await _imageSource.GetFilesAsync($"*{param.Ext}")).ToList();
+            try {
+                var regexes = patterns.Select(p => new Regex(p));
+                ImageFile? match = regexes.Select(r =>
+                    files.FirstOrDefault(f => r.IsMatch(f.Path))).FirstOrDefault();
+                if (match != null) {
+                    changed = origPath != match.Path;
+                    if (changed) {
+                        param.Path = match.Path;
+                        Log.Information("Matched {0} on {1}", param.Desc, param.Path);
+                    } else {
+                        Log.Information("Matched on the same cover file as before");
+                    }
+                    return changed;
+                }
+            } catch (Exception ex) {
+                Log.Error(ex, "Error occurred during pattern matching");
+            }
+            if (files.Any()) {
+                Log.Information("No match found for {0}, using first file in the directory.", param.Desc);
+                param.Path = files.First().Path;
+            }
+            changed = origPath != param.Path;
+            
+            return changed;
+        }
+
+        /// <summary>
         /// Don't include images smaller than minDim
         /// </summary>
         /// <param name="image">The image</param>

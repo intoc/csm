@@ -120,7 +120,7 @@ public sealed class ContactSheet : IDisposable {
 
     #region Private Fields
 
-    private IFileSource fileSource;
+    private IFileSource? fileSource;
     private readonly IImageSet imageSet = new ImageSet();
 
     private readonly BoolParam cover;
@@ -316,9 +316,6 @@ public sealed class ContactSheet : IDisposable {
             labels,
             cover
         };
-
-        fileSource = new DirectoryFileSource(Source);
-        imageSet.Source = fileSource;
     }
 
     /// <summary>
@@ -436,10 +433,9 @@ public sealed class ContactSheet : IDisposable {
     /// <param name="fileParam">The <see cref="FileParam"/></param>
     /// <param name="patterns">The patterns (Regular Expressions)</param>
     /// <param name="force">If true, proceeds even if <paramref name="fileParam"/> already has a file set</param>
-    /// <returns>Whether the the guess was executed and succeeded</returns>
-    private async Task<bool> GuessFile(FileParam fileParam, string[] patterns, bool force) {
+    private async Task GuessFile(FileParam fileParam, string[] patterns, bool force) {
         if (string.IsNullOrEmpty(fileType.ParsedValue)) {
-            return false;
+            return;
         }
         bool changed = false;
         fileParam.Ext = fileType.ParsedValue;
@@ -448,13 +444,12 @@ public sealed class ContactSheet : IDisposable {
         if (force || fileParam.File == null) {
             await Task.Run(() => {
                 lock (fileParam) {
-                    var task = fileParam.Guess(fileSource, patterns);
+                    var task = imageSet.GuessFile(fileParam, patterns);
                     task.Wait();
                     changed = task.Result;
                 }
             });
         }
-        return changed;
     }
 
     /// <summary>

@@ -1,18 +1,19 @@
 ﻿using csm.Business.Models;
 
-namespace csm.Business.Logic {
+namespace csm.Business.Logic; 
+internal interface IImageSet {
 
-    internal interface IImageSet {
+    bool Loaded { get; }
 
-        public bool Loaded { get; }
+    IList<ImageData> Images { get; }
 
-        public IList<ImageData> Images { get; }
+    IFileSource? Source { get; set; }
 
-        public IFileSource? Source { get; set; }
+    Task LoadImageListAsync(string fileType, int minDim, string? outFileName, string? coverFileName);
 
-        public Task LoadImageListAsync(string fileType, int minDim, string? outFileName, string? coverFileName);
+    void RefreshImageList(int minDim, string? outFileName, string? coverFileName);
 
-        public void RefreshImageList(int minDim, string? outFileName, string? coverFileName);
+    Task<bool> GuessFile(FileParam param, string[] patterns);
 
-    }
+  
 }

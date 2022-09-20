@@ -1,7 +1,4 @@
-﻿using csm.Business.Logic;
-using Serilog;
-using System.Text.RegularExpressions;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Serialization;
 
 namespace csm.Business.Models;
@@ -60,38 +57,6 @@ public class FileParam : Param {
     public FileParam(string arg, string? val, DirectoryInfo? dir = null) : base(arg, "file") {
         Directory = dir;
         ParseVal(val);
-    }
-
-    public async Task<bool> Guess(IFileSource source, string[] patterns) {
-        string? origFile = Path;
-        bool changed = false;
-        Log.Information("Guessing {0} using match patterns: {1}", Desc, string.Join(", ", patterns));
-        var files = (await source.GetFilesAsync($"*{Ext}")).ToList();
-        try {
-            var regexes = patterns.Select(p => new Regex(p));
-            ImageFile? match = regexes.Select(r =>
-                files.FirstOrDefault(f => r.IsMatch(f.Path))).FirstOrDefault();
-            if (match != null) {
-                changed = origFile != match.Path;
-                if (changed) {
-                    File = match;
-                    Log.Information("Matched {0} on {1}", Desc, File.Path);
-                    Changed();
-                } else {
-                    Log.Information("Matched on the same cover file as before");
-                }
-                return changed;
-            }
-        } catch (Exception ex) {
-            Log.Error(ex, "Error occurred during pattern matching");
-        }
-        if (files.Any()) {
-            Log.Information("No match found for {0}, using first file in the directory.", Desc);
-            File = files.First();
-        }
-        changed = origFile != Path;
-        Changed(changed);
-        return changed;
     }
 
     public override void ParseVal(string? value) {
