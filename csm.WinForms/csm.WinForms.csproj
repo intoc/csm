@@ -12,6 +12,7 @@
 		<ApplicationIcon>csm.ico</ApplicationIcon>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<SignAssembly>False</SignAssembly>
+		<AssemblyName>csm</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>

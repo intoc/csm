@@ -294,14 +294,14 @@ public sealed class ContactSheet : IDisposable {
         outputFilePath.ParamChanged += RefreshImageList;
 
         cover.ParamChanged += async (param) => {
-            if (!cover.BoolValue) {
+            if (!cover.BoolValue || fileSource == null) {
                 return;
             }
             Log.Debug("Guessing Cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
             await GuessCover(false);
         };
         coverPattern.ParamChanged += async (param) => {
-            if (!cover.BoolValue) {
+            if (!cover.BoolValue || fileSource == null) {
                 return;
             }
             Log.Debug("Guessing Cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
@@ -762,11 +762,12 @@ public sealed class ContactSheet : IDisposable {
                 statsSize.Height += padding * 2 + 1;
             }
 
-            // Draw the header
+            // Pre-draw the header
             headerHeight = (int)Math.Ceiling(headerSize.Height + statsSize.Height + padding * 2);
             Rectangle headerRegion = new(padding, padding, sheetWidth.IntValue, headerHeight);
             headerG.DrawString(headerText, headerFont, br, headerRegion);
             if (stats != null) {
+                // Pre-draw stats
                 int statsTop = (int)headerSize.Height + padding * 2 + 1;
                 headerG.DrawLine(new Pen(Color.DarkSlateGray, 1), new Point(padding, statsTop), new Point(sheetWidth.IntValue - padding, statsTop));
                 headerG.DrawString(stats, statsFont, br, 
