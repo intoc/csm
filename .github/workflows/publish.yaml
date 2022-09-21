@@ -41,12 +41,13 @@ jobs:
             # Only Build WinForms project
             dotnet publish csm.WinForms/csm.WinForms.csproj --framework net6.0-windows --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name_gui"
             # Pack to zip for Windows
-            7z a -tzip "${release_name}.zip" "./${release_name}/*"
+            7z a -tzip "${release_name_gui}.zip" "./${release_name_gui}/*"
+            7z a -tzip "${release_name_cmd}.zip" "./${release_name_cmd}/*"
             # Delete output directory
             rm -r "$release_name_gui"
           fi
           dotnet publish csm.Console/csm.Console.csproj --framework net6.0 --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name_cmd"
-          tar czvf "${release_name}.tar.gz" "$release_name_cmd"
+          tar czvf "${release_name_cmd}.tar.gz" "$release_name_cmd"
           # Delete output directory
           rm -r "$release_name_cmd"
       - name: Publish
