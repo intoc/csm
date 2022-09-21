@@ -439,7 +439,7 @@ public sealed class ContactSheet : IDisposable {
     /// Load Params from command-line arguments
     /// </summary>
     /// <param name="args">Command-line arguments</param>
-    public void LoadParamsFromCommandLine(string[] args) {
+    public void LoadParamsFromCommandLine(IEnumerable<string> args) {
 
         // Get any command line arguments
         foreach (string a in args) {

@@ -11,15 +11,15 @@ jobs:
       matrix:
         kind: ['windows']
         include:
-         # - kind: linux
-         #   os: ubuntu-latest
-         #   target: linux-x64
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
           - kind: windows
             os: windows-latest
             target: win-x64
-         # - kind: macOS
-         #   os: macos-latest
-         #   target: osx-x64
+          - kind: macOS
+            os: macos-latest
+            target: osx-x64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -34,18 +34,20 @@ jobs:
         shell: bash
         run: |
           tag=$(git describe --tags --abbrev=0)
-          release_name="csm-$tag-${{ matrix.target }}"
-          # Build everything
-          dotnet publish csm.WinForms/csm.WinForms.csproj --framework net6.0-windows --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name"
+          release_name_gui="csm-$tag-${{ matrix.target }}-gui"
+          release_name_cmd="csm-$tag-${{ matrix.target }}-cmd"
           # Pack files
           if [ "${{ matrix.target }}" == "win-x64" ]; then
+            # Only Build WinForms project
+            dotnet publish csm.WinForms/csm.WinForms.csproj --framework net6.0-windows --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name_gui"
             # Pack to zip for Windows
             7z a -tzip "${release_name}.zip" "./${release_name}/*"
-          else
-          tar czvf "${release_name}.tar.gz" "$release_name"
           fi
+          dotnet publish csm.Console/csm.Console.csproj --framework net6.0 --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name_cmd"
+          tar czvf "${release_name}.tar.gz" "$release_name_cmd"
           # Delete output directory
-          rm -r "$release_name"
+          rm -r "$release_name_gui"
+          rm -r "$release_name_cmd"
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
