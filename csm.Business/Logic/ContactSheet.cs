@@ -295,7 +295,7 @@ public sealed class ContactSheet : IDisposable {
         // Setup all instances where a file list reload is required
         fileType.ParamChanged += async (path) => await LoadFileList(path);
         SourceChanged += async (path) => {
-            Log.Information("Source changed to {0}", path);
+            Log.Information("Source set to {0}", path);
             imageSet.Source = fileSource ?? new DirectoryFileSource();
             headerTitle.ParseVal(fileSource?.Name);
             Log.Information("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
@@ -334,7 +334,6 @@ public sealed class ContactSheet : IDisposable {
             return;
         }
         if (cover.BoolValue) {
-            Log.Debug("Guessing Cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
             if (!await GuessCover(false)) {
                 // Image list will be refreshed via coverFile.ParamChanged
                 // If GuessCover changes its value.
@@ -354,7 +353,6 @@ public sealed class ContactSheet : IDisposable {
         if (!cover.BoolValue || fileSource == null) {
             return;
         }
-        Log.Debug("Guessing Cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
         if (await GuessCover(true)) {
             RefreshImageList(cover);
         }
@@ -510,7 +508,7 @@ public sealed class ContactSheet : IDisposable {
             return;
         }
         if (p != null) {
-            Log.Information("Refreshing image list due to change in {0}", p.CmdParameter);
+            Log.Debug("Refreshing image list due to change in {0}", p.Desc);
         }
         imageSet.RefreshImageList(minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
         ImageListChanged?.Invoke();

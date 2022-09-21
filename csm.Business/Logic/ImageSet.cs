@@ -109,7 +109,7 @@ namespace csm.Business.Logic {
 
             string? origPath = param.Path;
             bool changed = false;
-            Log.Information("Guessing {0} using match pattern: {1}", param.Desc, pattern);
+            Log.Debug("Guessing {0} (force={1}) using match pattern: {2}", param.Desc, force, pattern);
             var files = (await _imageSource.GetFilesAsync($"*{fileType}")).ToList();
             try {
                 var regex = new Regex(pattern);
@@ -118,9 +118,9 @@ namespace csm.Business.Logic {
                     changed = origPath != match.Path;
                     if (changed) {
                         param.Path = match.Path;
-                        Log.Information("Matched {0} on {1}", param.Desc, param.Path);
+                        Log.Information("Matched {0} on {1}", param.Desc, param.FileName);
                     } else {
-                        Log.Information("Matched on the same cover file as before");
+                        Log.Debug("Matched on the same cover file as before");
                     }
                     return changed;
                 }

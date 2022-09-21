@@ -1,7 +1,10 @@
 ﻿using csm.Business.Logic;
 using csm.Business.Models;
 using csm.WinForms.Controls;
+using Microsoft.Extensions.Configuration;
 using Serilog;
+using Serilog.Configuration;
+using System.Configuration;
 
 namespace csm;
 static class Program {
@@ -11,9 +14,12 @@ static class Program {
     [STAThread]
     static void Main(string[] args) {
 
+        // Logging configuration
+        var builder = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        var config = builder.Build();
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
+            .ReadFrom.Configuration(config)
             .CreateLogger();
 
         try {
