@@ -5,6 +5,8 @@ namespace csm.Business.Logic {
 
         string? FullPath { get; }
 
+        string? ParentDirectoryPath { get; }
+
         string? Name { get; }
 
         Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);
@@ -14,6 +16,8 @@ namespace csm.Business.Logic {
         void LoadImageDimensions(ImageData image);
 
         bool FileExists(string? path);
+
+        string CombinePaths(string path1, string path2);
 
         ImageFile? GetFile(string? path);
 

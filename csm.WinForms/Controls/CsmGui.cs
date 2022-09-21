@@ -17,7 +17,7 @@ public partial class CsmGui : Form {
     /// </summary>
     public CsmGui(ContactSheet sheet) {
         InitializeComponent();
-        SetButtonsEnabled(false, sheet.Source == null);
+        SetButtonsEnabled(sheet.Source != null, sheet.Source != null);
 
         // Initialize status elements
         drawStatus.Text = string.Empty;

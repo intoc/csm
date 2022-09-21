@@ -56,6 +56,20 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     public bool OpenOutputDir => openOutputDirectoryOnComplete.BoolValue;
 
+    private bool _pauseActions;
+    public bool PauseParamEventHandling { 
+        get => _pauseActions; 
+        set {
+            _pauseActions = value;
+            if (_pauseActions) {
+                Log.Debug("Paused Param event handling");
+            } else {
+                Log.Debug("Resumed Param event handling");
+                HandlePausedEvents();
+            }
+        } 
+    }
+
     /// <summary>
     /// The source path
     /// </summary>
@@ -147,6 +161,8 @@ public sealed class ContactSheet : IDisposable {
     private readonly StringParam fileType;
     private readonly StringParam headerTitle;
     private readonly StringParam outputFilePath;
+
+    private readonly IDictionary<string, Action> PausedActions = new Dictionary<string, Action>();
 
     // Draw status variables
     private DateTime startTime;
@@ -274,6 +290,8 @@ public sealed class ContactSheet : IDisposable {
 
         #endregion
 
+        #region Event Subscriptions
+
         // Setup all instances where a file list reload is required
         fileType.ParamChanged += async (path) => await LoadFileList(path);
         SourceChanged += async (path) => {
@@ -288,25 +306,14 @@ public sealed class ContactSheet : IDisposable {
         };
 
         // Setup all instances where a image list refresh is required without a full reload
-        cover.ParamChanged += RefreshImageList;
         coverFile.ParamChanged += RefreshImageList;
         minDimInput.ParamChanged += RefreshImageList;
         outputFilePath.ParamChanged += RefreshImageList;
 
-        cover.ParamChanged += async (param) => {
-            if (!cover.BoolValue || fileSource == null) {
-                return;
-            }
-            Log.Debug("Guessing Cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
-            await GuessCover(false);
-        };
-        coverPattern.ParamChanged += async (param) => {
-            if (!cover.BoolValue || fileSource == null) {
-                return;
-            }
-            Log.Debug("Guessing Cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
-            await GuessCover(true);
-        };
+        cover.ParamChanged += async (p) => await HandleShowCoverChanged(p);
+        coverPattern.ParamChanged += async (p) => await HandleCoverPatternChanged(p);
+
+        #endregion
 
         // Load top-level params into externaly visible Param list (ordered)
         Params = new List<Param> {
@@ -316,6 +323,51 @@ public sealed class ContactSheet : IDisposable {
             labels,
             cover
         };
+    }
+
+    private async Task HandleShowCoverChanged(Param param) {
+        if (PauseParamEventHandling) {
+            PausedActions["guessCover"] = async () => await HandleShowCoverChanged(param);
+            return;
+        }
+        if (fileSource == null) {
+            return;
+        }
+        if (cover.BoolValue) {
+            Log.Debug("Guessing Cover (not forced) due to change in {0}, now {1}", param.Desc, param.Value);
+            if (!await GuessCover(false)) {
+                // Image list will be refreshed via coverFile.ParamChanged
+                // If GuessCover changes its value.
+                // If not, it still needs to be refreshed do to the cover bool switch
+                RefreshImageList(cover);
+            }
+        } else {
+            RefreshImageList(cover);
+        }
+    }
+
+    private async Task HandleCoverPatternChanged(Param param) {
+        if (PauseParamEventHandling) {
+            PausedActions["guessCover"] = async () => await HandleCoverPatternChanged(param);
+            return;
+        }
+        if (!cover.BoolValue || fileSource == null) {
+            return;
+        }
+        Log.Debug("Guessing Cover (forced) due to change in {0}, now {1}", param.Desc, param.Value);
+        if (await GuessCover(true)) {
+            RefreshImageList(cover);
+        }
+    }
+
+    /// <summary>
+    /// Handle all events that are in the PausedActions collection and resume normal event handling
+    /// </summary>
+    private void HandlePausedEvents() {
+        foreach (KeyValuePair<string, Action> kvp in PausedActions) {
+            kvp.Value();
+        }
+        PausedActions.Clear();
     }
 
     /// <summary>
@@ -338,15 +390,13 @@ public sealed class ContactSheet : IDisposable {
         if (Source == null || path == null) {
             return string.Empty;
         }
-        var outputDirectory = Path.GetDirectoryName(Source);
-        // Use the parent directory if the output path is a directory
-        if (Directory.Exists(Source)) {
-            outputDirectory = Directory.GetParent(Source)?.FullName;
+
+        // Use the parent directory
+        var outputDirectory = fileSource?.ParentDirectoryPath;
+        if (outputDirectory == null) {
+            return string.Empty;
         }
-        if (outputDirectory != null) {
-            return Path.GetFullPath(Path.Combine(outputDirectory, path));
-        }
-        return string.Empty;
+        return fileSource?.CombinePaths(outputDirectory, path) ?? string.Empty;
     }
 
     /// <summary>
@@ -430,9 +480,9 @@ public sealed class ContactSheet : IDisposable {
     /// Guess the cover file path
     /// </summary>
     /// <param name="force">Proceed even if the cover file path has already been set</param>
-    private async Task GuessCover(bool force) {
+    private async Task<bool> GuessCover(bool force) {
         string pattern = coverPattern.ParsedValue ?? coverRegexes;
-        await imageSet.GuessFile(coverFile, fileType.Value, pattern, force);
+        return await imageSet.GuessFile(coverFile, fileType.Value, pattern, force);
     }
 
     /// <summary>
@@ -452,6 +502,10 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need for the refresh</param>
     public void RefreshImageList(Param? p = null) {
+        if (PauseParamEventHandling) {
+            PausedActions["refreshImageList"] = () => RefreshImageList(p);
+            return;
+        }
         if (!imageSet.Images.Any()) {
             return;
         }

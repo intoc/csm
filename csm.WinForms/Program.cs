@@ -31,6 +31,8 @@ static class Program {
                 cs.Source = path;
             }
 
+            cs.PauseParamEventHandling = true;
+
             // Load a settings file if path is provided
             var sFileParamAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
             if (sFileParamAndValue != null) {
@@ -46,6 +48,7 @@ static class Program {
                     // Load parameters from command line arguments again to override the settings file
                     cs.LoadParamsFromCommandLine(args);
                 }
+                cs.PauseParamEventHandling = false;
 
                 CsmGui gui = new(cs);
                 gui.FormClosed += async (sender, args) => {
@@ -58,6 +61,7 @@ static class Program {
                 gui.ShowDialog();
                 gui.Activate();
             } else {
+                cs.PauseParamEventHandling = false;
                 // Parameters are as they were entered, just go
                 cs.DrawAndSave(true).Wait();
                 cs.Dispose();

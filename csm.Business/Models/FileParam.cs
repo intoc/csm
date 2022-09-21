@@ -40,7 +40,9 @@ public class FileParam : Param {
 
     public FileParam(string arg, IFileSource fileSource, string? val = null) : base(arg, "file") {
         _fileSource = fileSource;
-        ParseVal(val);
+        if (val != null) {
+            Path = val;
+        }
     }
 
     public override void ParseVal(string? value) {
