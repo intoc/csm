@@ -381,11 +381,12 @@ public sealed class ContactSheet : IDisposable {
             return string.Empty;
         }
 
-        path = path.Replace("{title}", headerTitle.Value);
-
         if (suffix > 0) {
-            path = Regex.Replace(path, @"\.(.*)$", $"_{suffix}.$1");
+            // Insert _suffix before extension
+            path = Regex.Replace(path, @"\.([^\.]*)$", $"_{suffix}.$1");
         }
+
+        path = path.Replace("{title}", headerTitle.Value);
 
         if (Path.IsPathRooted(path)) {
             return path;
