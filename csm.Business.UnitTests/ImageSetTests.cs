@@ -55,7 +55,6 @@ public class ImageSetTests {
         ImageSet set = new() {
             Source = source.Object
         };
-
         Mock<IFileSource> source2 = new();
         set.Source = source2.Object;
 
@@ -63,107 +62,31 @@ public class ImageSetTests {
         source2.Verify(mock => mock.Dispose(), Times.Never());
     }
 
-    [Fact]
-    public async Task GuessFile_MatchesOnFirstMatchingFile() {
-        Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
-        source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
-            .ReturnsAsync(new List<ImageFile> {
-                new ImageFile("cover-clean.jpg"),
-                new ImageFile("cover.jpg"),
-                new ImageFile("clean-cover.jpg")
-            });
-
-        FileParam fParam = new("-cfile", source.Object);
-
-        await set.GuessFile(fParam, "_", @"cover\.jpg");
-
-        Assert.Equal("cover.jpg", fParam.Path);
-    }
-
-    [Fact]
-    public async Task GuessFile_SelectsFirstImageInSetIfNoMatch() {
-        Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
-        source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
-            .ReturnsAsync(new List<ImageFile> {
-                new ImageFile("cover-clean.jpg"),
-                new ImageFile("cover.jpg"),
-                new ImageFile("clean-cover.jpg")
-            });
-
-        FileParam fParam = new("-cfile", source.Object);
-
-        await set.GuessFile(fParam, "_", @"(cover\.png|cover\.gif)");
-
-        Assert.Equal("cover-clean.jpg", fParam.Path);
-    }
-
-    [Fact]
-    public async Task GuessFile_Forced_OverridesPreviousFile() {
-        Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
-        source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
-            .ReturnsAsync(new List<ImageFile> {
-                new ImageFile("cover.jpg")
-            });
-
-        FileParam fParam = new("-cfile", source.Object) {
-            File = new ImageFile("original.jpg")
-        };
-
-        bool force = true;
-
-        await set.GuessFile(fParam, "_", @"(cover\.jpg|cover\.gif)", force);
-
-        Assert.Equal("cover.jpg", fParam.Path);
-    }
-
-    [Fact]
-    public async Task GuessFile_NotForced_KeepsPreviousFile() {
-        Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
-        source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
-            .ReturnsAsync(new List<ImageFile> {
-                new ImageFile("cover.jpg")
-            });
-
-        FileParam fParam = new("-cfile", source.Object) {
-            File = new ImageFile("original.jpg")
-        };
-
-        bool force = false;
-
-        await set.GuessFile(fParam, "_", @"(cover\.jpg|cover\.gif)", force);
-
-        Assert.Equal("original.jpg", fParam.Path);
-    }
-
-    [Fact]
-    public async Task GuessFile_CallsFileSourceGetFiles_WithExtensionAndWildcard() {
-        Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
-        source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
-            .ReturnsAsync(new List<ImageFile> {
-                new ImageFile("cover.jpg")
-            });
-
-        FileParam fParam = new("-cfile", source.Object);
-
-        bool force = false;
-
-        await set.GuessFile(fParam, "some_extension", @"(cover\.jpg|cover\.gif)", force);
+    [Theory]
+    [InlineData(new string[] { "cover.bmp", "cover-clean.jpg", "cover.jpg", "clean-cover.jpg" }, @"cover\.jpg", false, false, true, "cover.jpg")]
+    [InlineData(new string[] { "cover.png", "cover-clean.png", "cover.jpg", "clean-cover.jpg" }, @"notpresent\.(jpg|gif)", false, false, true, "cover.png")]
+    [InlineData(new string[] { "cover.jpg.false.jpg", "true.jpg.cover.jpg", "cover.jpg", "clean-cover.jpg" }, @"cover\.(jpg|gif)$", false, false, true, "true.jpg.cover.jpg")]
+    [InlineData(new string[] { "cover.jpg", "cover.png" }, @"cover\.(jpg|gif)", true, true, true, "cover.jpg")]
+    [InlineData(new string[] { "cover.tiff", "cover.jpg" }, @"(cover\.jpg|cover\.gif)", true, false, false, "original.jpg")]
+    public async Task GuessFile_Theory(string[] sourceFiles, string regex, bool hasFile, bool force, bool expectToGetFiles, string expected) {
         
-        source.Verify(mock => mock.GetFilesAsync("*some_extension"), Times.Once());
+        // Setup
+        Mock<IFileSource> source = new();
+        ImageSet set = new() {
+            Source = source.Object
+        };
+        source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
+            .ReturnsAsync(sourceFiles.Select(file =>new ImageFile(file)));
+        FileParam fParam = new("-cfile", source.Object);
+        if (hasFile) {
+            fParam.File = new ImageFile("original.jpg");
+        }
+
+        // Act
+        await set.GuessFile(fParam, "some_extension", regex, force);
+
+        // Verify
+        source.Verify(mock => mock.GetFilesAsync("*some_extension"), expectToGetFiles ? Times.Once() : Times.Never());
+        Assert.Equal(expected, fParam.Path);
     }
 }

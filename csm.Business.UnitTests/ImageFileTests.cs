@@ -1,46 +1,29 @@
 ﻿namespace csm.Business.Models.UnitTests {
     public class ImageFileTests {
 
-        [Fact]
-        public void ImageFile_RelativePath_DirectoryIsRelative() {
-            ImageFile file = new("cover.jpg");
-            Assert.Equal(@".\", file.Directory);
+        [Theory]
+        [InlineData(@"cover.jpg", @".\")]
+        [InlineData(@"C:\images\cover.jpg", @"C:\images\")]
+        public void ImageFile_DirectoryTheory(string path, string expected) {
+            ImageFile file = new(path);
+            Assert.Equal(expected, file.Directory);
         }
 
-        [Fact]
-        public void ImageFile_AbsolutePath_DirectoryIsAbsolute() {
-            ImageFile file = new(@"C:\images\cover.jpg");
-            Assert.Equal(@"C:\images\", file.Directory);
+        [Theory]
+        [InlineData(@"cover.jpg", @"cover.jpg")]
+        [InlineData(@"C:\images\cover.jpg", @"cover.jpg")]
+        public void ImageFile_FileNameTheory(string path, string expected) {
+            ImageFile file = new(path);
+            Assert.Equal(expected, file.FileName);
         }
 
-        [Fact]
-        public void ImageFile_RelativePath_FileNameIsPath() {
-            ImageFile file = new("cover.jpg");
-            Assert.Equal("cover.jpg", file.FileName);
-        }
-
-        [Fact]
-        public void ImageFile_AbsolutePath_FileNameIsRelative() {
-            ImageFile file = new(@"C:\images\cover.jpg");
-            Assert.Equal("cover.jpg", file.FileName);
-        }
-
-        [Fact]
-        public void ImageFile_PathHasExtension_ExtensionIsCorrect() {
-            ImageFile file = new("cover.jpg");
-            Assert.Equal(".jpg", file.Extension);
-        }
-
-        [Fact]
-        public void ImageFile_PathHasMultipleDots_ExtensionIsCorrect() {
-            ImageFile file = new("cover.infix.jpg");
-            Assert.Equal(".jpg", file.Extension);
-        }
-
-        [Fact]
-        public void ImageFile_PathHasNoExtension_ExtensionIsNull() {
-            ImageFile file = new("cover");
-            Assert.Null(file.Extension);
+        [Theory]
+        [InlineData(@"cover.jpg", @".jpg")]
+        [InlineData(@"cover.infix.jpg", @".jpg")]
+        [InlineData(@"cover", null)]
+        public void ImageFile_ExtensionTheory(string path, string expected) {
+            ImageFile file = new(path);
+            Assert.Equal(expected, file.Extension);
         }
     }
 }

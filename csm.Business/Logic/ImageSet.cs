@@ -156,7 +156,7 @@ namespace csm.Business.Logic {
             if (outFileName == null) {
                 return false;
             }
-            string pathWithoutSuffix = Regex.Replace(image.FileName, @"(_\d*)?\.(.*)$", ".$2");
+            string pathWithoutSuffix = Regex.Replace(image.FileName, @"(_\d*)?\.([^\.]*)$", ".$2");
             return pathWithoutSuffix.Equals(outFileName);
         }
 
