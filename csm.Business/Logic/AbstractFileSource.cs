@@ -32,8 +32,6 @@ namespace csm.Business.Logic {
         /// </summary>
         public abstract string? Name { get; }
 
-        
-
         public abstract void Initialize(Action? callback = null);
 
         public abstract Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);

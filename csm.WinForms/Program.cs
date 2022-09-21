@@ -3,8 +3,6 @@ using csm.Business.Models;
 using csm.WinForms.Controls;
 using Microsoft.Extensions.Configuration;
 using Serilog;
-using Serilog.Configuration;
-using System.Configuration;
 
 namespace csm;
 static class Program {

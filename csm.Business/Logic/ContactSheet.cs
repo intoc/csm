@@ -2,6 +2,7 @@
 using Serilog;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 using Path = System.IO.Path;
@@ -375,17 +376,20 @@ public sealed class ContactSheet : IDisposable {
     /// <returns>The output file path</returns>
     public string OutFilePath(int suffix = 0) {
         string? path = outputFilePath.ParsedValue;
+        if (path == null) {
+            return string.Empty;
+        }
 
-        path = path?.Replace("{title}", headerTitle.Value);
+        path = path.Replace("{title}", headerTitle.Value);
 
         if (suffix > 0) {
-            path = path?.Replace(".jpg", $"_{suffix}.jpg");
+            path = Regex.Replace(path, @"\.(.*)$", $"_{suffix}.$1");
         }
 
         if (Path.IsPathRooted(path)) {
             return path;
         }
-        if (Source == null || path == null) {
+        if (fileSource == null) {
             return string.Empty;
         }
 
