@@ -76,5 +76,6 @@ The source path will be passed in automatically if you drag the folder or archiv
 `-outfile="../{title} CS.jpg"` will put the output file in the parent directory of the directory containing the source file or directory, with a name like "My Favorite Photos CS.jpg".
 - All file sources are checked for images recursively. If your sources contain small files that
 you don't want to include in the output, use the `-mindiminput` parameter to filter out small images.
-- The `-cregx` parameter uses Regular Expresses. If you want to match on multiple cover name possibilities, you can use something like `(big|cover|max|folder)\.jpg`. 
+- The `-cregx` parameter uses Regular Expressions. If you want to match on multiple cover name possibilities, 
+you can use something like `(cover|big|max|square|folder)\.(jpg|png)$`. 
 Try [regexr.com](https://regexr.com) to experiment with Regular Expressions.
