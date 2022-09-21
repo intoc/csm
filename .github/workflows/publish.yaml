@@ -36,19 +36,20 @@ jobs:
           tag=$(git describe --tags --abbrev=0)
           release_name_gui="csm-$tag-${{ matrix.target }}-gui"
           release_name_cmd="csm-$tag-${{ matrix.target }}-cmd"
-          # Pack files
+          # Build console project
+          dotnet publish csm.Console/csm.Console.csproj --framework net6.0 --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name_cmd"
           if [ "${{ matrix.target }}" == "win-x64" ]; then
-            # Only Build WinForms project
+            # Build WinForms project
             dotnet publish csm.WinForms/csm.WinForms.csproj --framework net6.0-windows --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name_gui"
             # Pack to zip for Windows
             7z a -tzip "${release_name_gui}.zip" "./${release_name_gui}/*"
             7z a -tzip "${release_name_cmd}.zip" "./${release_name_cmd}/*"
-            # Delete output directory
+            # Delete GUI project output directory
             rm -r "$release_name_gui"
+          else
+            tar czvf "${release_name_cmd}.tar.gz" "$release_name_cmd"
           fi
-          dotnet publish csm.Console/csm.Console.csproj --framework net6.0 --runtime "${{ matrix.target }}" --no-self-contained -c Release -o "$release_name_cmd"
-          tar czvf "${release_name_cmd}.tar.gz" "$release_name_cmd"
-          # Delete output directory
+          # Delete console project output directory
           rm -r "$release_name_cmd"
       - name: Publish
         uses: softprops/action-gh-release@v1
