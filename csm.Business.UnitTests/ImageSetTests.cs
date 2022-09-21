@@ -1,8 +1,7 @@
-using csm.Business.Logic;
 using csm.Business.Models;
 using Moq;
 
-namespace csm.Busines.Logic.UnitTests;
+namespace csm.Business.Logic.UnitTests;
 
 public class ImageSetTests {
 

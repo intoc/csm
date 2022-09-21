@@ -80,15 +80,13 @@ public sealed class ContactSheet : IDisposable {
         }
         set {
             var oldSource = fileSource;
-            if (Directory.Exists(value)) {
-                fileSource = new DirectoryFileSource(value);
-            } else if (File.Exists(value)) {
-                try {
-                    fileSource = ArchiveFileSource.Build(value);
-                } catch (Exception ex) {
-                    ErrorOccurred?.Invoke("Can't load archive.", ex);
-                }
+           
+            try {
+                fileSource = _fileSourceBuilder.Build(value);
+            } catch (Exception ex) {
+                ErrorOccurred?.Invoke("Can't load source path.", ex);
             }
+            
             if (oldSource?.FullPath != fileSource?.FullPath) {
                 oldSource?.Dispose();
                 fileSource?.Initialize(() => SourceChanged?.Invoke(fileSource?.FullPath));
@@ -137,6 +135,7 @@ public sealed class ContactSheet : IDisposable {
 
     private IFileSource? fileSource;
     private readonly IImageSet imageSet = new ImageSet();
+    private readonly IFileSourceBuilder _fileSourceBuilder;
 
     private readonly BoolParam cover;
     private readonly BoolParam exitOnComplete;
@@ -176,7 +175,9 @@ public sealed class ContactSheet : IDisposable {
     /// <summary>
     /// Create a contact sheet instance
     /// </summary>
-    public ContactSheet() {
+    public ContactSheet(IFileSourceBuilder fileSourceBuilder) {
+
+        _fileSourceBuilder = fileSourceBuilder;
 
         // Set parameter fields and defaults
 
@@ -398,7 +399,7 @@ public sealed class ContactSheet : IDisposable {
         if (outputDirectory == null) {
             return string.Empty;
         }
-        return fileSource?.CombinePaths(outputDirectory, path) ?? string.Empty;
+        return Path.GetFullPath(Path.Combine(outputDirectory, path));
     }
 
     /// <summary>

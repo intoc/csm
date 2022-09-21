@@ -21,7 +21,7 @@ static class Program {
             .CreateLogger();
 
         try {
-            ContactSheet cs = new();
+            ContactSheet cs = new(new FileSourceBuilder());
             cs.ErrorOccurred += (msg, ex) => Log.Error(ex, msg);
 
             // Check for a -help parameter and handle it
@@ -30,7 +30,7 @@ static class Program {
             }
 
             // Search all arguments for a path, use the first one that shows up
-            var path = args.FirstOrDefault(a => Directory.Exists(a) || File.Exists(a));
+            var path = args.FirstOrDefault(a => !a.StartsWith("-"));
             if (path != null) {
                 cs.Source = path;
             }

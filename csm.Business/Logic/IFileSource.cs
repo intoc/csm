@@ -17,8 +17,6 @@ namespace csm.Business.Logic {
 
         bool FileExists(string? path);
 
-        string CombinePaths(string path1, string path2);
-
         ImageFile? GetFile(string? path);
 
     }

@@ -79,16 +79,6 @@ namespace csm.Business.Logic {
             return new ImageFile(new FileInfo(path));
         }
 
-        /// <summary>
-        /// Combines two paths, ideally a directory and a relative file path
-        /// </summary>
-        /// <param name="path1">The first path (a directory)</param>
-        /// <param name="path2">The second path (a relative file path)</param>
-        /// <returns></returns>
-        public string CombinePaths(string path1, string path2) {
-            return Path.GetFullPath(Path.Combine(path1, path2));
-        }
-
         #region IDisposable
 
         /// <summary>

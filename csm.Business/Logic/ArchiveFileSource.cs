@@ -22,20 +22,6 @@ namespace csm.Business.Logic {
             }
         }
 
-        public static ArchiveFileSource Build(string path) {
-            var info = new FileInfo(path);
-            if (ZipFileSource.Supports(info.Extension)) {
-                return new ZipFileSource(path);
-            }
-            if (RarFileSource.Supports(info.Extension)) {
-                return new RarFileSource(path);
-            }
-            if (SevenZipFileSource.Supports(info.Extension)) {
-                return new SevenZipFileSource(path);
-            }
-            throw new NotImplementedException($"({info.Extension}) file source not supported.");
-        }
-
         protected override void Dispose(bool disposing) {
             lock (_dirLock) {
                 if (_tempDir.Exists) {
