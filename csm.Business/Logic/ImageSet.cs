@@ -82,9 +82,11 @@ namespace csm.Business.Logic {
         /// <param name="outFileName">Output file name to ignore</param>
         /// <param name="coverFileName">Cover file name to ignore</param>
         public void RefreshImageList(int minDim, string? outFileName, string? coverFileName) {
-            foreach (ImageData image in _images) {
-                if (!image.InclusionPinned) {
-                    image.Include = !(IsImageTooSmall(image, minDim) || IsOldSheet(image, outFileName) || IsCover(image, coverFileName));
+            lock (_images) {
+                foreach (ImageData image in _images) {
+                    if (!image.InclusionPinned) {
+                        image.Include = !(IsImageTooSmall(image, minDim) || IsOldSheet(image, outFileName) || IsCover(image, coverFileName));
+                    }
                 }
             }
         }

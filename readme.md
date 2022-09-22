@@ -79,3 +79,11 @@ you don't want to include in the output, use the `-mindiminput` parameter to fil
 - The `-cregx` parameter uses Regular Expressions. If you want to match on multiple cover name possibilities, 
 you can use something like `(cover|big|max|square|folder)\.(jpg|png)$`. 
 Try [regexr.com](https://regexr.com) to experiment with Regular Expressions.
+
+## Linux
+The linux command-line only version of this app requires the dotnet 6 runtime. 
+[This](http://anonym.es/?https://learn.microsoft.com/en-us/dotnet/core/install/linux-scripted-manual#manual-install) appears to be the most reliable way to install it.
+You may also need to install these packages with apt-get:
+- libc6-dev
+- libgdiplus
+- libx11-dev
