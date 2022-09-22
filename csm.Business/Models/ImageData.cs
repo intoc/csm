@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+﻿using SixLabors.ImageSharp;
 
 namespace csm.Business.Models;
 public class ImageData {

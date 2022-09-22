@@ -1,11 +1,16 @@
 ﻿using csm.Business.Models;
 using Serilog;
-using System.Drawing;
-using System.Drawing.Imaging;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 using Path = System.IO.Path;
+using SixLabors.Fonts.Unicode;
 
 namespace csm.Business.Logic;
 
@@ -161,7 +166,7 @@ public sealed class ContactSheet : IDisposable {
     /// Create a contact sheet instance
     /// </summary>
     public ContactSheet(IFileSourceBuilder fileSourceBuilder) {
-        
+
         _fileSourceBuilder = fileSourceBuilder;
         _firstLoadIncomplete = true;
 
@@ -491,9 +496,10 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="rect">The <see cref="Rectangle"/></param>
     /// <param name="scale">The scale factor</param>
-    private static void ScaleRect(ref Rectangle rect, double scale) {
-        rect.Width = (int)(rect.Width * scale);
-        rect.Height = (int)(rect.Height * scale);
+    private static void ScaleImage(Image img, double scale) {
+        img.Mutate(imageContext => {
+            imageContext.Resize((int)(img.Width * scale), (int)(img.Height * scale));
+        });
     }
 
     /// <summary>
@@ -510,7 +516,7 @@ public sealed class ContactSheet : IDisposable {
         List<List<ImageData>> analyses = new() {
             new List<ImageData>()
         };
-        Rectangle coverBounds = new();
+        //Rectangle coverBounds = new();
         Image? coverImage = null;
         int imageCount;
         int rowIndex = 0;
@@ -525,11 +531,12 @@ public sealed class ContactSheet : IDisposable {
             Log.Debug("DrawAndSave waiting...");
         }
         while (waitForLoad) {
-            lock (imageSet.Images) {
-                if (imageSet.Loaded && !_firstLoadIncomplete) {
-                    break;
-                }
+            //lock (imageSet.Images) {
+            Log.Debug("DrawAndSave waiting... imageSet.Loaded={0} _firstLoadIncomplete={0}", imageSet.Loaded, _firstLoadIncomplete);
+            if (imageSet.Loaded && !_firstLoadIncomplete) {
+                break;
             }
+            //}
             Thread.Sleep(250);
         }
 
@@ -560,30 +567,31 @@ public sealed class ContactSheet : IDisposable {
             if (drawCover && coverFile.File != null) {
                 // Begin image analysis
                 Log.Information("Analyzing cover...");
-                coverImage = Image.FromFile(coverFile.Path);
-                coverBounds = new Rectangle { Width = coverImage.Width, Height = coverImage.Height };
+                coverImage = Image.Load(coverFile.Path);
+                var coverPoint = new Point();
+                //coverBounds = new Rectangle { Width = coverImage.Width, Height = coverImage.Height };
                 double maxCoverImageScaleForGap = Math.Round(0.75 * columns.IntValue) / columns.IntValue;
 
                 if (fillGap) {
-                    if (coverBounds.Width >= (sheetWidth.IntValue * maxCoverImageScaleForGap)) {
+                    if (coverImage.Width >= (sheetWidth.IntValue * maxCoverImageScaleForGap)) {
                         // We want a gap right? Make the cover smaller.
                         Log.Information("Cover image is too large. Reducing size to {0:0.00}xSheetWidth to create a gap.", maxCoverImageScaleForGap);
-                        double scale = (sheetWidth.IntValue * maxCoverImageScaleForGap) / coverBounds.Width;
-                        ScaleRect(ref coverBounds, scale);
+                        double scale = (sheetWidth.IntValue * maxCoverImageScaleForGap) / coverImage.Width;
+                        ScaleImage(coverImage, scale);
                     } else {
                         // Otherwise the image is already small enough for gap filling
                         Log.Information("Cover image size allows for a natural gap.");
                     }
-                } else if (coverBounds.Width < sheetWidth.IntValue) {
+                } else if (coverImage.Width < sheetWidth.IntValue) {
                     // Center images smaller than the sheet width
                     Log.Information("Centering cover image.");
-                    coverBounds.X = (sheetWidth.IntValue - coverBounds.Width) / 2;
+                    coverPoint.X = (sheetWidth.IntValue - coverImage.Width) / 2;
                 } else {
                     // Scale the image down to sheet width
                     Log.Information("Cover image is too large. Reducing size to fit SheetWidth.");
-                    ScaleRect(ref coverBounds, (double)sheetWidth.IntValue / coverBounds.Width);
+                    ScaleImage(coverImage, (double)sheetWidth.IntValue / coverImage.Width);
                 }
-                Log.Information("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverBounds);
+                Log.Information("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverImage);
             }
 
             #endregion
@@ -625,10 +633,10 @@ public sealed class ContactSheet : IDisposable {
 
         for (rowIndex = 0; !done; ++rowIndex) {
 
-            if (inGap) {
+            if (inGap && coverImage != null) {
                 // Row space = cover gap
-                rowWidth = sheetWidth.IntValue - coverBounds.Width;
-                curPoint.X = coverBounds.Width;
+                rowWidth = sheetWidth.IntValue - coverImage.Width;
+                curPoint.X = coverImage.Width;
             } else {
                 // Row space = sheet width
                 rowWidth = sheetWidth.IntValue;
@@ -657,10 +665,8 @@ public sealed class ContactSheet : IDisposable {
 
             // Process at the end of the cover gap
             // Or at the end of the imagelist
-            int overFlow = curPoint.Y + rowHeight - coverBounds.Height;
-            if (inGap && (overFlow > 0 ||
-                rowIndex + 1 == analyses.Count ||
-                    analyses[rowIndex + 1].Count == 0)) {
+            int overFlow = curPoint.Y + rowHeight - coverImage?.Height ?? 0;
+            if (inGap && coverImage != null && (overFlow > 0 || rowIndex + 1 == analyses.Count || analyses[rowIndex + 1].Count == 0)) {
                 if (overFlow > rowHeight / 3) {
                     // This row is too tall to fit in the gap.
                     // Move all images in the row to the next one
@@ -681,32 +687,31 @@ public sealed class ContactSheet : IDisposable {
                 if (rowIndex >= 0) {
 
                     // Scale the cover and the gap images so they are the same height
-                    double h1 = coverBounds.Height;
-                    double w1 = coverBounds.Width;
+                    double h1 = coverImage.Height;
+                    double w1 = coverImage.Width;
                     double h2 = analyses[rowIndex][0].Y + analyses[rowIndex][0].Height;
                     double w2 = rowWidth;
 
                     double f1 = h2 * sheetWidth.IntValue / (h1 * w2 + h2 * w1);
 
-                    coverBounds.Width = (int)Math.Round(coverBounds.Width * f1);
-                    coverBounds.Height = (int)Math.Round(coverBounds.Height * f1);
+                    ScaleImage(coverImage, f1);
 
                     curPoint.Y = 0;
                     for (int i = 0; i <= rowIndex; ++i) {
                         // Move images to the start of the new gap
-                        analyses[i][0].X = coverBounds.Width;
+                        analyses[i][0].X = coverImage.Width;
                         analyses[i][0].Y = curPoint.Y;
                         // Scale row width to the new gap
-                        rowHeight = ScaleRow(analyses[i], sheetWidth.IntValue - coverBounds.Width);
+                        rowHeight = ScaleRow(analyses[i], sheetWidth.IntValue - coverImage.Width);
                         Log.Information("In Gap, Final Scaling, Row {0}", i);
                         // Next row
                         curPoint.Y += rowHeight;
                     }
                     // Adjust for scale error
-                    coverBounds.Height = curPoint.Y;
+                    //coverBounds.Height = curPoint.Y;
                 } else {
                     // No gap images. Display the cover normally.
-                    coverBounds.X = sheetWidth.IntValue / 2 - coverBounds.Width / 2;
+                    coverPoint.X = sheetWidth.IntValue / 2 - coverImage.Width / 2;
                     fillGap = false;
                     ErrorOccurred?.Invoke("Cover gap fill failed, image is too small. Centering.");
                 }
@@ -727,7 +732,7 @@ public sealed class ContactSheet : IDisposable {
 
                 // Attempt to even out the last two rows so there aren't any massive images at the end
                 // Don't adjust if the last row was in the cover gap
-                bool lastRowInGap = rowIndex > 0 && analyses[rowIndex - 1].Last().Y < coverBounds.Height;
+                bool lastRowInGap = rowIndex > 0 && analyses[rowIndex - 1].Last().Y < (coverImage?.Height ?? 0);
                 while (!lastRowInGap && rowHeight > lastRowHeight * 2 && analyses[rowIndex - 1].Count > 1) {
                     ShiftImage(analyses, rowIndex - 1, rowIndex);
                     lastRowHeight = ScaleRow(analyses[rowIndex - 1], lastRowWidth);
@@ -760,19 +765,29 @@ public sealed class ContactSheet : IDisposable {
 
         #region Drawing
 
+        FontCollection fonts = new();
+        fonts.Add("fonts/OpenSans-Bold.ttf");
+        FontFamily fontFamily = fonts.Add("fonts/OpenSans-Regular.ttf");
+
         // Set up the header
         Image? headerImage = null;
         int headerHeight = 0;
         if (header.BoolValue) {
-            headerImage = new Bitmap(sheetWidth.IntValue, sheetWidth.IntValue);
-            using Graphics headerG = Graphics.FromImage(headerImage);
+            headerImage = new Image<Rgba32>(sheetWidth.IntValue, sheetWidth.IntValue);
+
+
+
+
             SolidBrush br = new(Color.White);
             string headerText = headerTitle.ParsedValue ?? string.Empty;
-            Font headerFont = new("Arial", headerFontSize.IntValue, headerBold.BoolValue ? FontStyle.Bold : FontStyle.Regular);
-            Font statsFont = new("Arial", headerFontSize.IntValue, FontStyle.Regular);
+            Font titleFont = fontFamily.CreateFont(headerFontSize.IntValue, headerBold.BoolValue ? FontStyle.Bold : FontStyle.Regular);
+            Font statsFont = fontFamily.CreateFont(headerFontSize.IntValue, FontStyle.Regular);
             int padding = 5;
-            SizeF headerSize = headerG.MeasureString(headerText, headerFont, sheetWidth.IntValue - (padding * 2));
-            SizeF statsSize = new();
+            int headerWidth = sheetWidth.IntValue - (padding * 2);
+            TextOptions titleTextOptions = new TextOptions(titleFont) { WrappingLength = headerWidth };
+            TextOptions statsTextOptions = new TextOptions(statsFont) { WrappingLength = headerWidth };
+            FontRectangle headerFontRect = TextMeasurer.Measure(headerText, titleTextOptions);
+            int statsHeight = 0;
             string? stats = null;
             if (headerStats.BoolValue) {
                 // Determine largest image
@@ -782,20 +797,24 @@ public sealed class ContactSheet : IDisposable {
                     .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
                 // Determine how much space the stats will take up in the header
                 stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px";
-                statsSize = headerG.MeasureString(stats, statsFont, sheetWidth.IntValue - (padding * 2));
-                statsSize.Height += padding * 2 + 1;
-            }
+                var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
+                statsHeight = (int)statsFontSize.Height + padding * 2 + 1;
 
-            // Pre-draw the header
-            headerHeight = (int)Math.Ceiling(headerSize.Height + statsSize.Height + padding * 2);
-            Rectangle headerRegion = new(padding, padding, sheetWidth.IntValue, headerHeight);
-            headerG.DrawString(headerText, headerFont, br, headerRegion);
-            if (stats != null) {
-                // Pre-draw stats
-                int statsTop = (int)headerSize.Height + padding * 2 + 1;
-                headerG.DrawLine(new Pen(Color.DarkSlateGray, 1), new Point(padding, statsTop), new Point(sheetWidth.IntValue - padding, statsTop));
-                headerG.DrawString(stats, statsFont, br,
-                    new Rectangle(padding, statsTop + padding, sheetWidth.IntValue - padding * 2, (int)statsSize.Height));
+                // Pre-draw the header
+                headerHeight = (int)Math.Ceiling(headerFontRect.Height + statsHeight + padding * 2);
+                PointF headerPoint = new(padding, padding);
+
+                headerImage.Mutate(imageContext => {
+                    imageContext.DrawText(titleTextOptions, headerText, Color.White);
+                    if (stats != null) {
+                        // Pre-draw stats
+                        int statsTop = (int)headerFontRect.Height + padding * 2 + 1;
+                        imageContext.DrawLines(new Pen(Color.DarkSlateGray, 1), new PointF(padding, statsTop), new PointF(sheetWidth.IntValue - padding, statsTop));
+                        //imageContext.DrawString(stats, statsFont, br,
+                        //     new Rectangle(padding, statsTop + padding, sheetWidth.IntValue - padding * 2, (int)statsFontSize.Height));
+                        imageContext.DrawText(statsTextOptions, stats, Color.White);
+                    }
+                });
             }
         }
 
@@ -803,50 +822,54 @@ public sealed class ContactSheet : IDisposable {
         ImageData last = analyses.Last(l => l.Count > 0)[0];
         int sheetHeight = last.Y + last.Height + headerHeight;
         if (!fillGap) {
-            sheetHeight += coverBounds.Height;
+            sheetHeight += coverImage?.Height ?? 0;
         }
 
         // Create the output image
-        using Image sheetImage = new Bitmap(sheetWidth.IntValue, sheetHeight);
+        using Image sheetImage = new Image<Rgba32>(sheetWidth.IntValue, sheetHeight);
 
         // Set up the Graphics and resampling options
-        using Graphics sheetGraphics = Graphics.FromImage(sheetImage);
-        sheetGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-        sheetGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+        //sheetGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+        //sheetGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
         // Draw the header
         if (headerImage != null) {
             Log.Information("Drawing header...");
-            sheetGraphics.DrawImage(headerImage, 0, 0);
+            sheetImage.Mutate(imageContext => {
+                imageContext.DrawImage(headerImage, 1);
+            });
             headerImage.Dispose();
         }
 
         // Draw the cover
         if (coverImage != null) {
             Log.Information("Drawing cover {0}...", Path.GetFileName(coverFile.Path));
-            coverBounds.Y += headerHeight + borders.IntValue;
-            coverBounds.X += borders.IntValue;
-            coverBounds.Width -= borders.IntValue * 2;
-            coverBounds.Height -= borders.IntValue * 2;
-            if (preview.BoolValue) {
-                sheetGraphics.FillRectangle(Brushes.White, coverBounds);
-                sheetGraphics.DrawRectangle(Pens.LightGreen, coverBounds);
-                sheetGraphics.DrawString(
-                    "COVER",
-                    new Font("Times New Roman", 14, FontStyle.Bold),
-                    Brushes.Black,
-                    coverBounds.X + coverBounds.Width / 2,
-                    coverBounds.Y + coverBounds.Height / 2);
-            } else {
-                sheetGraphics.DrawImage(coverImage, coverBounds);
-            }
+            coverPoint.Y += headerHeight + borders.IntValue;
+            coverPoint.X += borders.IntValue;
+            coverImage.Mutate(imageContext => {
+                imageContext.Pad(borders.IntValue, borders.IntValue);
+            });
+            sheetImage.Mutate(imageContext => {
+                if (preview.BoolValue) {
+                    imageContext.Draw(Pens.Solid(Color.LightGreen, 1), coverImage.Bounds());
+                    imageContext.DrawText(
+                        "COVER",
+                        fontFamily.CreateFont(14, FontStyle.Bold),
+                    Color.Black,
+                        new PointF(coverPoint.X + coverImage.Width / 2, coverPoint.Y + coverImage.Height / 2));
+                } else {
+                    imageContext.DrawImage(coverImage, 1);
+                }
+            });
+
             coverImage?.Dispose();
         }
 
         // Interpolation is being done by the draw function on separate graphics
         // objects, no need to use it here. Same for smoothing.
-        sheetGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Default;
-        sheetGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.Default;
+        //sheetGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Default;
+        //sheetGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.Default;
 
         // Draw the thumbnail images
         int index = 1;
@@ -860,11 +883,11 @@ public sealed class ContactSheet : IDisposable {
             foreach (ImageData col in row) {
                 col.Y += headerHeight;
                 if (!fillGap) {
-                    col.Y += coverBounds.Height;
+                    col.Y += coverImage?.Height ?? 0;
                 }
 
                 // Create info for threaded load/draw operation
-                DrawThreadObj tdata = new(col, sheetGraphics) {
+                DrawThreadObj tdata = new(col, sheetImage) {
                     Index = index,
                     ImageTotal = imageCount,
                     FontSize = labels.BoolValue ? labelFontSize.IntValue : 0,
@@ -882,9 +905,9 @@ public sealed class ContactSheet : IDisposable {
         await Task.WhenAll(drawThumbTasks);
 
         // Save the sheet with the given Jpeg quality
-        ImageCodecInfo? jpgEncoder = ImageCodecInfo.GetImageDecoders().SingleOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
-        EncoderParameters myEncoderParameters = new(1);
-        myEncoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, quality.IntValue);
+        //ImageCodecInfo? jpgEncoder = ImageCodecInfo.GetImageDecoders().SingleOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
+        //EncoderParameters myEncoderParameters = new(1);
+        //myEncoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, quality.IntValue);
 
         DateTime endTime = DateTime.Now;
         TimeSpan duration = endTime - startTime;
@@ -920,17 +943,17 @@ public sealed class ContactSheet : IDisposable {
                         }
                     }
                 }
-                if (jpgEncoder != null) {
-                    string? dir = Path.GetDirectoryName(OutFilePath(suffix));
-                    if (dir != null && !Directory.Exists(dir)) {
-                        Log.Information("Creating Directory: {0}", dir);
-                        Directory.CreateDirectory(dir);
-                    }
-                    sheetImage.Save(OutFilePath(suffix), jpgEncoder, myEncoderParameters);
-                    Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
-                } else {
-                    ErrorOccurred?.Invoke("JPEG Encoder not found.");
+                //if (jpgEncoder != null) {
+                string? dir = Path.GetDirectoryName(OutFilePath(suffix));
+                if (dir != null && !Directory.Exists(dir)) {
+                    Log.Information("Creating Directory: {0}", dir);
+                    Directory.CreateDirectory(dir);
                 }
+                sheetImage.SaveAsJpeg(OutFilePath(suffix));
+                Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
+                // } else {
+                //   ErrorOccurred?.Invoke("JPEG Encoder not found.");
+                // }
             }
         } catch (System.Runtime.InteropServices.ExternalException e) {
             ErrorOccurred?.Invoke("Can't Save Sheet", e);
@@ -954,9 +977,9 @@ public sealed class ContactSheet : IDisposable {
     private void DrawThumb(DrawThreadObj data) {
         Image image;
         if (!preview.BoolValue) {
-            image = new Bitmap(data.File);
+            image = Image.Load(data.File);
         } else {
-            image = new Bitmap(data.Image.Width, data.Image.Height);
+            image = new Image<Rgba32>(data.Image.Width, data.Image.Height);
         }
 
         Rectangle thumb = new(
@@ -964,24 +987,27 @@ public sealed class ContactSheet : IDisposable {
             data.BorderWidth,
             data.Image.Width - data.BorderWidth * 2,
             data.Image.Height - data.BorderWidth * 2);
-        Image bmp = new Bitmap(data.Image.Width, data.Image.Height);
+        Image bmp = new Image<Rgba32>(data.Image.Width, data.Image.Height);
 
-        // Load the image
-        Graphics thumbG = Graphics.FromImage(bmp);
 
         // Only use the high-quality shit if specified
-        if (interpolate.BoolValue) {
-            thumbG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
-        } else {
-            thumbG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Low;
-        }
+        //if (interpolate.BoolValue) {
+        //    thumbG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+        //} else {
+        //    thumbG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Low;
+        //}
 
-        if (preview.BoolValue) {
-            thumbG.FillRectangle(Brushes.White, thumb);
-            thumbG.DrawRectangle(Pens.LightGreen, thumb);
-        } else {
-            thumbG.DrawImage(image, thumb);
-        }
+        image.Mutate(imageContext => {
+            if (preview.BoolValue) {
+           
+                    imageContext.Fill(Brushes.Solid(Color.White), thumb);
+                    imageContext.Draw(Pens.Solid(Color.LightGreen, 1), thumb);
+           
+            } else {
+                // scale here?
+                imageContext.DrawImage(image, 1);
+            }
+        });
 
         image.Dispose();
 
@@ -1013,7 +1039,7 @@ public sealed class ContactSheet : IDisposable {
         // Have to lock on the Graphics object
         // because two threads can't draw on it at the same time
         lock (graphicsLock) {
-            data.Graphics.DrawImage(bmp, data.Image.Bounds);
+            data.SheetImage.DrawImage(bmp, data.Image.Bounds);
         }
 
         // Clean up

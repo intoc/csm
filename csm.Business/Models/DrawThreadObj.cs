@@ -1,15 +1,15 @@
-﻿using System.Drawing;
+﻿using SixLabors.ImageSharp;
 
 namespace csm.Business.Models;
 internal class DrawThreadObj {
 
-    public DrawThreadObj(ImageData image, Graphics g) {
+    public DrawThreadObj(ImageData image, Image sheetImage) {
         Image = image;
-        Graphics = g;
+        SheetImage = sheetImage;
     }
 
     public ImageData Image { get; set; }
-    public Graphics Graphics { get; set; }
+    public Image SheetImage { get; set; }
     public int Index { get; set; }
     public int ImageTotal { get; set; }
     public int FontSize { get; set; }
