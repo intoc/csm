@@ -1,0 +1,1 @@
+dotnet publish csm.Console/csm.Console.csproj --framework net6.0 --runtime linux-x64 --no-self-contained -c Release -o /csm-linux
