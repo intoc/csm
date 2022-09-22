@@ -58,8 +58,8 @@ public sealed class ContactSheet : IDisposable {
     public bool OpenOutputDir => openOutputDirectoryOnComplete.BoolValue;
 
     private bool _pauseActions;
-    public bool PauseParamEventHandling { 
-        get => _pauseActions; 
+    public bool PauseParamEventHandling {
+        get => _pauseActions;
         set {
             _pauseActions = value;
             if (_pauseActions) {
@@ -68,7 +68,7 @@ public sealed class ContactSheet : IDisposable {
                 Log.Debug("Resumed Param event handling");
                 HandlePausedEvents();
             }
-        } 
+        }
     }
 
     /// <summary>
@@ -80,13 +80,13 @@ public sealed class ContactSheet : IDisposable {
         }
         set {
             var oldSource = fileSource;
-           
+
             try {
                 fileSource = _fileSourceBuilder.Build(value);
             } catch (Exception ex) {
                 ErrorOccurred?.Invoke("Can't load source path.", ex);
             }
-            
+
             if (oldSource?.FullPath != fileSource?.FullPath) {
                 oldSource?.Dispose();
                 fileSource?.Initialize(() => SourceChanged?.Invoke(fileSource?.FullPath));
@@ -169,6 +169,7 @@ public sealed class ContactSheet : IDisposable {
     private int drawnCount, progressStep;
     private readonly object graphicsLock = new();
     private readonly object progressLock = new();
+    private bool _firstLoadIncomplete;
 
     #endregion
 
@@ -176,8 +177,9 @@ public sealed class ContactSheet : IDisposable {
     /// Create a contact sheet instance
     /// </summary>
     public ContactSheet(IFileSourceBuilder fileSourceBuilder) {
-
+        
         _fileSourceBuilder = fileSourceBuilder;
+        _firstLoadIncomplete = true;
 
         // Set parameter fields and defaults
 
@@ -301,10 +303,12 @@ public sealed class ContactSheet : IDisposable {
             imageSet.Source = fileSource ?? new DirectoryFileSource();
             headerTitle.ParseVal(fileSource?.Name);
             Log.Information("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
+            await LoadFileList();
             if (cover.BoolValue) {
                 await GuessCover(true);
             }
-            await LoadFileList();
+            // First loading has finished, stop blocking DrawAndSave
+            _firstLoadIncomplete = false;
         };
 
         // Setup all instances where a image list refresh is required without a full reload
@@ -560,7 +564,7 @@ public sealed class ContactSheet : IDisposable {
         }
         while (waitForLoad) {
             lock (imageSet.Images) {
-                if (imageSet.Loaded) {
+                if (imageSet.Loaded && !_firstLoadIncomplete) {
                     break;
                 }
             }
@@ -828,7 +832,7 @@ public sealed class ContactSheet : IDisposable {
                 // Pre-draw stats
                 int statsTop = (int)headerSize.Height + padding * 2 + 1;
                 headerG.DrawLine(new Pen(Color.DarkSlateGray, 1), new Point(padding, statsTop), new Point(sheetWidth.IntValue - padding, statsTop));
-                headerG.DrawString(stats, statsFont, br, 
+                headerG.DrawString(stats, statsFont, br,
                     new Rectangle(padding, statsTop + padding, sheetWidth.IntValue - padding * 2, (int)statsSize.Height));
             }
         }

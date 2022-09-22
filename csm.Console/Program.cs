@@ -26,8 +26,6 @@ try {
         cs.Source = path;
     }
 
-    cs.PauseParamEventHandling = true;
-
     // Load a settings file if path is provided
     var sFileParamAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
     if (sFileParamAndValue != null) {
@@ -36,7 +34,6 @@ try {
 
     // Ignore the nogui parameter because it doesn't matter
     cs.LoadParamsFromCommandLine(args.Where(a => !a.StartsWith("-nogui=")));
-    cs.PauseParamEventHandling = false;
     cs.DrawAndSave(true).Wait();
 } catch (Exception ex) {
     Log.Error(ex, "An unhandled Exception occurred.");
