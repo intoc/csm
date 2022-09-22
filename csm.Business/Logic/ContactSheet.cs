@@ -57,20 +57,6 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     public bool OpenOutputDir => openOutputDirectoryOnComplete.BoolValue;
 
-    private bool _pauseActions;
-    public bool PauseParamEventHandling {
-        get => _pauseActions;
-        set {
-            _pauseActions = value;
-            if (_pauseActions) {
-                Log.Debug("Paused Param event handling");
-            } else {
-                Log.Debug("Resumed Param event handling");
-                HandlePausedEvents();
-            }
-        }
-    }
-
     /// <summary>
     /// The source path
     /// </summary>
@@ -161,8 +147,6 @@ public sealed class ContactSheet : IDisposable {
     private readonly StringParam fileType;
     private readonly StringParam headerTitle;
     private readonly StringParam outputFilePath;
-
-    private readonly IDictionary<string, Action> PausedActions = new Dictionary<string, Action>();
 
     // Draw status variables
     private DateTime startTime;
@@ -316,8 +300,8 @@ public sealed class ContactSheet : IDisposable {
         minDimInput.ParamChanged += RefreshImageList;
         outputFilePath.ParamChanged += RefreshImageList;
 
-        cover.ParamChanged += async (p) => await HandleShowCoverChanged(p);
-        coverPattern.ParamChanged += async (p) => await HandleCoverPatternChanged(p);
+        cover.ParamChanged += async (p) => await HandleShowCoverChanged();
+        coverPattern.ParamChanged += async (p) => await HandleCoverPatternChanged();
 
         #endregion
 
@@ -331,11 +315,7 @@ public sealed class ContactSheet : IDisposable {
         };
     }
 
-    private async Task HandleShowCoverChanged(Param param) {
-        if (PauseParamEventHandling) {
-            PausedActions["guessCover"] = async () => await HandleShowCoverChanged(param);
-            return;
-        }
+    private async Task HandleShowCoverChanged() {
         if (fileSource == null) {
             return;
         }
@@ -351,27 +331,13 @@ public sealed class ContactSheet : IDisposable {
         }
     }
 
-    private async Task HandleCoverPatternChanged(Param param) {
-        if (PauseParamEventHandling) {
-            PausedActions["guessCover"] = async () => await HandleCoverPatternChanged(param);
-            return;
-        }
+    private async Task HandleCoverPatternChanged() {
         if (!cover.BoolValue || fileSource == null) {
             return;
         }
         if (await GuessCover(true)) {
             RefreshImageList(cover);
         }
-    }
-
-    /// <summary>
-    /// Handle all events that are in the PausedActions collection and resume normal event handling
-    /// </summary>
-    private void HandlePausedEvents() {
-        foreach (KeyValuePair<string, Action> kvp in PausedActions) {
-            kvp.Value();
-        }
-        PausedActions.Clear();
     }
 
     /// <summary>
@@ -510,10 +476,6 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need for the refresh</param>
     public void RefreshImageList(Param? p = null) {
-        if (PauseParamEventHandling) {
-            PausedActions["refreshImageList"] = () => RefreshImageList(p);
-            return;
-        }
         if (!imageSet.Images.Any()) {
             return;
         }

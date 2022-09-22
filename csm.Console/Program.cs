@@ -20,12 +20,6 @@ try {
         return;
     }
 
-    // Search all arguments for a path, use the first one that shows up
-    var path = args.FirstOrDefault(a => !a.StartsWith("-"));
-    if (path != null) {
-        cs.Source = path;
-    }
-
     // Load a settings file if path is provided
     var sFileParamAndValue = args.FirstOrDefault(a => a.ToLower().StartsWith("-sfile="));
     if (sFileParamAndValue != null) {
@@ -34,6 +28,13 @@ try {
 
     // Ignore the nogui parameter because it doesn't matter
     cs.LoadParamsFromCommandLine(args.Where(a => !a.StartsWith("-nogui=")));
+
+    // Search all arguments for a path, use the first one that shows up
+    var path = args.FirstOrDefault(a => !a.StartsWith("-"));
+    if (path != null) {
+        cs.Source = path;
+    }
+
     cs.DrawAndSave(true).Wait();
 } catch (Exception ex) {
     Log.Error(ex, "An unhandled Exception occurred.");
