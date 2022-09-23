@@ -65,6 +65,8 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     public bool OpenOutputDir => openOutputDirectoryOnComplete.BoolValue;
 
+    public bool FirstLoadComplete => !_firstLoadIncomplete;
+
     /// <summary>
     /// The source path
     /// </summary>
