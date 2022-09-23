@@ -15,7 +15,6 @@ internal class ThumbnailData {
     public int Index { get; set; }
     public int ImageTotal { get; set; }
     public int FontSize { get; set; }
-    public int BorderWidth { get; set; }
     public string File => Image.File;
 
 }

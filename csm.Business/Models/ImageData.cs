@@ -1,4 +1,5 @@
 ﻿using SixLabors.ImageSharp;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace csm.Business.Models;
 
@@ -14,29 +15,16 @@ public class ImageData {
     public bool Include { get; set; } = true;
     public bool InclusionPinned { get; set; } = false;
 
-    public Rectangle Bounds {
-        get {
-            return new Rectangle(X, Y, Width, Height);
-        }
-    }
+    public Rectangle Bounds => new(X, Y, Width, Height);
 
-    public string Orientation {
-        get {
-            return IsLandscape ? "Landscape" : "Portrait";
-        }
-    }
-    public string FileName {
-        get {
-            if (File.Contains('/')) {
-                return File.Split('/').Last();
-            }
-            return File.Split('\\').Last();
-        }
-    }
+    public Point Origin => new(X, Y);
+
+    public string Orientation => IsLandscape ? "Landscape" : "Portrait";
+
+    public string FileName => Path.GetFileName(File);
 
     public ImageData(string fileName) {
         File = fileName;
-        OriginalSize = new Size(Width, Height);
     }
 
     public ImageData(Size s, string filename) {
@@ -57,15 +45,27 @@ public class ImageData {
     /// </summary>
     /// <param name="height">The height to scale to</param>
     /// <returns>The scale factor</returns>
-    public double ScaleToHeight(double height) {
-        double factor = height / OriginalSize.Height;
+    public double ScaleToHeight(int height) {
+        double factor = height / (double)OriginalSize.Height;
         Width = (int)Math.Round(OriginalSize.Width * factor);
-        Height = (int)height;
+        Height = height;
 
         if (Width < 0 || Height < 0) {
             throw new InvalidOperationException(string.Format("Bad Scale! Factor: {0}, OriginalSize: {1}, Width: {2}, Height: {3}", factor, OriginalSize, Width, Height));
         }
         return factor;
+    }
+
+    public void Scale(double factor) {
+        Width = (int)(Width * factor);
+        Height = (int)(Height * factor);
+    }
+
+    public void Pad(int padding) {
+        Width -= (padding * 2);
+        Height -= (padding * 2);
+        X += padding;
+        Y += padding;
     }
 
     public override string ToString() {
