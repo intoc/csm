@@ -527,7 +527,7 @@ public sealed class ContactSheet : IDisposable {
             Log.Debug("DrawAndSave waiting...");
         }
         while (waitForLoad) {
-            Log.Debug("DrawAndSave waiting... imageSet.Loaded={0} _firstLoadIncomplete={0}", imageSet.Loaded, _firstLoadIncomplete);
+            Log.Debug("DrawAndSave waiting. imageSet.Loaded={0} _firstLoadIncomplete={0}", imageSet.Loaded, _firstLoadIncomplete);
             if (imageSet.Loaded && !_firstLoadIncomplete) {
                 break;
             }
@@ -988,8 +988,8 @@ public sealed class ContactSheet : IDisposable {
             if (data.FontSize > 0) {
 
                 // Set label to file name, no extension
-                string label = data.Image.FileName;
-                label = label[..label.LastIndexOf(".")];
+                string label = Path.GetFileNameWithoutExtension(data.Image.FileName);
+
                 // Determine label size
                 Font font = data.FontFamily.CreateFont(data.FontSize);
                 var labelSize = TextMeasurer.Measure(label,
@@ -1003,15 +1003,15 @@ public sealed class ContactSheet : IDisposable {
                 Point labelCoords = new((int)(size.Width - labelSize.Width) / 2, (int)(size.Height - labelSize.Height));
 
                 // Make the label. We draw it black on white and invert because otherwise it looks like crap.
-                Image labelBg = new Image<Rgba32>((int)labelSize.Width, (int)labelSize.Height);
-                labelBg.Mutate(labelContext => {
+                Image labelImage = new Image<Rgba32>((int)labelSize.Width, (int)labelSize.Height);
+                labelImage.Mutate(labelContext => {
                     labelContext.Fill(Color.White)
                         .DrawText(label, font, Color.Black, Point.Empty)
                         .Invert();
                 });
 
                 // Draw the label
-                imageContext.DrawImage(labelBg, labelCoords, 0.5f);
+                imageContext.DrawImage(labelImage, labelCoords, 0.5f);
             }
         });
 
