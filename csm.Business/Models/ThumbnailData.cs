@@ -1,15 +1,16 @@
-﻿using System.Drawing;
+﻿using SixLabors.Fonts;
+using SixLabors.ImageSharp;
 
 namespace csm.Business.Models;
-internal class DrawThreadObj {
+internal class ThumbnailData {
 
-    public DrawThreadObj(ImageData image, Graphics g) {
+    public ThumbnailData(ImageData image, Image sheetImage) {
         Image = image;
-        Graphics = g;
+        SheetImage = sheetImage;
     }
-
+    public FontFamily FontFamily { get; set; }
     public ImageData Image { get; set; }
-    public Graphics Graphics { get; set; }
+    public Image SheetImage { get; set; }
     public int Index { get; set; }
     public int ImageTotal { get; set; }
     public int FontSize { get; set; }

@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+﻿using SixLabors.ImageSharp;
 
 namespace csm.Business.Models;
 public class ImageData {
@@ -26,6 +26,9 @@ public class ImageData {
     }
     public string FileName {
         get {
+            if (File.Contains('/')) {
+                return File.Split('/').Last();
+            }
             return File.Split('\\').Last();
         }
     }

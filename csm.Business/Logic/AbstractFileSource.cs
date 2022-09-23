@@ -1,5 +1,6 @@
 ﻿using csm.Business.Models;
-using System.Drawing;
+using Serilog;
+using SixLabors.ImageSharp;
 
 namespace csm.Business.Logic {
 
@@ -54,7 +55,7 @@ namespace csm.Business.Logic {
         /// <param name="image">The <see cref="ImageData"/> to initialize</param>
         public void LoadImageDimensions(ImageData image) {
             using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
-            using var fromStream = Image.FromStream(stream, false, false);
+            using var fromStream = Image.Load(stream);
             image.InitSize(new Size(fromStream.Width, fromStream.Height));
         }
 

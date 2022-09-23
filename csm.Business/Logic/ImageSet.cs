@@ -38,6 +38,7 @@ namespace csm.Business.Logic {
         public async Task LoadImageListAsync(string fileType, int minDim, string? outFileName, string? coverFileName) {
             await Task.Run(() => {
                 lock (Images) {
+                    
                     if (_imageSource == null) {
                         return;
                     }
@@ -53,7 +54,6 @@ namespace csm.Business.Logic {
                         from file in allFiles
                         where !file.Hidden
                         select file.Path;
-
                     // Load Image data into list
                     _images.Clear();
 
@@ -63,15 +63,11 @@ namespace csm.Business.Logic {
                         _images.Add(image);
                         tasks.Add(Task.Run(() => _imageSource.LoadImageDimensions(image)));
                     }
-
                     Task.WaitAll(tasks.ToArray());
-
                     sw.Stop();
                     Log.Debug("{0}.{1} took {2}", GetType().Name, "LoadImageListAsync", sw.Elapsed);
-
-                    RefreshImageList(minDim, outFileName, coverFileName);
-                    Loaded = true;
                 }
+                RefreshImageList(minDim, outFileName, coverFileName);
             });
         }
 
@@ -82,12 +78,13 @@ namespace csm.Business.Logic {
         /// <param name="outFileName">Output file name to ignore</param>
         /// <param name="coverFileName">Cover file name to ignore</param>
         public void RefreshImageList(int minDim, string? outFileName, string? coverFileName) {
-            lock (_images) {
+            lock (Images) {
                 foreach (ImageData image in _images) {
                     if (!image.InclusionPinned) {
                         image.Include = !(IsImageTooSmall(image, minDim) || IsOldSheet(image, outFileName) || IsCover(image, coverFileName));
                     }
                 }
+                Loaded = true;
             }
         }
 
