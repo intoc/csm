@@ -1,6 +1,7 @@
 ﻿using SixLabors.ImageSharp;
 
 namespace csm.Business.Models;
+
 public class ImageData {
     public int Width { get; set; }
     public int Height { get; set; }

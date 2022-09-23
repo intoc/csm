@@ -42,6 +42,7 @@ partial class CsmGui
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.chooseFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.chooseArchiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.drawSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pnlMain = new System.Windows.Forms.Panel();
@@ -52,11 +53,10 @@ partial class CsmGui
             this.buttonPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.btnRun = new System.Windows.Forms.Button();
             this.btnFiles = new System.Windows.Forms.Button();
-            this.btnArchive = new System.Windows.Forms.Button();
             this.btnFolder = new System.Windows.Forms.Button();
+            this.btnArchive = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.settingsLabel = new System.Windows.Forms.Label();
-            this.chooseArchiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip.SuspendLayout();
             this.menu.SuspendLayout();
             this.pnlMain.SuspendLayout();
@@ -174,13 +174,21 @@ partial class CsmGui
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.toolsToolStripMenuItem.Text = "Tools";
             // 
-            // changeDirectoryToolStripMenuItem
+            // chooseFolderToolStripMenuItem
             // 
-            this.chooseFolderToolStripMenuItem.Name = "changeDirectoryToolStripMenuItem";
+            this.chooseFolderToolStripMenuItem.Name = "chooseFolderToolStripMenuItem";
             this.chooseFolderToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
             this.chooseFolderToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
             this.chooseFolderToolStripMenuItem.Text = "Choose Folder";
             this.chooseFolderToolStripMenuItem.Click += new System.EventHandler(this.ChooseFolder);
+            // 
+            // chooseArchiveToolStripMenuItem
+            // 
+            this.chooseArchiveToolStripMenuItem.Name = "chooseArchiveToolStripMenuItem";
+            this.chooseArchiveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
+            this.chooseArchiveToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.chooseArchiveToolStripMenuItem.Text = "Choose Archive";
+            this.chooseArchiveToolStripMenuItem.Click += new System.EventHandler(this.ChooseArchive);
             // 
             // viewFilesToolStripMenuItem
             // 
@@ -305,17 +313,6 @@ partial class CsmGui
             this.btnFiles.UseVisualStyleBackColor = true;
             this.btnFiles.Click += new System.EventHandler(this.ViewFiles);
             // 
-            // btnArchive
-            // 
-            this.btnArchive.Location = new System.Drawing.Point(272, 3);
-            this.btnArchive.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnArchive.Name = "btnArchive";
-            this.btnArchive.Size = new System.Drawing.Size(120, 27);
-            this.btnArchive.TabIndex = 6;
-            this.btnArchive.Text = "Choose Archive";
-            this.btnArchive.UseVisualStyleBackColor = true;
-            this.btnArchive.Click += new System.EventHandler(this.ChooseArchive);
-            // 
             // btnFolder
             // 
             this.btnFolder.Location = new System.Drawing.Point(144, 3);
@@ -326,6 +323,17 @@ partial class CsmGui
             this.btnFolder.Text = "Choose Folder";
             this.btnFolder.UseVisualStyleBackColor = true;
             this.btnFolder.Click += new System.EventHandler(this.ChooseFolder);
+            // 
+            // btnArchive
+            // 
+            this.btnArchive.Location = new System.Drawing.Point(272, 3);
+            this.btnArchive.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnArchive.Name = "btnArchive";
+            this.btnArchive.Size = new System.Drawing.Size(120, 27);
+            this.btnArchive.TabIndex = 6;
+            this.btnArchive.Text = "Choose Archive";
+            this.btnArchive.UseVisualStyleBackColor = true;
+            this.btnArchive.Click += new System.EventHandler(this.ChooseArchive);
             // 
             // btnSave
             // 
@@ -348,14 +356,6 @@ partial class CsmGui
             this.settingsLabel.TabIndex = 4;
             this.settingsLabel.Text = "settingsLabel";
             // 
-            // chooseArchiveToolStripMenuItem
-            // 
-            this.chooseArchiveToolStripMenuItem.Name = "chooseArchiveToolStripMenuItem";
-            this.chooseArchiveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
-            this.chooseArchiveToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
-            this.chooseArchiveToolStripMenuItem.Text = "Choose Archive";
-            this.chooseArchiveToolStripMenuItem.Click += new System.EventHandler(this.ChooseArchive);
-            // 
             // CsmGui
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -372,7 +372,7 @@ partial class CsmGui
             this.MaximizeBox = false;
             this.Name = "CsmGui";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
-            this.Text = "iCSM";
+            this.Text = "Intelligent Contact Sheet Maker";
             this.Activated += new System.EventHandler(this.Activate);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.CsmGui_FormClosed);
             this.statusStrip.ResumeLayout(false);

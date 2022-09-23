@@ -2,6 +2,7 @@
 using SixLabors.ImageSharp;
 
 namespace csm.Business.Models;
+
 internal class ThumbnailData {
 
     public ThumbnailData(ImageData image, Image sheetImage) {

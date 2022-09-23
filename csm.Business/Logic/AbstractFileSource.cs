@@ -1,5 +1,4 @@
 ﻿using csm.Business.Models;
-using Serilog;
 using SixLabors.ImageSharp;
 
 namespace csm.Business.Logic {

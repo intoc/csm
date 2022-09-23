@@ -1,5 +1,4 @@
-﻿
-using Aspose.Zip.SevenZip;
+﻿using Aspose.Zip.SevenZip;
 
 namespace csm.Business.Logic {
     public class SevenZipFileSource : ArchiveFileSource {

@@ -2,6 +2,7 @@
 using System.Xml.Serialization;
 
 namespace csm.Business.Models;
+
 [Serializable]
 public class StringParam : Param {
 

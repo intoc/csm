@@ -1,5 +1,7 @@
 ﻿namespace csm.Business.Models;
+
 public class SettingsChangedEventArgs : EventArgs {
+
     public string SettingsFile { get; private set; }
     public string Message { get; private set; }
     public bool Passed { get; private set; }

@@ -780,10 +780,12 @@ public sealed class ContactSheet : IDisposable {
 
             headerImage.Mutate(imageContext => {
 
+                
+
                 // Draw title text
                 imageContext
-                    .Fill(Color.White)
-                    .DrawText(titleTextOptions, headerText, Color.Black);
+                    .Fill(Color.Black)
+                    .DrawText(titleTextOptions, headerText, Color.White);
 
                 // Stats
                 if (headerStats.BoolValue) {
@@ -810,7 +812,7 @@ public sealed class ContactSheet : IDisposable {
                     int statsTop = (int)headerFontRect.Height + padding;
                     imageContext
                         .DrawLines(new Pen(Color.DarkSlateGray, 1), new PointF(padding, statsTop), new PointF(sheetWidth.IntValue - padding, statsTop))
-                        .DrawText(statsTextOptions, stats, Color.Black);
+                        .DrawText(statsTextOptions, stats, Color.White);
                 }
             });
         }
@@ -824,7 +826,7 @@ public sealed class ContactSheet : IDisposable {
         sheetImage.Mutate((sheetContext) => {
 
             // We have to make the background white because the header text looks bad on a black background
-            sheetContext.Fill(Color.White);
+            sheetContext.Fill(Color.Black);
 
             // Draw the the header
             if (headerHeight > 0) {
@@ -832,9 +834,6 @@ public sealed class ContactSheet : IDisposable {
                 Log.Information("Drawing header. Height {0}px", headerHeight);
                 sheetContext.DrawImage(headerImage, 1);
             }
-
-            // Invert so we can have white text on a black background
-            sheetContext.Invert();
 
             // Draw the cover
             if (coverImage != null) {
@@ -991,7 +990,7 @@ public sealed class ContactSheet : IDisposable {
                 string label = Path.GetFileNameWithoutExtension(data.Image.FileName);
 
                 // Determine label size
-                Font font = data.FontFamily.CreateFont(data.FontSize);
+                Font font = data.FontFamily.CreateFont(data.FontSize, FontStyle.Regular);
                 var labelSize = TextMeasurer.Measure(label,
                     new TextOptions(font) {
                         WordBreaking = WordBreaking.Normal,
@@ -1005,9 +1004,8 @@ public sealed class ContactSheet : IDisposable {
                 // Make the label. We draw it black on white and invert because otherwise it looks like crap.
                 Image labelImage = new Image<Rgba32>((int)labelSize.Width, (int)labelSize.Height);
                 labelImage.Mutate(labelContext => {
-                    labelContext.Fill(Color.White)
-                        .DrawText(label, font, Color.Black, Point.Empty)
-                        .Invert();
+                    labelContext.Fill(Color.Black)
+                        .DrawText(label, font, Color.White, Point.Empty);
                 });
 
                 // Draw the label
