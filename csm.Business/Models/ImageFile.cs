@@ -1,24 +1,27 @@
-﻿namespace csm.Business.Models {
-    public class ImageFile {
+﻿using IOPath = System.IO.Path;
 
-        public bool Hidden { get; private set; }
+namespace csm.Business.Models;
 
-        public string Path { get; private set; }
+public class ImageFile {
 
-        public string? Directory => Path.Contains('\\') ? Path[..(Path.LastIndexOf('\\') + 1)] : @".\";
+    public bool Hidden { get; private set; }
 
-        public string? FileName => Path.Contains('\\') ? Path[(Path.LastIndexOf('\\') + 1)..] : Path;
+    public string Path { get; private set; }
 
-        public string? Extension => Path.Contains('.') ? Path[Path.LastIndexOf('.')..] : null;
+    public string? Directory =>  IOPath.GetDirectoryName(Path);
 
-        public ImageFile(string path, bool hidden = false) {
-            Path = path;
-            Hidden = hidden;
-        }
+    public string? FileName => IOPath.GetFileName(Path);
+       
+    public string Extension => IOPath.GetExtension(Path);
 
-        public ImageFile(FileInfo info) {
-            Path = info.FullName;
-            Hidden = (info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden;
-        }
+    public ImageFile(string path, bool hidden = false) {
+        this.Path = path;
+        Hidden = hidden;
+    }
+
+    public ImageFile(FileInfo info) {
+        Path = info.FullName;
+        Hidden = (info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden;
     }
 }
+

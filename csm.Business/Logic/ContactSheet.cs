@@ -11,6 +11,9 @@ using System.Xml;
 using System.Xml.Serialization;
 using Path = System.IO.Path;
 using SixLabors.Fonts.Unicode;
+using System.Net.Http.Headers;
+using SixLabors.Fonts.Tables.AdvancedTypographic;
+using SixLabors.ImageSharp.Formats.Jpeg;
 
 namespace csm.Business.Logic;
 
@@ -134,7 +137,6 @@ public sealed class ContactSheet : IDisposable {
     private readonly BoolParam header;
     private readonly BoolParam headerBold;
     private readonly BoolParam headerStats;
-    private readonly BoolParam interpolate;
     private readonly BoolParam labels;
     private readonly BoolParam noGui;
     private readonly BoolParam openOutputDirectoryOnComplete;
@@ -210,8 +212,6 @@ public sealed class ContactSheet : IDisposable {
             MaxVal = 100
         };
 
-        interpolate = new BoolParam("-interp", true);
-
         preview = new BoolParam("-preview", false);
         exitOnComplete = new BoolParam("-exit", false);
 
@@ -228,7 +228,6 @@ public sealed class ContactSheet : IDisposable {
         generalParams.AddSubParam(minDimThumbnail);
         generalParams.AddSubParam(borders);
         generalParams.AddSubParam(quality);
-        generalParams.AddSubParam(interpolate);
         generalParams.AddSubParam(exitOnComplete);
         generalParams.AddSubParam(openOutputDirectoryOnComplete);
         generalParams.AddSubParam(preview);
@@ -516,7 +515,6 @@ public sealed class ContactSheet : IDisposable {
         List<List<ImageData>> analyses = new() {
             new List<ImageData>()
         };
-        //Rectangle coverBounds = new();
         Image? coverImage = null;
         int imageCount;
         int rowIndex = 0;
@@ -531,15 +529,13 @@ public sealed class ContactSheet : IDisposable {
             Log.Debug("DrawAndSave waiting...");
         }
         while (waitForLoad) {
-            //lock (imageSet.Images) {
             Log.Debug("DrawAndSave waiting... imageSet.Loaded={0} _firstLoadIncomplete={0}", imageSet.Loaded, _firstLoadIncomplete);
             if (imageSet.Loaded && !_firstLoadIncomplete) {
                 break;
             }
-            //}
             Thread.Sleep(250);
         }
-
+        Point coverPoint = new(0, 0);
         lock (imageSet.Images) {
             Log.Debug("DrawAndSave starting");
 
@@ -568,8 +564,6 @@ public sealed class ContactSheet : IDisposable {
                 // Begin image analysis
                 Log.Information("Analyzing cover...");
                 coverImage = Image.Load(coverFile.Path);
-                var coverPoint = new Point();
-                //coverBounds = new Rectangle { Width = coverImage.Width, Height = coverImage.Height };
                 double maxCoverImageScaleForGap = Math.Round(0.75 * columns.IntValue) / columns.IntValue;
 
                 if (fillGap) {
@@ -707,8 +701,6 @@ public sealed class ContactSheet : IDisposable {
                         // Next row
                         curPoint.Y += rowHeight;
                     }
-                    // Adjust for scale error
-                    //coverBounds.Height = curPoint.Y;
                 } else {
                     // No gap images. Display the cover normally.
                     coverPoint.X = sheetWidth.IntValue / 2 - coverImage.Width / 2;
@@ -765,115 +757,117 @@ public sealed class ContactSheet : IDisposable {
 
         #region Drawing
 
+        // Get fonts
         FontCollection fonts = new();
-        fonts.Add("fonts/OpenSans-Bold.ttf");
-        FontFamily fontFamily = fonts.Add("fonts/OpenSans-Regular.ttf");
+        fonts.Add("Fonts/OpenSans-Bold.ttf");
+        FontFamily fontFamily = fonts.Add("Fonts/OpenSans-Regular.ttf");
 
-        // Set up the header
-        Image? headerImage = null;
+        // Draw the header image first since we can't extend the canvas during drawing
         int headerHeight = 0;
+        using var headerImage = new Image<Rgba32>(sheetWidth.IntValue, sheetWidth.IntValue);
+
         if (header.BoolValue) {
-            headerImage = new Image<Rgba32>(sheetWidth.IntValue, sheetWidth.IntValue);
-
-
-
-
-            SolidBrush br = new(Color.White);
             string headerText = headerTitle.ParsedValue ?? string.Empty;
-            Font titleFont = fontFamily.CreateFont(headerFontSize.IntValue, headerBold.BoolValue ? FontStyle.Bold : FontStyle.Regular);
-            Font statsFont = fontFamily.CreateFont(headerFontSize.IntValue, FontStyle.Regular);
             int padding = 5;
             int headerWidth = sheetWidth.IntValue - (padding * 2);
-            TextOptions titleTextOptions = new TextOptions(titleFont) { WrappingLength = headerWidth };
-            TextOptions statsTextOptions = new TextOptions(statsFont) { WrappingLength = headerWidth };
+
+            // Build title font
+            Font titleFont = fontFamily.CreateFont(headerFontSize.IntValue, headerBold.BoolValue ? FontStyle.Bold : FontStyle.Regular);
+            TextOptions titleTextOptions = new(titleFont) {
+                WrappingLength = headerWidth,
+                Origin = new(padding, 0)
+            };
             FontRectangle headerFontRect = TextMeasurer.Measure(headerText, titleTextOptions);
-            int statsHeight = 0;
-            string? stats = null;
-            if (headerStats.BoolValue) {
-                // Determine largest image
-                var maxSize = analyses
-                    .Where(x => x.Count > 0)
-                    .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
-                    .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
-                // Determine how much space the stats will take up in the header
-                stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px";
-                var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
-                statsHeight = (int)statsFontSize.Height + padding * 2 + 1;
+            headerHeight = (int)Math.Ceiling(headerFontRect.Height + padding * 2);
 
-                // Pre-draw the header
-                headerHeight = (int)Math.Ceiling(headerFontRect.Height + statsHeight + padding * 2);
-                PointF headerPoint = new(padding, padding);
+            headerImage.Mutate(imageContext => {
 
-                headerImage.Mutate(imageContext => {
-                    imageContext.DrawText(titleTextOptions, headerText, Color.White);
-                    if (stats != null) {
-                        // Pre-draw stats
-                        int statsTop = (int)headerFontRect.Height + padding * 2 + 1;
-                        imageContext.DrawLines(new Pen(Color.DarkSlateGray, 1), new PointF(padding, statsTop), new PointF(sheetWidth.IntValue - padding, statsTop));
-                        //imageContext.DrawString(stats, statsFont, br,
-                        //     new Rectangle(padding, statsTop + padding, sheetWidth.IntValue - padding * 2, (int)statsFontSize.Height));
-                        imageContext.DrawText(statsTextOptions, stats, Color.White);
-                    }
-                });
-            }
-        }
+                // Draw title text
+                imageContext
+                    .Fill(Color.White)
+                    .DrawText(titleTextOptions, headerText, Color.Black);
 
-        // Determine the overall sheet height
-        ImageData last = analyses.Last(l => l.Count > 0)[0];
-        int sheetHeight = last.Y + last.Height + headerHeight;
-        if (!fillGap) {
-            sheetHeight += coverImage?.Height ?? 0;
+                // Stats
+                if (headerStats.BoolValue) {
+                    // Build stats font
+                    Font statsFont = fontFamily.CreateFont(headerFontSize.IntValue, FontStyle.Regular);
+                    TextOptions statsTextOptions = new(statsFont) {
+                        WrappingLength = headerWidth,
+                        Origin = new(padding, headerFontRect.Height + padding)
+                    };
+
+                    // Determine largest image
+                    var maxSize = analyses
+                        .Where(x => x.Count > 0)
+                        .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
+                        .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
+
+                    // Determine how much space the stats will take up in the header
+                    string stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px";
+                    var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
+                    int statsHeight = (int)statsFontSize.Height + padding;
+                    headerHeight = (int)Math.Ceiling(headerFontRect.Height + statsHeight + padding);
+
+                    // Pre-draw stats
+                    int statsTop = (int)headerFontRect.Height + padding;
+                    imageContext
+                        .DrawLines(new Pen(Color.DarkSlateGray, 1), new PointF(padding, statsTop), new PointF(sheetWidth.IntValue - padding, statsTop))
+                        .DrawText(statsTextOptions, stats, Color.Black);
+                }
+            });
         }
 
         // Create the output image
+        ImageData last = analyses.Last(l => l.Count > 0).First();
+        int sheetHeight = last.Y + last.Height + headerHeight + (fillGap ? 0 : coverImage?.Height ?? 0);
         using Image sheetImage = new Image<Rgba32>(sheetWidth.IntValue, sheetHeight);
 
-        // Set up the Graphics and resampling options
+        // Draw the sheet
+        sheetImage.Mutate((sheetContext) => {
 
-        //sheetGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-        //sheetGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            // We have to make the background white because the header text looks bad on a black background
+            sheetContext.Fill(Color.White);
 
-        // Draw the header
-        if (headerImage != null) {
-            Log.Information("Drawing header...");
-            sheetImage.Mutate(imageContext => {
-                imageContext.DrawImage(headerImage, 1);
-            });
-            headerImage.Dispose();
-        }
+            // Draw the the header
+            if (headerHeight > 0) {
+                // Draw the header on the sheet
+                Log.Information("Drawing header. Height {0}px", headerHeight);
+                sheetContext.DrawImage(headerImage, 1);
+            }
 
-        // Draw the cover
-        if (coverImage != null) {
-            Log.Information("Drawing cover {0}...", Path.GetFileName(coverFile.Path));
-            coverPoint.Y += headerHeight + borders.IntValue;
-            coverPoint.X += borders.IntValue;
-            coverImage.Mutate(imageContext => {
-                imageContext.Pad(borders.IntValue, borders.IntValue);
-            });
-            sheetImage.Mutate(imageContext => {
+            // Invert so we can have white text on a black background
+            sheetContext.Invert();
+
+            // Draw the cover
+            if (coverImage != null) {
+                Log.Information("Drawing cover {0}. Height {1}px", Path.GetFileName(coverFile.Path), coverImage.Height);
+                coverPoint.Y += headerHeight + borders.IntValue;
+                coverPoint.X += borders.IntValue;
+                coverImage.Mutate(imageContext => {
+                    if (borders.IntValue > 0) {
+                        imageContext.Resize(coverImage.Width - borders.IntValue * 2, coverImage.Height - borders.IntValue * 2);
+                    }
+                });
+
                 if (preview.BoolValue) {
-                    imageContext.Draw(Pens.Solid(Color.LightGreen, 1), coverImage.Bounds());
-                    imageContext.DrawText(
-                        "COVER",
-                        fontFamily.CreateFont(14, FontStyle.Bold),
-                    Color.Black,
+                    var bounds = coverImage.Bounds();
+                    bounds.X = coverPoint.X;
+                    bounds.Y = coverPoint.Y;
+                    sheetContext.Fill(Brushes.Solid(Color.White), bounds);
+                    sheetContext.DrawText(
+                        "COVER", fontFamily.CreateFont(14, FontStyle.Bold), Color.Black,
                         new PointF(coverPoint.X + coverImage.Width / 2, coverPoint.Y + coverImage.Height / 2));
                 } else {
-                    imageContext.DrawImage(coverImage, 1);
+                    sheetContext.DrawImage(coverImage, coverPoint, 1);
                 }
-            });
 
-            coverImage?.Dispose();
-        }
-
-        // Interpolation is being done by the draw function on separate graphics
-        // objects, no need to use it here. Same for smoothing.
-        //sheetGraphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Default;
-        //sheetGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.Default;
+                coverImage.Dispose();
+            }
+        });
 
         // Draw the thumbnail images
         int index = 1;
-        Log.Information("Drawing sheet...");
+        Log.Information("Drawing sheet. Height {0}px", sheetHeight);
 
         drawnCount = 0;
         progressStep = 0;
@@ -887,11 +881,12 @@ public sealed class ContactSheet : IDisposable {
                 }
 
                 // Create info for threaded load/draw operation
-                DrawThreadObj tdata = new(col, sheetImage) {
+                ThumbnailData tdata = new(col, sheetImage) {
                     Index = index,
                     ImageTotal = imageCount,
                     FontSize = labels.BoolValue ? labelFontSize.IntValue : 0,
-                    BorderWidth = borders.IntValue
+                    BorderWidth = borders.IntValue,
+                    FontFamily = fontFamily
                 };
 
                 if (col == row.Last() && col.X + col.Width != sheetWidth.IntValue) {
@@ -904,11 +899,6 @@ public sealed class ContactSheet : IDisposable {
         }
         await Task.WhenAll(drawThumbTasks);
 
-        // Save the sheet with the given Jpeg quality
-        //ImageCodecInfo? jpgEncoder = ImageCodecInfo.GetImageDecoders().SingleOrDefault(c => c.FormatID == ImageFormat.Jpeg.Guid);
-        //EncoderParameters myEncoderParameters = new(1);
-        //myEncoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, quality.IntValue);
-
         DateTime endTime = DateTime.Now;
         TimeSpan duration = endTime - startTime;
 
@@ -919,10 +909,10 @@ public sealed class ContactSheet : IDisposable {
         Log.Information("---------------------------------------------------------------------------");
         Log.Information("Completed! It took {0}", duration);
         Log.Information("---------------------------------------------------------------------------");
-        Log.Information("Sheet Size: {0} images, {1} rows, {2}x{3}px", imageCount, analyses.Count(r => r.Count > 0), sheetImage.Size.Width, sheetImage.Size.Height);
+        Log.Information("Sheet Size: {0} images, {1} rows, {2}x{3}px", imageCount, analyses.Count(r => r.Count > 0), sheetImage.Width, sheetImage.Height);
         Log.Information("Maximum Images per Row: {0}", analyses.Max(r => r.Count));
         Log.Information("Minimum Images per Row: {0}", analyses.Where(r => r.Count > 0).Min(r => r.Count));
-        Log.Information("Output Quality: {0}%{1}", quality.IntValue, interpolate.BoolValue ? ", Using High-Quality Interpolation." : "");
+        Log.Information("Output Quality: {0}%", quality.IntValue);
         Log.Information("---------------------------------------------------------------------------");
 
         try {
@@ -943,17 +933,17 @@ public sealed class ContactSheet : IDisposable {
                         }
                     }
                 }
-                //if (jpgEncoder != null) {
+
                 string? dir = Path.GetDirectoryName(OutFilePath(suffix));
                 if (dir != null && !Directory.Exists(dir)) {
                     Log.Information("Creating Directory: {0}", dir);
                     Directory.CreateDirectory(dir);
                 }
-                sheetImage.SaveAsJpeg(OutFilePath(suffix));
+                sheetImage.SaveAsJpeg(OutFilePath(suffix), new JpegEncoder {
+                    Quality = quality.IntValue
+                });
                 Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
-                // } else {
-                //   ErrorOccurred?.Invoke("JPEG Encoder not found.");
-                // }
+
             }
         } catch (System.Runtime.InteropServices.ExternalException e) {
             ErrorOccurred?.Invoke("Can't Save Sheet", e);
@@ -974,77 +964,70 @@ public sealed class ContactSheet : IDisposable {
     /// Draw a thumbnail image on the contact sheet
     /// </summary>
     /// <param name="data">Data about the image and its position on the sheet</param>
-    private void DrawThumb(DrawThreadObj data) {
+    private void DrawThumb(ThumbnailData data) {
         Image image;
-        if (!preview.BoolValue) {
-            image = Image.Load(data.File);
-        } else {
-            image = new Image<Rgba32>(data.Image.Width, data.Image.Height);
-        }
-
-        Rectangle thumb = new(
-            data.BorderWidth,
-            data.BorderWidth,
+        Size size = new(
             data.Image.Width - data.BorderWidth * 2,
             data.Image.Height - data.BorderWidth * 2);
-        Image bmp = new Image<Rgba32>(data.Image.Width, data.Image.Height);
-
-
-        // Only use the high-quality shit if specified
-        //if (interpolate.BoolValue) {
-        //    thumbG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
-        //} else {
-        //    thumbG.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Low;
-        //}
+        if (preview.BoolValue) {
+            image = new Image<Rgba32>(size.Width, size.Height);
+        } else {
+            image = Image.Load(data.File);
+        }
 
         image.Mutate(imageContext => {
+
             if (preview.BoolValue) {
-           
-                    imageContext.Fill(Brushes.Solid(Color.White), thumb);
-                    imageContext.Draw(Pens.Solid(Color.LightGreen, 1), thumb);
-           
+                // Make the preview box
+                imageContext.Fill(Brushes.Solid(Color.White))
+                    .Draw(Pens.Solid(Color.LightGreen, 1), new Rectangle(Point.Empty, size));
             } else {
-                // scale here?
-                imageContext.DrawImage(image, 1);
+                // Resize the image to thumbnail size
+                imageContext.Resize(size.Width, size.Height, KnownResamplers.Triangle);
+            }
+
+            // Draw image name label
+            if (data.FontSize > 0) {
+
+                // Set label to file name, no extension
+                string label = data.Image.FileName;
+                label = label[..label.LastIndexOf(".")];
+                // Determine label size
+                Font font = data.FontFamily.CreateFont(data.FontSize);
+                var labelSize = TextMeasurer.Measure(label,
+                    new TextOptions(font) {
+                        WordBreaking = WordBreaking.Normal,
+                        WrappingLength = data.Image.Width,
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    });
+
+                // Center label at the bottom of the thumbnail
+                Point labelCoords = new((int)(size.Width - labelSize.Width) / 2, (int)(size.Height - labelSize.Height));
+
+                // Make the label. We draw it black on white and invert because otherwise it looks like crap.
+                Image labelBg = new Image<Rgba32>((int)labelSize.Width, (int)labelSize.Height);
+                labelBg.Mutate(labelContext => {
+                    labelContext.Fill(Color.White)
+                        .DrawText(label, font, Color.Black, Point.Empty)
+                        .Invert();
+                });
+
+                // Draw the label
+                imageContext.DrawImage(labelBg, labelCoords, 0.5f);
             }
         });
 
-        image.Dispose();
-
-
-        // Draw image name labels
-        if (data.FontSize > 0) {
-            // Set label to file name, no extension
-            string label = data.Image.FileName;
-            label = label[..label.LastIndexOf(".")];
-            // Determine label size
-            Font font = new(FontFamily.GenericSansSerif, data.FontSize);
-            SizeF labelSize = thumbG.MeasureString(label, font, data.Image.Width);
-            // Center label at the bottom of the thumbnail
-            RectangleF labelClip = new(
-                (data.Image.Width - labelSize.Width) / 2,
-                data.Image.Height - labelSize.Height,
-                labelSize.Width,
-                labelSize.Height);
-            // Align text center
-            StringFormat alignCenter = new() {
-                Alignment = StringAlignment.Center
-            };
-            // Draw translucent black background
-            thumbG.FillRectangle(new SolidBrush(Color.FromArgb(150, Color.Black)), labelClip);
-            // Draw label
-            thumbG.DrawString(label, font, Brushes.White, labelClip, alignCenter);
-        }
-
-        // Have to lock on the Graphics object
-        // because two threads can't draw on it at the same time
         lock (graphicsLock) {
-            data.SheetImage.DrawImage(bmp, data.Image.Bounds);
+            data.SheetImage.Mutate(context => {
+                // Shift the image to create the left and top border
+                var coords = new Point(data.Image.X + data.BorderWidth, data.Image.Y + data.BorderWidth);
+                // Draw the thumbnail
+                context.DrawImage(image, coords, 1.0f);
+            });
         }
 
         // Clean up
-        bmp.Dispose();
-        thumbG.Dispose();
+        image.Dispose();
 
         // Send a limited number of progress updates to the listeners
         lock (progressLock) {

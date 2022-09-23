@@ -2,8 +2,8 @@
     public class ImageFileTests {
 
         [Theory]
-        [InlineData(@"cover.jpg", @".\")]
-        [InlineData(@"C:\images\cover.jpg", @"C:\images\")]
+        [InlineData(@"cover.jpg", @"")]
+        [InlineData(@"C:\images\cover.jpg", @"C:\images")]
         public void ImageFile_Directory_Theory(string path, string expected) {
             ImageFile file = new(path);
             Assert.Equal(expected, file.Directory);
@@ -20,7 +20,7 @@
         [Theory]
         [InlineData(@"cover.jpg", @".jpg")]
         [InlineData(@"cover.infix.jpg", @".jpg")]
-        [InlineData(@"cover", null)]
+        [InlineData(@"cover", @"")]
         public void ImageFile_Extension_Theory(string path, string expected) {
             ImageFile file = new(path);
             Assert.Equal(expected, file.Extension);

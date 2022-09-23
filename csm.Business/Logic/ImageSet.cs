@@ -44,11 +44,9 @@ namespace csm.Business.Logic {
                     }
                     var sw = Stopwatch.StartNew();
 
-                    Log.Debug("here1");
                     var getFilesTask = _imageSource.GetFilesAsync($"*{fileType}");
                     getFilesTask.Wait();
                     var allFiles = getFilesTask.Result;
-                    Log.Debug("here2");
 
                     // Get a list of all the images in the source
                     // Don't include hidden files
@@ -56,11 +54,8 @@ namespace csm.Business.Logic {
                         from file in allFiles
                         where !file.Hidden
                         select file.Path;
-                    Log.Debug("here3");
                     // Load Image data into list
                     _images.Clear();
-
-                    Log.Debug("here4");
 
                     IList<Task> tasks = new List<Task>();
                     foreach (string path in files) {
@@ -68,13 +63,9 @@ namespace csm.Business.Logic {
                         _images.Add(image);
                         tasks.Add(Task.Run(() => _imageSource.LoadImageDimensions(image)));
                     }
-                    Log.Debug("here5");
                     Task.WaitAll(tasks.ToArray());
-                    Log.Debug("here6");
                     sw.Stop();
                     Log.Debug("{0}.{1} took {2}", GetType().Name, "LoadImageListAsync", sw.Elapsed);
-
-                    
                 }
                 RefreshImageList(minDim, outFileName, coverFileName);
             });

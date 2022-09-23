@@ -54,13 +54,9 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="image">The <see cref="ImageData"/> to initialize</param>
         public void LoadImageDimensions(ImageData image) {
-            Log.Debug("LoadImageDimensions start {0}", image.FileName);
             using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
-            Log.Debug("LoadImageDimensions stream opened {0}", image.FileName);
             using var fromStream = Image.Load(stream);
-            Log.Debug("LoadImageDimensions image loaded {0}", image.FileName);
             image.InitSize(new Size(fromStream.Width, fromStream.Height));
-            Log.Debug("LoadImageDimensions end {0}", image.FileName);
         }
 
         /// <summary>
