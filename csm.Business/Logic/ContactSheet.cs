@@ -2,18 +2,14 @@
 using Serilog;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 using Path = System.IO.Path;
-using SixLabors.Fonts.Unicode;
-using System.Net.Http.Headers;
-using SixLabors.Fonts.Tables.AdvancedTypographic;
-using SixLabors.ImageSharp.Formats.Jpeg;
 
 namespace csm.Business.Logic;
 
