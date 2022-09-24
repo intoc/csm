@@ -963,17 +963,12 @@ public sealed class ContactSheet : IDisposable {
         drawnCount = 0;
         progressStep = 0;
         IList<Task> drawThumbTasks = new List<Task>();
-
-        Font labelFont = fontFamily.CreateFont(labels.BoolValue ? labelFontSize.IntValue : 0, FontStyle.Regular);
-        TextOptions labelOptions = new(labelFont) {
-            WordBreaking = WordBreaking.Normal,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
+        Font labelFont = fontFamily.CreateFont(labels.BoolValue ? labelFontSize.IntValue : 0, FontStyle.Bold);
 
         foreach (ImageData image in analyses.SelectMany(row => row.Select(image => image))) {
 
             // Create info for threaded load/draw operation
-            ThumbnailData tdata = new(image, sheetImage, labelFont, labelOptions) {
+            ThumbnailData tdata = new(image, sheetImage, labelFont) {
                 Index = index++,
                 ImageTotal = imageCount
             };
@@ -1076,23 +1071,29 @@ public sealed class ContactSheet : IDisposable {
 
                 // Set label to file name, no extension
                 string label = Path.GetFileNameWithoutExtension(data.Image.FileName);
+                TextOptions labelOptions = new(data.LabelFont) {
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    TextAlignment = TextAlignment.Center,
+                    WordBreaking = WordBreaking.BreakAll,
+                    WrappingLength = data.Image.Width - data.LabelFont.Size
+                };
 
                 // Determine label size
-                data.LabelTextOptions.WrappingLength = data.Image.Width;
-                var labelSize = TextMeasurer.Measure(label, data.LabelTextOptions);
+                var labelSize = TextMeasurer.Measure(label, labelOptions);
                 labelSize = labelSize.Inflate(data.LabelFont.Size / 2, 0);
+                if (size.Width - labelSize.Width < 10) {
+                    labelSize = new FontRectangle(labelSize.X, labelSize.Y, size.Width, labelSize.Height);
+                }
+                labelOptions.Origin = new PointF(labelSize.Width / 2, 0);
 
-                // Center label at the bottom of the thumbnail
-                Point labelCoords = new((int)(size.Width - labelSize.Width) / 2, (int)(size.Height - labelSize.Height));
-
-                // Make the label.
-                Image labelImage = new Image<Rgba32>((int)labelSize.Width, (int)labelSize.Height);
+                // Make the label image
+                using Image labelImage = new Image<Rgba32>((int)Math.Round(labelSize.Width), (int)Math.Round(labelSize.Height));
                 labelImage.Mutate(labelContext => {
-                    labelContext.Fill(Color.Black)
-                        .DrawText(label, data.LabelFont, Color.White, new Point((int)Math.Round(data.LabelFont.Size / 2), 0));
+                    labelContext.Fill(Color.Black).DrawText(labelOptions, label, Color.White);
                 });
 
-                // Draw the label
+                // Draw the label image on the thumbnail. Center at the bottom.
+                Point labelCoords = new((int)(size.Width - labelSize.Width) / 2, (int)(size.Height - labelSize.Height));
                 imageContext.DrawImage(labelImage, labelCoords, 0.5f);
             }
         });
