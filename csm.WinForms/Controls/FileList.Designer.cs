@@ -37,7 +37,7 @@ partial class FileList {
             this.btnReset = new System.Windows.Forms.Button();
             this.btnClose = new System.Windows.Forms.Button();
             this.FileCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Size = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ImageSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Orientation = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.statusBar.SuspendLayout();
             this.pnlCenter.SuspendLayout();
@@ -84,7 +84,7 @@ partial class FileList {
             this.files.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.files.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.FileCol,
-            this.Size,
+            this.ImageSize,
             this.Orientation});
             this.files.DataSource = this.binder;
             this.files.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -174,10 +174,10 @@ partial class FileList {
             // 
             // Size
             // 
-            this.Size.DataPropertyName = "SizeString";
-            this.Size.HeaderText = "Size";
-            this.Size.Name = "Size";
-            this.Size.ReadOnly = true;
+            this.ImageSize.DataPropertyName = "SizeString";
+            this.ImageSize.HeaderText = "Size";
+            this.ImageSize.Name = "ImageSize";
+            this.ImageSize.ReadOnly = true;
             // 
             // Orientation
             // 
@@ -229,6 +229,6 @@ partial class FileList {
     private BindingSource binder;
     private Button btnReset;
     private DataGridViewTextBoxColumn FileCol;
-    private DataGridViewTextBoxColumn Size;
+    private DataGridViewTextBoxColumn ImageSize;
     private DataGridViewTextBoxColumn Orientation;
 }
