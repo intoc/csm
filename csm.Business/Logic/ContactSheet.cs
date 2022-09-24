@@ -157,7 +157,6 @@ public sealed class ContactSheet : IDisposable {
     private DateTime startTime;
     private int drawnCount, progressStep;
     private readonly object graphicsLock = new();
-    private readonly object progressLock = new();
     private bool _firstLoadIncomplete;
 
     #endregion
@@ -584,7 +583,7 @@ public sealed class ContactSheet : IDisposable {
                     Log.Information("Cover image is too large. Reducing size to fit SheetWidth.");
                     coverImageData.Scale((double)sheetWidth.IntValue / coverImageData.Width);
                 }
-                Log.Information("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverImageData);
+                Log.Information("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverImageData.Bounds);
             }
 
             #endregion
@@ -592,7 +591,7 @@ public sealed class ContactSheet : IDisposable {
             #region Analysis Pass 1 - Build initial rows scaled to width
 
             // Begin image analysis
-            Log.Information("Analyzing {0} files (Pass 1)", imageCount);
+            Log.Information("Pass 1: Analyzing {0} images", imageCount);
 
             // First pass, add the same number of images to each row,
             // scale to width, record maximum row height
@@ -613,12 +612,13 @@ public sealed class ContactSheet : IDisposable {
                 }
                 ++fileIndex;
             }
+            Log.Information("Added {0} rows, maxRowHeight: {1}", analyses.Count, maxRowHeight);
 
             #endregion
 
             #region Analysis Pass 2 - Scale and Shift
 
-            Log.Information("Analyzing {0} Rows (Pass 2), maxRowHeight: {1}", analyses.Count, maxRowHeight);
+            Log.Information("Pass 2: Analyzing {0} Rows to normalize row height", analyses.Count);
 
             // Second pass tries to make all rows of similar height by
             // shifting images and rescaling rows.
@@ -767,10 +767,12 @@ public sealed class ContactSheet : IDisposable {
             // Draw the header image first since we can't extend the canvas during drawing
 
             if (header.BoolValue) {
+                Log.Information("Building the header {0} stats", headerStats.BoolValue ? "with" : "without");
                 headerImage = new Image<Rgba32>(sheetWidth.IntValue, sheetWidth.IntValue);
                 string headerText = headerTitle.ParsedValue ?? string.Empty;
                 int padding = 5;
                 int headerWidth = sheetWidth.IntValue - (padding * 2);
+                Log.Information("Title{1}: {0}", headerText, headerBold.BoolValue ? " (bold)" : string.Empty);
 
                 // Build title font
                 Font titleFont = fontFamily.CreateFont(headerFontSize.IntValue, headerBold.BoolValue ? FontStyle.Bold : FontStyle.Regular);
@@ -808,6 +810,7 @@ public sealed class ContactSheet : IDisposable {
                         var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
                         int statsHeight = (int)statsFontSize.Height + 10;
                         headerHeight = (int)Math.Ceiling(headerFontRect.Height + statsHeight + padding);
+                        Log.Information("Stats: {0}", stats);
 
                         // Pre-draw stats
                         int statsTop = (int)headerFontRect.Height + padding;
@@ -818,6 +821,7 @@ public sealed class ContactSheet : IDisposable {
 
                     // Get rid of extra height
                     headerImageContext.Crop(sheetWidth.IntValue, headerHeight);
+                    Log.Information("Height: {0}px", headerHeight);
                 });
             }
 
@@ -848,7 +852,7 @@ public sealed class ContactSheet : IDisposable {
 
             #region Calculate Borders
 
-            Log.Information("Calculating borders (Width {0}px) and accounting for rounding error", borderWidth);
+            Log.Information("Pass 3: Calculating borders (Width {0}px) and accounting for rounding error", borderWidth);
 
             // Calculate row height scale factor
             ImageData last = analyses.Last().First();
@@ -912,7 +916,6 @@ public sealed class ContactSheet : IDisposable {
 
             // Calculate final sheet height
             sheetHeight = last.Y + last.Height + borderWidth;
-
         }
 
         #endregion
@@ -1077,15 +1080,16 @@ public sealed class ContactSheet : IDisposable {
                 // Determine label size
                 data.LabelTextOptions.WrappingLength = data.Image.Width;
                 var labelSize = TextMeasurer.Measure(label, data.LabelTextOptions);
+                labelSize = labelSize.Inflate(data.LabelFont.Size / 2, 0);
 
                 // Center label at the bottom of the thumbnail
                 Point labelCoords = new((int)(size.Width - labelSize.Width) / 2, (int)(size.Height - labelSize.Height));
 
-                // Make the label. We draw it black on white and invert because otherwise it looks like crap.
+                // Make the label.
                 Image labelImage = new Image<Rgba32>((int)labelSize.Width, (int)labelSize.Height);
                 labelImage.Mutate(labelContext => {
                     labelContext.Fill(Color.Black)
-                        .DrawText(label, data.LabelFont, Color.White, Point.Empty);
+                        .DrawText(label, data.LabelFont, Color.White, new Point((int)Math.Round(data.LabelFont.Size / 2), 0));
                 });
 
                 // Draw the label
