@@ -33,6 +33,9 @@ namespace csm.Business.Logic {
                 }
                 base.Dispose(disposing);
             }
+            // TODO:
+            // Delete old directories?
+            // Use a global static GUID for parent folder and delete parent folders without that GUID
         }
 
         public override void Initialize(Action? callback = null) {

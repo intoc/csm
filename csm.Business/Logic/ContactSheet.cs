@@ -503,6 +503,9 @@ public sealed class ContactSheet : IDisposable {
             new List<ImageData>()
         };
         ImageData? coverImageData = null;
+        Image<Rgba32>? headerImage = null;
+        Image<Rgba32> sheetImage;
+        int sheetHeight = 0;
         int imageCount;
         int rowIndex = 0;
         int maxRowHeight = 0;
@@ -510,6 +513,12 @@ public sealed class ContactSheet : IDisposable {
         int fileIndex = 1;
         bool drawCover = cover.BoolValue;
         bool fillGap = drawCover && fillCoverGap.BoolValue;
+        int borderWidth = borders.IntValue;
+
+        // Get fonts
+        FontCollection fonts = new();
+        fonts.Add("Fonts/OpenSans-Bold.ttf");
+        FontFamily fontFamily = fonts.Add("Fonts/OpenSans-Regular.ttf");
 
         // Wait for the image list to be ready
         if (waitForLoad) {
@@ -523,8 +532,10 @@ public sealed class ContactSheet : IDisposable {
             Thread.Sleep(250);
         }
 
+
+        Log.Debug("DrawAndSave starting");
+
         lock (imageSet.Images) {
-            Log.Debug("DrawAndSave starting");
 
             images = imageSet.Images.Where(i => i.Include);
             imageCount = images.Count();
@@ -578,6 +589,8 @@ public sealed class ContactSheet : IDisposable {
 
             #endregion
 
+            #region Analysis Pass 1 - Build initial rows scaled to width
+
             // Begin image analysis
             Log.Information("Analyzing {0} files (Pass 1)", imageCount);
 
@@ -600,215 +613,314 @@ public sealed class ContactSheet : IDisposable {
                 }
                 ++fileIndex;
             }
-        }
 
-        Log.Information("Analyzing {0} Rows (Pass 2), maxRowHeight: {1}", analyses.Count, maxRowHeight);
+            #endregion
 
-        Size minRowDims;
+            #region Analysis Pass 2 - Scale and Shift
 
-        // Second pass tries to make all rows of similar height by
-        // shifting images and rescaling rows.
-        bool done = false;
-        int rowWidth;
-        Point curPoint = new(0, 0);
-        bool inGap = fillGap;
+            Log.Information("Analyzing {0} Rows (Pass 2), maxRowHeight: {1}", analyses.Count, maxRowHeight);
 
-        for (rowIndex = 0; !done; ++rowIndex) {
+            // Second pass tries to make all rows of similar height by
+            // shifting images and rescaling rows.
+            Size minRowDims;
+            bool done = false;
+            int rowWidth;
+            Point curPoint = new(0, 0);
+            bool inGap = fillGap;
 
-            if (inGap && coverImageData != null) {
-                // Row space = cover gap
-                rowWidth = sheetWidth.IntValue - coverImageData.Width;
-                curPoint.X = coverImageData.Width;
-            } else {
-                // Row space = sheet width
-                rowWidth = sheetWidth.IntValue;
-                curPoint.X = 0;
-            }
+            for (rowIndex = 0; !done; ++rowIndex) {
 
-            // Set the first image's location
-            // Succeeding row images will follow horizontally
-            analyses[rowIndex][0].X = curPoint.X;
-            analyses[rowIndex][0].Y = curPoint.Y;
+                if (inGap && coverImageData != null) {
+                    // Row space = cover gap
+                    rowWidth = sheetWidth.IntValue - coverImageData.Width;
+                    curPoint.X = coverImageData.Width;
+                } else {
+                    // Row space = sheet width
+                    rowWidth = sheetWidth.IntValue;
+                    curPoint.X = 0;
+                }
 
-            // Do the scaling/shifting to give the row a similar
-            // height to the rest, with each image's dimensions
-            // greater than or equal to the minimum dimension param.
-            rowHeight = ScaleRow(analyses[rowIndex], rowWidth);
-            minRowDims = MinDims(analyses[rowIndex]);
-            while (analyses[rowIndex].Count > 1 &&
-                    (rowHeight < maxRowHeight * 0.85 ||
-                     minRowDims.Width < minDimThumbnail.IntValue ||
-                     minRowDims.Height < minDimThumbnail.IntValue ||
-                     analyses[rowIndex].Count > columns.IntValue)) {
-                ShiftImage(analyses, rowIndex, rowIndex + 1);
+                // Set the first image's location
+                // Succeeding row images will follow horizontally
+                analyses[rowIndex][0].X = curPoint.X;
+                analyses[rowIndex][0].Y = curPoint.Y;
+
+                // Do the scaling/shifting to give the row a similar
+                // height to the rest, with each image's dimensions
+                // greater than or equal to the minimum dimension param.
                 rowHeight = ScaleRow(analyses[rowIndex], rowWidth);
                 minRowDims = MinDims(analyses[rowIndex]);
-            }
-
-            // Process at the end of the cover gap
-            // Or at the end of the imagelist
-            int overFlow = curPoint.Y + rowHeight - coverImageData?.Height ?? 0;
-            if (inGap && coverImageData != null && (overFlow > 0 || rowIndex + 1 == analyses.Count || analyses[rowIndex + 1].Count == 0)) {
-                if (overFlow > rowHeight / 3) {
-                    // This row is too tall to fit in the gap.
-                    // Move all images in the row to the next one
-                    while (analyses[rowIndex].Count > 0) {
-                        ShiftImage(analyses, rowIndex, rowIndex + 1);
-                    }
-                    // Remove this empty row
-                    Log.Information("Removing row " + rowIndex);
-                    analyses.Remove(analyses[rowIndex]);
-
-                    // Since we removed a row, the next row is now this one.
-                    // Make sure to process it
-                    --rowIndex;
-                }
-
-                // If we just moved the first row down, then there's no point in
-                // resizing the gap images (there aren't any).
-                if (rowIndex >= 0) {
-
-                    // Scale the cover and the gap images so they are the same height
-                    double h1 = coverImageData.Height;
-                    double w1 = coverImageData.Width;
-                    double h2 = analyses[rowIndex][0].Y + analyses[rowIndex][0].Height;
-                    double w2 = rowWidth;
-
-                    double f1 = h2 * sheetWidth.IntValue / (h1 * w2 + h2 * w1);
-
-                    coverImageData.Scale(f1);
-
-                    curPoint.Y = 0;
-                    for (int i = 0; i <= rowIndex; ++i) {
-                        // Move images to the start of the new gap
-                        analyses[i][0].X = coverImageData.Width;
-                        analyses[i][0].Y = curPoint.Y;
-                        // Scale row width to the new gap
-                        rowHeight = ScaleRow(analyses[i], sheetWidth.IntValue - coverImageData.Width);
-                        Log.Information("In Gap, Final Scaling, Row {0}", i);
-                        // Next row
-                        curPoint.Y += rowHeight;
-                    }
-                } else {
-                    // No gap images. Display the cover normally.
-                    coverImageData.X = sheetWidth.IntValue / 2 - coverImageData.Width / 2;
-                    fillGap = false;
-                    ErrorOccurred?.Invoke("Cover gap fill failed, image is too small. Centering.");
-                }
-                // We're done with the gap
-                inGap = false;
-            } else {
-                curPoint.Y += rowHeight;
-            }
-
-            // Adjust the last rows to account for distortion
-            if (rowIndex + 1 == analyses.Count || analyses[rowIndex + 1].Count == 0) {
-
-                // If this is a single row sheet, don't try to get the previous row's dimensions
-                bool isSingleRow = rowIndex == 0;
-                var lastRow = isSingleRow ? analyses[rowIndex] : analyses[rowIndex - 1];
-                int lastRowHeight = lastRow.First().Height;
-                int lastRowWidth = lastRow.Last().X + lastRow.Last().Width;
-
-                // Attempt to even out the last two rows so there aren't any massive images at the end
-                // Don't adjust if the last row was in the cover gap
-                bool lastRowInGap = rowIndex > 0 && analyses[rowIndex - 1].Last().Y < (coverImageData?.Height ?? 0);
-                while (!lastRowInGap && rowHeight > lastRowHeight * 2 && analyses[rowIndex - 1].Count > 1) {
-                    ShiftImage(analyses, rowIndex - 1, rowIndex);
-                    lastRowHeight = ScaleRow(analyses[rowIndex - 1], lastRowWidth);
-                    analyses[rowIndex][0].X = curPoint.X;
-                    analyses[rowIndex][0].Y += lastRowHeight;
+                while (analyses[rowIndex].Count > 1 &&
+                        (rowHeight < maxRowHeight * 0.85 ||
+                         minRowDims.Width < minDimThumbnail.IntValue ||
+                         minRowDims.Height < minDimThumbnail.IntValue ||
+                         analyses[rowIndex].Count > columns.IntValue)) {
+                    ShiftImage(analyses, rowIndex, rowIndex + 1);
                     rowHeight = ScaleRow(analyses[rowIndex], rowWidth);
-                    Log.Information("Row {0} Rescaled, {1} Images. Height: {2}px", rowIndex - 1, analyses[rowIndex - 1].Count, lastRowHeight);
+                    minRowDims = MinDims(analyses[rowIndex]);
                 }
-                done = true;
+
+                // Process at the end of the cover gap
+                // Or at the end of the imagelist
+                int overFlow = curPoint.Y + rowHeight - coverImageData?.Height ?? 0;
+                if (inGap && coverImageData != null && (overFlow > 0 || rowIndex + 1 == analyses.Count || analyses[rowIndex + 1].Count == 0)) {
+                    if (overFlow > rowHeight / 3) {
+                        // This row is too tall to fit in the gap.
+                        // Move all images in the row to the next one
+                        while (analyses[rowIndex].Count > 0) {
+                            ShiftImage(analyses, rowIndex, rowIndex + 1);
+                        }
+                        // Remove this empty row
+                        Log.Information("Removing row " + rowIndex);
+                        analyses.Remove(analyses[rowIndex]);
+
+                        // Since we removed a row, the next row is now this one.
+                        // Make sure to process it
+                        --rowIndex;
+                    }
+
+                    // If we just moved the first row down, then there's no point in
+                    // resizing the gap images (there aren't any).
+                    if (rowIndex >= 0) {
+
+                        // Scale the cover and the gap images so they are the same height
+                        double h1 = coverImageData.Height;
+                        double w1 = coverImageData.Width;
+                        double h2 = analyses[rowIndex][0].Y + analyses[rowIndex][0].Height;
+                        double w2 = rowWidth;
+
+                        double f1 = h2 * sheetWidth.IntValue / (h1 * w2 + h2 * w1);
+
+                        coverImageData.Scale(f1);
+
+                        curPoint.Y = 0;
+                        for (int i = 0; i <= rowIndex; ++i) {
+                            // Move images to the start of the new gap
+                            analyses[i][0].X = coverImageData.Width;
+                            analyses[i][0].Y = curPoint.Y;
+                            // Scale row width to the new gap
+                            rowHeight = ScaleRow(analyses[i], sheetWidth.IntValue - coverImageData.Width);
+                            Log.Information("In Gap, Final Scaling, Row {0}", i);
+                            // Next row
+                            curPoint.Y += rowHeight;
+                        }
+                    } else {
+                        // No gap images. Display the cover normally.
+                        coverImageData.X = sheetWidth.IntValue / 2 - coverImageData.Width / 2;
+                        fillGap = false;
+                        ErrorOccurred?.Invoke("Cover gap fill failed, image is too small. Centering.");
+                    }
+                    // We're done with the gap
+                    inGap = false;
+                } else {
+                    curPoint.Y += rowHeight;
+                }
+
+                // Adjust the last rows to account for distortion
+                if (rowIndex + 1 == analyses.Count || analyses[rowIndex + 1].Count == 0) {
+
+                    // If this is a single row sheet, don't try to get the previous row's dimensions
+                    bool isSingleRow = rowIndex == 0;
+                    var lastRow = isSingleRow ? analyses[rowIndex] : analyses[rowIndex - 1];
+                    int lastRowHeight = lastRow.First().Height;
+                    int lastRowWidth = lastRow.Last().X + lastRow.Last().Width;
+
+                    // Attempt to even out the last two rows so there aren't any massive images at the end
+                    // Don't adjust if the last row was in the cover gap
+                    bool lastRowInGap = rowIndex > 0 && analyses[rowIndex - 1].Last().Y < (coverImageData?.Height ?? 0);
+                    while (!lastRowInGap && rowHeight > lastRowHeight * 2 && analyses[rowIndex - 1].Count > 1) {
+                        ShiftImage(analyses, rowIndex - 1, rowIndex);
+                        lastRowHeight = ScaleRow(analyses[rowIndex - 1], lastRowWidth);
+                        analyses[rowIndex][0].X = curPoint.X;
+                        analyses[rowIndex][0].Y += lastRowHeight;
+                        rowHeight = ScaleRow(analyses[rowIndex], rowWidth);
+                        Log.Information("Row {0} Rescaled, {1} Images. Height: {2}px", rowIndex - 1, analyses[rowIndex - 1].Count, lastRowHeight);
+                    }
+                    done = true;
+                }
+
+                if (rowIndex >= 0) {
+                    Log.Information("Row {0}: {1} Images. Height: {2}px. Y: {3}", rowIndex, analyses[rowIndex].Count, rowHeight, analyses[rowIndex][0].Y);
+                }
             }
 
-            if (rowIndex >= 0) {
-                Log.Information("Row {0}: {1} Images. Height: {2}px. Y: {3}", rowIndex, analyses[rowIndex].Count, rowHeight, analyses[rowIndex][0].Y);
+            // Remove empty rows
+            for (int i = 0; i < analyses.Count; ++i) {
+                if (!analyses[i].Any()) {
+                    analyses.RemoveAt(i);
+                }
             }
-        }
 
-        // Final pass, make sure rows don't overlap or have gaps between them
-        curPoint.Y = analyses[0][0].Y;
-        foreach (List<ImageData> row in analyses) {
-            foreach (ImageData im in row) {
-                im.Y = curPoint.Y;
-            }
-            if (row.Count > 0) {
+            // Make sure rows don't overlap or have gaps between them
+            curPoint.Y = analyses.First().First().Y;
+            foreach (List<ImageData> row in analyses) {
+                foreach (ImageData im in row) {
+                    im.Y = curPoint.Y;
+                }
                 curPoint.Y += row[0].Height;
             }
+
+            #endregion
+
+            #region Build Header Image
+
+            // Draw the header image first since we can't extend the canvas during drawing
+
+            if (header.BoolValue) {
+                headerImage = new Image<Rgba32>(sheetWidth.IntValue, sheetWidth.IntValue);
+                string headerText = headerTitle.ParsedValue ?? string.Empty;
+                int padding = 5;
+                int headerWidth = sheetWidth.IntValue - (padding * 2);
+
+                // Build title font
+                Font titleFont = fontFamily.CreateFont(headerFontSize.IntValue, headerBold.BoolValue ? FontStyle.Bold : FontStyle.Regular);
+                TextOptions titleTextOptions = new(titleFont) {
+                    WrappingLength = headerWidth,
+                    Origin = new(padding, 0)
+                };
+                FontRectangle headerFontRect = TextMeasurer.Measure(headerText, titleTextOptions);
+                int headerHeight = (int)Math.Ceiling(headerFontRect.Height + padding * 2);
+
+                headerImage.Mutate(headerImageContext => {
+
+                    // Draw title text
+                    headerImageContext
+                        .Fill(Color.Black)
+                        .DrawText(titleTextOptions, headerText, Color.White);
+
+                    // Stats
+                    if (headerStats.BoolValue) {
+                        // Build stats font
+                        Font statsFont = fontFamily.CreateFont(14, FontStyle.Regular);
+                        TextOptions statsTextOptions = new(statsFont) {
+                            WrappingLength = headerWidth,
+                            Origin = new(padding, headerFontRect.Height + 10)
+                        };
+
+                        // Determine largest image
+                        var maxSize = analyses
+                            .Where(x => x.Count > 0)
+                            .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
+                            .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
+
+                        // Determine how much space the stats will take up in the header
+                        string stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px";
+                        var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
+                        int statsHeight = (int)statsFontSize.Height + 10;
+                        headerHeight = (int)Math.Ceiling(headerFontRect.Height + statsHeight + padding);
+
+                        // Pre-draw stats
+                        int statsTop = (int)headerFontRect.Height + padding;
+                        headerImageContext
+                            .DrawLines(new Pen(Color.DarkSlateGray, 1), new PointF(padding, statsTop), new PointF(sheetWidth.IntValue - padding, statsTop))
+                            .DrawText(statsTextOptions, stats, Color.White);
+                    }
+
+                    // Get rid of extra height
+                    headerImageContext.Crop(sheetWidth.IntValue, headerHeight);
+                });
+            }
+
+            #endregion
+
+            #region Adjust Y values
+
+            // Determine where we should start drawing images vertically
+            int newTop = headerImage?.Height ?? 0;
+            if (newTop > 0) {
+                newTop -= borderWidth;
+
+                // Adjust cover Y position
+                if (coverImageData != null) {
+                    coverImageData.Y = newTop;
+                }
+            }
+
+            // Adjust image Y positions
+            foreach (var image in analyses.SelectMany(row => row.Select(image => image))) {
+                image.Y += newTop;
+                if (!fillGap) {
+                    image.Y += coverImageData?.Height ?? 0;
+                }
+            }
+
+            #endregion
+
+            #region Calculate Borders
+
+            Log.Information("Calculating borders (Width {0}px) and accounting for rounding error", borderWidth);
+
+            // Calculate row height scale factor
+            ImageData last = analyses.Last().First();
+            sheetHeight = last.Y + last.Height + borderWidth;
+            double vScale = 1.0;
+            int borderSum = borderWidth * (analyses.Count + 1);
+            double reduceImageHeight = (double)borderSum / (sheetHeight - analyses.First().First().Y);
+            vScale = 1.0 - reduceImageHeight;
+            int top = analyses.First().First().Y;
+
+            foreach (List<ImageData> row in analyses) {
+
+                var firstRowImage = row.First();
+                var lastRowImage = row.Last();
+
+                // Calculate image with scale factor
+                double hScale = 1.0;
+                borderSum = borderWidth * (row.Count + 1);
+                double reduceImageWidth = (double)borderSum / (sheetWidth.IntValue - firstRowImage.X);
+                hScale = 1.0 - reduceImageWidth;
+                int leftEdge = firstRowImage.X;
+                int lastImageRightEdge = firstRowImage.X;
+
+                // Scale and shift images to create borders
+                foreach (ImageData image in row) {
+                    image.Width = (int)Math.Round(image.Width * hScale);
+                    image.Height = (int)Math.Round(image.Height * vScale);
+                    image.X = lastImageRightEdge + borderWidth;
+                    image.Y = top + borderWidth;
+                    lastImageRightEdge = image.X + image.Width;
+                }
+
+                // Correct rounding error Horizontally
+                // Calculate the error, shift all images to center, and adjust the left and right edges to align
+                int xError = sheetWidth.IntValue - (lastRowImage.X + lastRowImage.Width + borderWidth);
+                int xCorrection = (int)Math.Round((double)xError / 2);
+                foreach (ImageData image in row) {
+                    image.X += xCorrection;
+                }
+                int shift = borderWidth - (firstRowImage.X - leftEdge);
+                firstRowImage.X = leftEdge + borderWidth;
+                firstRowImage.Width -= shift;
+                lastRowImage.Width = sheetWidth.IntValue - lastRowImage.X - borderWidth;
+
+                top = firstRowImage.Y + firstRowImage.Height;
+            }
+
+            // Correct cover height after thumbnail borders added
+            if (coverImageData != null) {
+                coverImageData.Pad(borderWidth);
+                if (fillGap) {
+                    foreach (var row in analyses) {
+                        int leftEdge = row.First().X;
+                        if (leftEdge == borderWidth) {
+                            coverImageData.Height = (row.First().Y - borderWidth) - coverImageData.Y;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Calculate final sheet height
+            sheetHeight = last.Y + last.Height + borderWidth;
+
         }
 
-        // Update list watchers so they see the new sizes
-        ImageListChanged?.Invoke();
+        #endregion
 
         #region Drawing
 
-        // Get fonts
-        FontCollection fonts = new();
-        fonts.Add("Fonts/OpenSans-Bold.ttf");
-        FontFamily fontFamily = fonts.Add("Fonts/OpenSans-Regular.ttf");
-
-        // Draw the header image first since we can't extend the canvas during drawing
-        int headerHeight = 0;
-        using var headerImage = new Image<Rgba32>(sheetWidth.IntValue, sheetWidth.IntValue);
-
-        if (header.BoolValue) {
-            string headerText = headerTitle.ParsedValue ?? string.Empty;
-            int padding = 5;
-            int headerWidth = sheetWidth.IntValue - (padding * 2);
-
-            // Build title font
-            Font titleFont = fontFamily.CreateFont(headerFontSize.IntValue, headerBold.BoolValue ? FontStyle.Bold : FontStyle.Regular);
-            TextOptions titleTextOptions = new(titleFont) {
-                WrappingLength = headerWidth,
-                Origin = new(padding, 0)
-            };
-            FontRectangle headerFontRect = TextMeasurer.Measure(headerText, titleTextOptions);
-            headerHeight = (int)Math.Ceiling(headerFontRect.Height + padding * 2);
-
-            headerImage.Mutate(imageContext => {
-
-                // Draw title text
-                imageContext
-                    .Fill(Color.Black)
-                    .DrawText(titleTextOptions, headerText, Color.White);
-
-                // Stats
-                if (headerStats.BoolValue) {
-                    // Build stats font
-                    Font statsFont = fontFamily.CreateFont(headerFontSize.IntValue, FontStyle.Regular);
-                    TextOptions statsTextOptions = new(statsFont) {
-                        WrappingLength = headerWidth,
-                        Origin = new(padding, headerFontRect.Height + padding)
-                    };
-
-                    // Determine largest image
-                    var maxSize = analyses
-                        .Where(x => x.Count > 0)
-                        .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
-                        .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
-
-                    // Determine how much space the stats will take up in the header
-                    string stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px";
-                    var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
-                    int statsHeight = (int)statsFontSize.Height + padding;
-                    headerHeight = (int)Math.Ceiling(headerFontRect.Height + statsHeight + padding);
-
-                    // Pre-draw stats
-                    int statsTop = (int)headerFontRect.Height + padding;
-                    imageContext
-                        .DrawLines(new Pen(Color.DarkSlateGray, 1), new PointF(padding, statsTop), new PointF(sheetWidth.IntValue - padding, statsTop))
-                        .DrawText(statsTextOptions, stats, Color.White);
-                }
-            });
-        }
-
         // Create the output image
-        ImageData last = analyses.Last(l => l.Count > 0).First();
-        int sheetHeight = last.Y + last.Height + headerHeight + (fillGap ? 0 : coverImageData?.Height ?? 0);
-        using Image sheetImage = new Image<Rgba32>(sheetWidth.IntValue, sheetHeight);
+        sheetImage = new Image<Rgba32>(sheetWidth.IntValue, sheetHeight);
 
         // Draw the sheet
         sheetImage.Mutate(async (sheetContext) => {
@@ -817,69 +929,55 @@ public sealed class ContactSheet : IDisposable {
             sheetContext.Fill(Color.Black);
 
             // Draw the the header
-            if (headerHeight > 0) {
+            if (headerImage != null) {
                 // Draw the header on the sheet
-                Log.Information("Drawing header. Height {0}px", headerHeight);
+                Log.Information("Drawing header. Height {0}px", headerImage.Height);
                 sheetContext.DrawImage(headerImage, 1);
             }
 
             // Draw the cover
             if (coverImageData != null) {
                 Log.Information("Drawing cover {0}. Height {1}px", Path.GetFileName(coverFile.Path), coverImageData.Height);
-                Image coverImage = await Image.LoadAsync(coverImageData.File);
-                coverImageData.Y += headerHeight;
-                coverImage.Mutate(coverContext => {
-                    coverContext.Resize(coverImageData.Width, coverImageData.Height);
-                });
-                coverImageData.Pad(borders.IntValue);
-
                 if (preview.BoolValue) {
                     sheetContext.Fill(Brushes.Solid(Color.White), coverImageData.Bounds);
                     sheetContext.DrawText(
                         "COVER", fontFamily.CreateFont(14, FontStyle.Bold), Color.Black,
                         new PointF(coverImageData.X + coverImageData.Width / 2, coverImageData.Y + coverImageData.Height / 2));
                 } else {
+                    using var coverImage = await Image.LoadAsync(coverImageData.File);
+                    coverImage.Mutate(coverContext => {
+                        coverContext.Resize(coverImageData.Width, coverImageData.Height);
+                    });
                     sheetContext.DrawImage(coverImage, coverImageData.Origin, 1);
                 }
-
-                coverImage.Dispose();
             }
         });
+
 
         // Draw the thumbnail images
         int index = 1;
         Log.Information("Drawing sheet. Height {0}px", sheetHeight);
-
         drawnCount = 0;
         progressStep = 0;
-
         IList<Task> drawThumbTasks = new List<Task>();
-        foreach (List<ImageData> row in analyses.Where(l => l.Any())) {
-            foreach (ImageData image in row) {
-                image.Y += headerHeight;
-                if (!fillGap) {
-                    image.Y += coverImageData?.Height ?? 0;
-                }
 
-                // Create info for threaded load/draw operation
-                ThumbnailData tdata = new(image, sheetImage) {
-                    Index = index++,
-                    ImageTotal = imageCount,
-                    FontSize = labels.BoolValue ? labelFontSize.IntValue : 0,
-                    FontFamily = fontFamily
-                };
+        Font labelFont = fontFamily.CreateFont(labels.BoolValue ? labelFontSize.IntValue : 0, FontStyle.Regular);
+        TextOptions labelOptions = new(labelFont) {
+            WordBreaking = WordBreaking.Normal,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
 
-                if (image == row.Last() && image.X + image.Width != sheetWidth.IntValue) {
-                    tdata.Image.Width = sheetWidth.IntValue - image.X;
-                }
+        foreach (ImageData image in analyses.SelectMany(row => row.Select(image => image))) {
 
-                if (borders.IntValue > 0) {
-                    tdata.Image.Pad(borders.IntValue);
-                }
+            // Create info for threaded load/draw operation
+            ThumbnailData tdata = new(image, sheetImage, labelFont, labelOptions) {
+                Index = index++,
+                ImageTotal = imageCount
+            };
 
-                drawThumbTasks.Add(Task.Factory.StartNew(() => DrawThumb(tdata)));
-            }
+            drawThumbTasks.Add(Task.Factory.StartNew(() => DrawThumb(tdata)));
         }
+
         await Task.WhenAll(drawThumbTasks);
 
         DateTime endTime = DateTime.Now;
@@ -888,6 +986,9 @@ public sealed class ContactSheet : IDisposable {
         #endregion
 
         #region Finish
+
+        // Update list watchers so they see the new sizes
+        ImageListChanged?.Invoke();
 
         Log.Information("---------------------------------------------------------------------------");
         Log.Information("Completed! It took {0}", duration);
@@ -968,19 +1069,14 @@ public sealed class ContactSheet : IDisposable {
             }
 
             // Draw image name label
-            if (data.FontSize > 0) {
+            if (data.LabelFont.Size > 0) {
 
                 // Set label to file name, no extension
                 string label = Path.GetFileNameWithoutExtension(data.Image.FileName);
 
                 // Determine label size
-                Font font = data.FontFamily.CreateFont(data.FontSize, FontStyle.Regular);
-                var labelSize = TextMeasurer.Measure(label,
-                    new TextOptions(font) {
-                        WordBreaking = WordBreaking.Normal,
-                        WrappingLength = data.Image.Width,
-                        HorizontalAlignment = HorizontalAlignment.Center
-                    });
+                data.LabelTextOptions.WrappingLength = data.Image.Width;
+                var labelSize = TextMeasurer.Measure(label, data.LabelTextOptions);
 
                 // Center label at the bottom of the thumbnail
                 Point labelCoords = new((int)(size.Width - labelSize.Width) / 2, (int)(size.Height - labelSize.Height));
@@ -989,7 +1085,7 @@ public sealed class ContactSheet : IDisposable {
                 Image labelImage = new Image<Rgba32>((int)labelSize.Width, (int)labelSize.Height);
                 labelImage.Mutate(labelContext => {
                     labelContext.Fill(Color.Black)
-                        .DrawText(label, font, Color.White, Point.Empty);
+                        .DrawText(label, data.LabelFont, Color.White, Point.Empty);
                 });
 
                 // Draw the label
@@ -1007,21 +1103,21 @@ public sealed class ContactSheet : IDisposable {
         // Clean up
         image.Dispose();
 
+        // Update counters
+        int resolution = 10;
+        Interlocked.Increment(ref drawnCount);
+        double progressFraction = drawnCount / (double)data.ImageTotal;
+        int step = (int)Math.Floor(progressFraction * resolution);
+
         // Send a limited number of progress updates to the listeners
-        lock (progressLock) {
-            // Update counters
-            int resolution = 10;
-            double progressFraction = ++drawnCount / (double)data.ImageTotal;
-            int step = (int)Math.Floor(progressFraction * resolution);
-            if (step > progressStep) {
-                ++progressStep;
-                // Send progress to listeners
-                DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
-            }
-            // Output status to console
-            Log.Information("({0:P1}) {1} ({2}/{3}) {4}",
-                progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
+        if (step > progressStep) {
+            ++progressStep;
+            // Send progress to listeners
+            DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
         }
+        // Output status to console
+        Log.Information("({0:P1}) {1} ({2}/{3}) {4}",
+            progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
     }
 
     /// <summary>

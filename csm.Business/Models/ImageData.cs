@@ -1,5 +1,4 @@
 ﻿using SixLabors.ImageSharp;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace csm.Business.Models;
 
@@ -22,6 +21,11 @@ public class ImageData {
     public string Orientation => IsLandscape ? "Landscape" : "Portrait";
 
     public string FileName => Path.GetFileName(File);
+
+    public string OriginalSizeString => $"{OriginalSize.Width}x{OriginalSize.Height}";
+
+    // Used by the File List
+    public string SizeString => $"{OriginalSizeString} {(OriginalSize.Width != Width ? $"[{Width}x{Height}]" : string.Empty)}".Trim();
 
     public ImageData(string fileName) {
         File = fileName;
@@ -61,9 +65,9 @@ public class ImageData {
         Height = (int)(Height * factor);
     }
 
-    public void Pad(int padding) {
-        Width -= (padding * 2);
-        Height -= (padding * 2);
+    public void Pad(int padding, bool padRight = false, bool padBottom = false) {
+        Width -= (padding + (padRight ? padding : 0));
+        Height -= (padding + (padBottom ? padding : 0));
         X += padding;
         Y += padding;
     }
