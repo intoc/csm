@@ -135,10 +135,10 @@
   <data name="cfill_note" xml:space="preserve">
     <value>Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.</value>
   </data>
-  <data name="cmaxwpct_desc" xml:space="preserve">
+  <data name="cmaxw_desc" xml:space="preserve">
     <value>Maximum cover width</value>
   </data>
-  <data name="cmaxwpct_note" xml:space="preserve">
+  <data name="cmaxw_note" xml:space="preserve">
     <value>The maximum percentage of the sheet width that the cover's width can be (approximate)</value>
   </data>
   <data name="cols_desc" xml:space="preserve">

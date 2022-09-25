@@ -117,18 +117,18 @@ namespace csm.Business {
         /// <summary>
         ///   Looks up a localized string similar to Maximum cover width.
         /// </summary>
-        internal static string cmaxwpct_desc {
+        internal static string cmaxw_desc {
             get {
-                return ResourceManager.GetString("cmaxwpct_desc", resourceCulture);
+                return ResourceManager.GetString("cmaxw_desc", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to The maximum percentage of the sheet width that the cover&apos;s width can be (approximate).
         /// </summary>
-        internal static string cmaxwpct_note {
+        internal static string cmaxw_note {
             get {
-                return ResourceManager.GetString("cmaxwpct_note", resourceCulture);
+                return ResourceManager.GetString("cmaxw_note", resourceCulture);
             }
         }
         

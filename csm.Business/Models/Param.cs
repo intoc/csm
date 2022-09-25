@@ -58,6 +58,7 @@ public abstract class Param {
     /// </summary>
     protected Param() {
         SubParams = new List<Param>();
+        Units = string.Empty;
     }
 
     /// <summary>

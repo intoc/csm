@@ -8,6 +8,9 @@ public class IntParam : Param {
     [XmlIgnore]
     public int IntValue { get; set; }
 
+    [XmlIgnore]
+    public bool IsSmall { get; set; }
+
     [XmlAttribute]
     public override string? Value {
         get => IntValue.ToString();

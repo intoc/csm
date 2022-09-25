@@ -30,7 +30,7 @@ public partial class ParamControl : UserControl {
             SetupString(strParam);
         } else if (parameter is FileParam) {
             SetupFile();
-        } else if (parameter is NullParam nullParam){
+        } else if (parameter is NullParam nullParam) {
             // Just a group
             outerFlow.Visible = false;
             subBox.Visible = true;
@@ -63,6 +63,11 @@ public partial class ParamControl : UserControl {
 
     private void SetupInt(IntParam intParam) {
         text.Width = 10 * ((int)Math.Log10(intParam.MaxVal) + 1);
+        numberSpinner.Visible = intParam.IsSmall;
+        text.Visible = !intParam.IsSmall;
+        if (intParam.IsSmall) {
+            numberSpinner.Value = intParam.IntValue;
+        }
     }
 
     private void SetupString(StringParam strParam) {
@@ -98,9 +103,11 @@ public partial class ParamControl : UserControl {
 
     public void RefreshValue(Param p) {
         if (p is BoolParam param) {
-            checkBox.Invoke(() => checkBox.Checked = param.BoolValue);
+            Invoke(() => checkBox.Checked = param.BoolValue);
+        } else if (p is IntParam intParam && intParam.IsSmall) {
+            Invoke(() => numberSpinner.Value = intParam.IntValue);
         } else {
-            text.Invoke(() => text.Text = p.Value);
+            Invoke(() => text.Text = p.Value);
         }
     }
 
@@ -141,4 +148,14 @@ public partial class ParamControl : UserControl {
         e.Handled = true;
     }
 
+    private void NumberSpinner_ValueChanged(object sender, EventArgs e) {
+        if (parameter is IntParam intParam) {
+            try {
+                intParam.ParseVal(numberSpinner.Value.ToString());
+            } catch (Exception ex) {
+                MessageBox.Show(ex.Message, "Validation Error");
+                RefreshValue(parameter);
+            }
+        }
+    }
 }

@@ -34,6 +34,7 @@ partial class ParamControl
             this.checkBox = new System.Windows.Forms.CheckBox();
             this.label = new System.Windows.Forms.Label();
             this.text = new System.Windows.Forms.TextBox();
+            this.numberSpinner = new System.Windows.Forms.NumericUpDown();
             this.btnFileChooser = new System.Windows.Forms.Button();
             this.units = new System.Windows.Forms.Label();
             this.subBox = new System.Windows.Forms.GroupBox();
@@ -41,6 +42,7 @@ partial class ParamControl
             this.tltpHelp = new System.Windows.Forms.ToolTip(this.components);
             this.outerPanel.SuspendLayout();
             this.outerFlow.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numberSpinner)).BeginInit();
             this.subBox.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -55,7 +57,7 @@ partial class ParamControl
             this.outerPanel.Location = new System.Drawing.Point(5, 5);
             this.outerPanel.Margin = new System.Windows.Forms.Padding(0);
             this.outerPanel.Name = "outerPanel";
-            this.outerPanel.Size = new System.Drawing.Size(315, 57);
+            this.outerPanel.Size = new System.Drawing.Size(374, 57);
             this.outerPanel.TabIndex = 0;
             // 
             // outerFlow
@@ -65,12 +67,13 @@ partial class ParamControl
             this.outerFlow.Controls.Add(this.checkBox);
             this.outerFlow.Controls.Add(this.label);
             this.outerFlow.Controls.Add(this.text);
+            this.outerFlow.Controls.Add(this.numberSpinner);
             this.outerFlow.Controls.Add(this.btnFileChooser);
             this.outerFlow.Controls.Add(this.units);
             this.outerFlow.Location = new System.Drawing.Point(0, 0);
             this.outerFlow.Margin = new System.Windows.Forms.Padding(0);
             this.outerFlow.Name = "outerFlow";
-            this.outerFlow.Size = new System.Drawing.Size(315, 30);
+            this.outerFlow.Size = new System.Drawing.Size(374, 30);
             this.outerFlow.TabIndex = 4;
             this.outerFlow.WrapContents = false;
             // 
@@ -110,10 +113,19 @@ partial class ParamControl
             this.text.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Text_KeyUp);
             this.text.Validating += new System.ComponentModel.CancelEventHandler(this.Text_Validating);
             // 
+            // numberSpinner
+            // 
+            this.numberSpinner.Location = new System.Drawing.Point(184, 3);
+            this.numberSpinner.Name = "numberSpinner";
+            this.numberSpinner.Size = new System.Drawing.Size(53, 23);
+            this.numberSpinner.TabIndex = 5;
+            this.numberSpinner.Visible = false;
+            this.numberSpinner.ValueChanged += new System.EventHandler(this.NumberSpinner_ValueChanged);
+            // 
             // btnFileChooser
             // 
             this.btnFileChooser.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.btnFileChooser.Location = new System.Drawing.Point(185, 0);
+            this.btnFileChooser.Location = new System.Drawing.Point(244, 0);
             this.btnFileChooser.Margin = new System.Windows.Forms.Padding(4, 0, 4, 3);
             this.btnFileChooser.Name = "btnFileChooser";
             this.btnFileChooser.Size = new System.Drawing.Size(88, 27);
@@ -126,7 +138,7 @@ partial class ParamControl
             // 
             this.units.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.units.AutoSize = true;
-            this.units.Location = new System.Drawing.Point(278, 7);
+            this.units.Location = new System.Drawing.Point(337, 7);
             this.units.Margin = new System.Windows.Forms.Padding(1, 1, 4, 1);
             this.units.Name = "units";
             this.units.Size = new System.Drawing.Size(33, 15);
@@ -181,11 +193,12 @@ partial class ParamControl
             this.Controls.Add(this.outerPanel);
             this.Margin = new System.Windows.Forms.Padding(1);
             this.Name = "ParamControl";
-            this.Size = new System.Drawing.Size(320, 62);
+            this.Size = new System.Drawing.Size(379, 62);
             this.outerPanel.ResumeLayout(false);
             this.outerPanel.PerformLayout();
             this.outerFlow.ResumeLayout(false);
             this.outerFlow.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numberSpinner)).EndInit();
             this.subBox.ResumeLayout(false);
             this.subBox.PerformLayout();
             this.ResumeLayout(false);
@@ -205,7 +218,5 @@ partial class ParamControl
     private System.Windows.Forms.GroupBox subBox;
     private System.Windows.Forms.FlowLayoutPanel subPanel;
     private System.Windows.Forms.ToolTip tltpHelp;
-
-
-
+    private NumericUpDown numberSpinner;
 }

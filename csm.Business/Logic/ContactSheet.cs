@@ -176,7 +176,9 @@ public sealed class ContactSheet : IDisposable {
 
         #region General Parameters
 
-        noGui = new BoolParam("-nogui", false);
+        noGui = new BoolParam("-nogui", false) {
+            LoadFromSettings = false
+        };
 
         fileType = new StringParam("-filetype", ".jpg", "Extension") {
             MaxChars = 4
@@ -184,17 +186,19 @@ public sealed class ContactSheet : IDisposable {
 
         minDimInput = new IntParam("-mindiminput", 0, "px") {
             MinVal = 0,
-            MaxVal = 999999
+            MaxVal = 99999
         };
 
         columns = new IntParam("-cols", DEFAULT_COLUMNS) {
             MinVal = 1,
-            MaxVal = 99999
+            MaxVal = 50,
+            IsSmall = true
+
         };
 
         sheetWidth = new IntParam("-width", DEFAULT_WIDTH, "px") {
             MinVal = 1,
-            MaxVal = 999999
+            MaxVal = 99999
         };
 
         minDimThumbnail = new IntParam("-mindim", 0, "px") {
@@ -204,12 +208,14 @@ public sealed class ContactSheet : IDisposable {
 
         borders = new IntParam("-border", 0, "px") {
             MinVal = 0,
-            MaxVal = 50
+            MaxVal = 50,
+            IsSmall = true
         };
 
         quality = new IntParam("-qual", DEFAULT_QUALITY, "%") {
             MinVal = 0,
-            MaxVal = 100
+            MaxVal = 100,
+            IsSmall = true
         };
 
         preview = new BoolParam("-preview", false);
@@ -240,7 +246,8 @@ public sealed class ContactSheet : IDisposable {
         labels = new BoolParam("-labels", false);
         labelFontSize = new IntParam("-lsize", 8, "pt") {
             MinVal = 0,
-            MaxVal = 136
+            MaxVal = 136,
+            IsSmall = true
         };
         labels.AddSubParam(labelFontSize);
 
@@ -251,7 +258,8 @@ public sealed class ContactSheet : IDisposable {
         header = new BoolParam("-header", false);
         headerFontSize = new IntParam("-hsize", 12, "pt") {
             MinVal = 0,
-            MaxVal = 180
+            MaxVal = 180,
+            IsSmall = true
         };
         headerBold = new BoolParam("-hbold", false);
         headerTitle = new StringParam("-htitle", "Title", "Words") {
@@ -280,7 +288,7 @@ public sealed class ContactSheet : IDisposable {
         fillCoverGap = new BoolParam("-cfill", false);
         cover.AddSubParam(fillCoverGap);
         maxCoverWithPercent = new IntParam("-cmaxw", 75) {
-            MinVal = 0, MaxVal = 100, Units = "%"
+            MinVal = 0, MaxVal = 100, Units = "%", IsSmall = true
         };
         cover.AddSubParam(maxCoverWithPercent);
 
