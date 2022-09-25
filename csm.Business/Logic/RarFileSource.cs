@@ -9,6 +9,10 @@ namespace csm.Business.Logic {
 
         protected override void Extract() {
             using var archive = new RarArchive(_archiveFilePath);
+            foreach (var entry in archive.Entries) {
+                entryCompletion[entry.Name] = false;
+                entry.ExtractionProgressed += ArchiveFileSource_ExtractionProgressed;
+            }
             archive.ExtractToDirectory(_tempDir.FullName);
         }
     }

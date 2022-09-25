@@ -1,4 +1,6 @@
-﻿using csm.Business.Models;
+﻿using Aspose.Zip;
+using Aspose.Zip.Rar;
+using csm.Business.Models;
 using Serilog;
 using System.Diagnostics;
 
@@ -20,6 +22,7 @@ namespace csm.Business.Logic {
         public override string? Name => Path.GetFileNameWithoutExtension(_archiveFilePath);
 
         protected readonly DirectoryInfo _tempDir;
+        protected readonly IDictionary<string, bool> entryCompletion;
         protected readonly string _archiveFilePath;
         private readonly object _dirLock = new();
         private bool _extracted = false;
@@ -38,6 +41,7 @@ namespace csm.Business.Logic {
             if (File.Exists(path)) {
                 Bytes = new FileInfo(path).Length;
             }
+            entryCompletion = new Dictionary<string, bool>();
         }
 
         /// <summary>
@@ -81,6 +85,14 @@ namespace csm.Business.Logic {
             Extract();
             sw.Stop();
             Log.Information("{0} - Extraction complete. Time: {1}", GetType().Name, sw.Elapsed);
+        }
+
+        protected void ArchiveFileSource_ExtractionProgressed(object? sender, ProgressEventArgs e) {
+            if (sender is RarArchiveEntry entry && entry.UncompressedSize == e.ProceededBytes && !entryCompletion[entry.Name]) {
+                entryCompletion[entry.Name] = true;
+                Log.Debug("{0} Extracted ({1}/{2})",
+                entry.Name, entryCompletion.Values.Count(v => v), entryCompletion.Count);
+            }
         }
 
         protected abstract void Extract();

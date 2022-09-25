@@ -542,11 +542,9 @@ public sealed class ContactSheet : IDisposable {
         FontFamily fontFamily = fonts.Add("Fonts/OpenSans-Regular.ttf");
 
         // Wait for the image list to be ready
-        if (waitForLoad) {
-            Log.Debug("DrawAndSave waiting...");
-        }
+
         while (waitForLoad) {
-            Log.Debug("DrawAndSave waiting. imageSet.Loaded={0} _firstLoadIncomplete={0}", imageSet.Loaded, _firstLoadIncomplete);
+            Log.Debug("DrawAndSave waiting for images to be ready...");
             if (imageSet.Loaded && !_firstLoadIncomplete) {
                 break;
             }
