@@ -5,7 +5,7 @@ by simply running csm.exe. Supported inputs are directories, .zip, .7z, and .rar
 
 ## Main GUI
 If you want to save your settings, you can click `Save Settings`, `File -> Save Settings`, 
-or `File -> Save Settings As…` The `Save Settings` options will save to the currently open settings file
+or `File -> Save Settings Asâ€¦` The `Save Settings` options will save to the currently open settings file
 (shown next to the button) or *default.xml* if no file is open.
 You can later load your settings files with `File -> Load Settings`.
 iCSM will always open *default.xml* on load if it exists.
@@ -14,21 +14,19 @@ You can find the same information in this document under [Parameters](#Parameter
 
 ## File View
 Use `Tools -> View Files`, the corresponding button, or ctrl-F to make any changes to the file list. You can
-select multiple rows and remove them with the Delete key or the Remove button. If you made a
-mistake, click Reload to grab all of the files again. You can double-click on a row to view the image with
-your default image viewer.
+select multiple rows and exclude them with the Delete key or the `Remove` button. Click `Reset` to rest to the default
+inclusion for all files. The selected cover file and any files that are similarly named to the output file are excluded automatically.
 
 ## Making the Contact Sheet from the GUI
-When you’re happy with your settings and the files, click `Run`, select `Tools -> Draw
-Sheet`, or hit F5. The `Width` and `Height` columns will be updated with the new thumbnail sizes, and the
-drawing progress will be shown in the status bar. Once completed, the directory containing your contact
-sheet will be opened in Explorer. The program will remain open until you close it (unless otherwise specified), so you can run again
-with different settings, and also change the directory using `Choose Folder` or `Choose Archive` in the Tools menu, or the
-corresponding button.
+When youâ€™re happy with your settings and the files, click `Run`, select `Tools -> Draw
+Sheet`, or hit F5. The `Size` column will be updated with the new thumbnail sizes, and the
+drawing progress will be shown in the status bar. The program will remain open until you close it (unless otherwise specified), 
+so you can run again with different settings, and also change the directory using `Choose Folder` or `Choose Archive` in the Tools menu, 
+or the corresponding button.
 
 ## Command Line
 csm is also a fully functional command-line program. In order to use it without the GUI, you
-must start it with the `–nogui` option.
+must start it with the `â€“nogui` option.
 
 *Usage*: `csm [path to image directory or archive] [param1=val1] [param2=val2] [...]`
 
