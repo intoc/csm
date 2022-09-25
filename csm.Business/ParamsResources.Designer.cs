@@ -22,7 +22,7 @@ namespace csm.Business {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class ParamsResources {
+    internal class ParamsResources {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -111,6 +111,24 @@ namespace csm.Business {
         internal static string cfill_note {
             get {
                 return ResourceManager.GetString("cfill_note", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Maximum cover width.
+        /// </summary>
+        internal static string cmaxwpct_desc {
+            get {
+                return ResourceManager.GetString("cmaxwpct_desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The maximum percentage of the sheet width that the cover&apos;s width can be (approximate).
+        /// </summary>
+        internal static string cmaxwpct_note {
+            get {
+                return ResourceManager.GetString("cmaxwpct_note", resourceCulture);
             }
         }
         

@@ -35,7 +35,7 @@ public abstract class Param {
     /// Whether to exclude this parameter from the settings file loading process
     /// </summary>
     [XmlIgnore]
-    public bool ExcludeFromLoading { get; set; }
+    public bool LoadFromSettings { get; set; }
 
     /// <summary>
     /// Sub-parameters of this parameter
@@ -94,9 +94,9 @@ public abstract class Param {
         string? value = Value;
         value = string.IsNullOrEmpty(value) ? "[none]" : value;
         if (isMarkDown) {
-            help.AppendLine($"| `{CmdParameter}` | {Desc} | {Units} | {value} | {Note} {(ExcludeFromLoading ? "(Not loaded from settings)" : string.Empty)} |");
+            help.AppendLine($"| `{CmdParameter}` | {Desc} | {Units} | {value} | {Note} {(!LoadFromSettings ? "(Not loaded from settings)" : string.Empty)} |");
         } else {
-            string unitsDefaults = $"[{Units}, Default={value}{(ExcludeFromLoading ? " (Not loaded from settings)" : string.Empty)}]";
+            string unitsDefaults = $"[{Units}, Default={value}{(!LoadFromSettings ? " (Not loaded from settings)" : string.Empty)}]";
             help.AppendLine(CmdParameter == "null" ? string.Empty : $"{CmdParameter}: {Desc} {unitsDefaults}. {Note}");
         }
     }
@@ -106,7 +106,7 @@ public abstract class Param {
     /// </summary>
     /// <param name="other"></param>
     protected virtual void Load(Param other) {
-        if (!ExcludeFromLoading) {
+        if (LoadFromSettings) {
             ParseVal(other.Value);
         }
         LoadSubParams(other);

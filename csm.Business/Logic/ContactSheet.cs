@@ -144,6 +144,7 @@ public sealed class ContactSheet : IDisposable {
     private readonly IntParam columns;
     private readonly IntParam headerFontSize;
     private readonly IntParam labelFontSize;
+    private readonly IntParam maxCoverWithPercent;
     private readonly IntParam minDimThumbnail;
     private readonly IntParam minDimInput;
     private readonly IntParam quality;
@@ -253,7 +254,7 @@ public sealed class ContactSheet : IDisposable {
         headerBold = new BoolParam("-hbold", false);
         headerTitle = new StringParam("-htitle", "Title", "Words") {
             MaxChars = 20,
-            ExcludeFromLoading = true
+            LoadFromSettings = false
         };
         headerStats = new BoolParam("-hstats", false);
         header.AddSubParam(headerFontSize);
@@ -270,12 +271,16 @@ public sealed class ContactSheet : IDisposable {
             MaxChars = 20
         };
         coverFile = new FileParam("-cfile", new DirectoryFileSource()) {
-            ExcludeFromLoading = true
+            LoadFromSettings = false
         };
         cover.AddSubParam(coverPattern);
         cover.AddSubParam(coverFile);
         fillCoverGap = new BoolParam("-cfill", false);
         cover.AddSubParam(fillCoverGap);
+        maxCoverWithPercent = new IntParam("-cmaxw", 75) {
+            MinVal = 0, MaxVal = 100, Units = "%"
+        };
+        cover.AddSubParam(maxCoverWithPercent);
 
         #endregion
 
@@ -562,25 +567,23 @@ public sealed class ContactSheet : IDisposable {
                 Log.Information("Analyzing cover...");
                 coverImageData = new ImageData(coverFile.File.Path);
                 fileSource.LoadImageDimensions(coverImageData);
-                double maxCoverImageScaleForGap = Math.Round(0.75 * columns.IntValue) / columns.IntValue;
+                double maxCoverImageScaleForGap = Math.Round(((float)maxCoverWithPercent.IntValue / 100) * columns.IntValue) / columns.IntValue;
 
-                if (fillGap) {
-                    if (coverImageData.Width >= (sheetWidth.IntValue * maxCoverImageScaleForGap)) {
-                        // We want a gap right? Make the cover smaller.
-                        Log.Information("Cover image is too large. Reducing size to {0:0.00}xSheetWidth to create a gap.", maxCoverImageScaleForGap);
-                        double scaleFactor = (sheetWidth.IntValue * maxCoverImageScaleForGap) / coverImageData.Width;
-                        coverImageData.Scale(scaleFactor);
-                    } else {
-                        // Otherwise the image is already small enough for gap filling
-                        Log.Information("Cover image size allows for a natural gap.");
-                    }
-                } else if (coverImageData.Width < sheetWidth.IntValue) {
+                if (coverImageData.Width >= (sheetWidth.IntValue * maxCoverImageScaleForGap)) {
+                    // We want a gap right? Make the cover smaller.
+                    Log.Information("Cover image is too large. Reducing size to {0:0.00}% of sheet width.", maxCoverImageScaleForGap * 100);
+                    double scaleFactor = (sheetWidth.IntValue * maxCoverImageScaleForGap) / coverImageData.Width;
+                    coverImageData.Scale(scaleFactor);
+                }
+
+                if (coverImageData.Width < sheetWidth.IntValue && !fillGap) {
                     // Center images smaller than the sheet width
                     Log.Information("Centering cover image.");
                     coverImageData.X = (sheetWidth.IntValue - coverImageData.Width) / 2;
-                } else {
+                }  
+                if (coverImageData.Width > sheetWidth.IntValue) {
                     // Scale the image down to sheet width
-                    Log.Information("Cover image is too large. Reducing size to fit SheetWidth.");
+                    Log.Information("Cover image is too large. Reducing size to fit sheet width.");
                     coverImageData.Scale((double)sheetWidth.IntValue / coverImageData.Width);
                 }
                 Log.Information("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", fillGap, coverImageData.Bounds);
@@ -937,13 +940,13 @@ public sealed class ContactSheet : IDisposable {
             // Draw the the header
             if (headerImage != null) {
                 // Draw the header on the sheet
-                Log.Information("Drawing header. Height {0}px", headerImage.Height);
+                Log.Information("Drawing header. {0}", headerImage.Bounds());
                 sheetContext.DrawImage(headerImage, 1);
             }
 
             // Draw the cover
             if (coverImageData != null) {
-                Log.Information("Drawing cover {0}. Height {1}px", Path.GetFileName(coverFile.Path), coverImageData.Height);
+                Log.Information("Drawing cover {0}. {1}", Path.GetFileName(coverFile.Path), coverImageData.Bounds);
                 if (preview.BoolValue) {
                     sheetContext.Fill(Brushes.Solid(Color.White), coverImageData.Bounds);
                     sheetContext.DrawText(
@@ -962,7 +965,7 @@ public sealed class ContactSheet : IDisposable {
 
         // Draw the thumbnail images
         int index = 1;
-        Log.Information("Drawing sheet. Height {0}px", sheetHeight);
+        Log.Information("Drawing sheet. {0}", sheetImage.Bounds());
         drawnCount = 0;
         progressStep = 0;
         IList<Task> drawThumbTasks = new List<Task>();

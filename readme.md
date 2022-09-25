@@ -59,6 +59,7 @@ then the current executable directory will be used. Parameters may be in any ord
 | `-cregx` | Cover Pattern | Regex | cover\. | The primary regular expression used to match cover files. (Changing this option reloads the file list).  |
 | `-cfile` | Cover File | file | [none] | The path to the file to use as the cover. (Changing this option reloads the file list). (Not loaded from settings) |
 | `-cfill` | Attempt to Fill Cover Gaps | true/false | false | Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.  |
+| `-cmaxw` | Maximum cover width | % | 75 | The maximum percentage of the sheet width that the cover's width can be (approximate)  |
 | `-sfile` | Settings file path | File Path | default.aspx | The path to a settings file. Can be absolute or relative. |
 | `-help` | View help message (no value required) | None | N/A | Show a help message on the command line with parameter documentation. |
 

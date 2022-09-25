@@ -61,7 +61,7 @@ public class FileParam : Param {
 
     protected override void Load(Param other) {
         if (other is FileParam otherFile) {
-            if (!ExcludeFromLoading) {
+            if (LoadFromSettings) {
                 ParseVal(otherFile.FileName);
             }
             LoadSubParams(other);
