@@ -11,6 +11,9 @@ namespace csm.Business.Logic {
     /// </summary>
     public abstract class AbstractFileSource : IFileSource {
 
+        protected const string CSM_TEMP_FOLDER = "csm_e2bd2683";
+        protected readonly DirectoryInfo _csmTempFolder;
+
         /// <summary>
         /// The full path of the source
         /// </summary>
@@ -52,6 +55,14 @@ namespace csm.Business.Logic {
         public abstract Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);
 
         protected long Bytes;
+
+        protected AbstractFileSource() {
+            // Create the parent temp directory for csm if it doesn't exist
+            _csmTempFolder = new DirectoryInfo(Path.Combine(Path.GetTempPath(), CSM_TEMP_FOLDER));
+            if (!_csmTempFolder.Exists) {
+                _csmTempFolder.Create();
+            }
+        }
 
         /// <summary>
         /// Gets the files in a directory recursively, optionally filtered by <paramref name="pattern"/>
@@ -118,7 +129,14 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing) {
-            // Don't do anything by default
+            // Look for old temp directories and delete them
+            var dirs = _csmTempFolder.GetDirectories();
+            foreach (var dir in dirs) {
+                if (DateTime.Now - dir.CreationTime > TimeSpan.FromHours(1)) {
+                    dir.Delete(true);
+                    Log.Debug("Deleted old temp directory {0}", dir.FullName);
+                }
+            }
         }
 
         #endregion

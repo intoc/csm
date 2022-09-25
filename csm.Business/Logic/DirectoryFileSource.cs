@@ -5,7 +5,7 @@ namespace csm.Business.Logic {
 
         private readonly DirectoryInfo? _directory;
 
-        public DirectoryFileSource(string? path = null) {
+        public DirectoryFileSource(string? path = null) : base() {
             if (path != null) {
                 _directory = new DirectoryInfo(path);
                 // Get total size of all files in the directory and subdirectories
