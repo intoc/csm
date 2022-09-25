@@ -33,8 +33,8 @@ public partial class CsmGui : Form {
         cs.SettingsChanged += new SettingsChangedEventHandler(SettingsChanged);
         cs.ErrorOccurred += new ExceptionEventHandler(ExceptionOccurred);
         cs.SourceChanged += (path) => Invoke(() => {
-            directoryLabel.Text = directoryLabelText(path);
-            SetButtonsEnabled(true, true);
+            Invoke(() => directoryLabel.Text = directoryLabelText(path));
+            Invoke(() => SetButtonsEnabled(true, true));
         });
 
         settingsLabel.Text = cs.SettingsFile;
@@ -44,16 +44,16 @@ public partial class CsmGui : Form {
     }
 
     private void SetButtonsEnabledIfFilesLoaded() {
-        SetButtonsEnabled(cs.FirstLoadComplete, cs.Source != null || cs.FirstLoadComplete);
+        SetButtonsEnabled(cs.FirstLoadComplete, cs.Source == null || cs.FirstLoadComplete);
     }
 
     private void SetButtonsEnabled(bool run, bool choose) {
         btnRun.Enabled = run;
+        drawSheetToolStripMenuItem.Enabled = run;
         btnArchive.Enabled = choose;
         btnFolder.Enabled = choose;
         chooseFolderToolStripMenuItem.Enabled = choose;
         chooseArchiveToolStripMenuItem.Enabled = choose;
-        drawSheetToolStripMenuItem.Enabled = choose;
     }
 
     void Exit(object? sender, EventArgs e) {

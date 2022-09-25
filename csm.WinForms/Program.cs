@@ -45,14 +45,14 @@ static class Program {
 
             // Prompt for arguments graphically
             if (cs.GuiEnabled) {
-                if (path != null) {
-                    cs.Source = path;
-                }
-
                 CsmGui gui = new(cs);
-                gui.FormClosed += async (sender, args) => {
-                    await Log.CloseAndFlushAsync();
-                };
+                gui.FormClosed += async (sender, args) => await Log.CloseAndFlushAsync();
+                
+                if (path != null) {
+                    // Delay setting the source path until after the main GUI has loaded
+                    // so the buttons will be set to enabled/disabled correctly
+                    gui.Load += (sender, args) => cs.Source = path;
+                }
 
                 // Show a GUI for parameter customization
                 Application.EnableVisualStyles();
