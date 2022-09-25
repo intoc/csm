@@ -29,7 +29,7 @@ public abstract class Param {
     /// The units of <see cref="Value"/>
     /// </summary>
     [XmlIgnore]
-    public string? Units { get; set; }
+    public string Units { get; set; }
 
     /// <summary>
     /// Whether to exclude this parameter from the settings file loading process
@@ -65,7 +65,7 @@ public abstract class Param {
     /// </summary>
     /// <param name="cmdParameter">The command-line parameter string</param>
     /// <param name="units">The units of <see cref="Value"/></param>
-    protected Param(string cmdParameter, string? units = null) : this() {
+    protected Param(string cmdParameter, string units) : this() {
         CmdParameter = cmdParameter;
         Units = units;
         LoadFromSettings = true;

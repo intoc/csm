@@ -18,9 +18,9 @@ public class NullParam : Param {
         }
     }
 
-    public NullParam() : base("null") { }
+    public NullParam() : base("null", "none") { }
 
-    public NullParam(string text) : base("null") {
+    public NullParam(string text) : base("null", "none") {
         Text = text;
     }
 
