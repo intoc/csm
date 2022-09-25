@@ -88,8 +88,8 @@ namespace csm.Business.Logic {
                 using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
                 using var fromStream = Image.Load(stream);
                 image.InitSize(fromStream.Size());
-            } catch (Exception ex) {
-                Log.Error(ex, "Unable to load image dimensions for {0}", image.FileName);
+            } catch (InvalidImageContentException ex) {
+                Log.Error("Unable to load image dimensions for {0}. {1}", image.FileName, ex.Message);
             }
         }
 

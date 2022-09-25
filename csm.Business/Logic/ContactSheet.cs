@@ -553,7 +553,6 @@ public sealed class ContactSheet : IDisposable {
             Thread.Sleep(250);
         }
 
-
         Log.Debug("DrawAndSave starting");
 
         lock (imageSet.Images) {
@@ -597,7 +596,7 @@ public sealed class ContactSheet : IDisposable {
                     // Center images smaller than the sheet width
                     Log.Information("Centering cover image.");
                     coverImageData.X = (sheetWidth.IntValue - coverImageData.Width) / 2;
-                }  
+                }
                 if (coverImageData.Width > sheetWidth.IntValue) {
                     // Scale the image down to sheet width
                     Log.Information("Cover image is too large. Reducing size to fit sheet width.");
@@ -613,11 +612,20 @@ public sealed class ContactSheet : IDisposable {
             // Begin image analysis
             Log.Information("Pass 1: Analyzing {0} images", imageCount);
 
+
+            var maxWidth = images.Max(i => i.Width);
+
             // First pass, add the same number of images to each row,
             // scale to width, record maximum row height
             foreach (ImageData data in images) {
                 // Add image to row
                 analyses[rowIndex].Add(data);
+
+                // Check for any images that didn't get dimensions during the initial loading process
+                // We'll show a placeholder later if it still fails to load
+                if (data.Width == 0) {
+                    data.InitSize(new Size(maxWidth, maxWidth));
+                }
 
                 if (analyses[rowIndex].Count == columns.IntValue || fileIndex == imageCount) {
                     // Scale the row to fit the sheetwidth
@@ -1072,10 +1080,32 @@ public sealed class ContactSheet : IDisposable {
     private void DrawThumb(ThumbnailData data) {
         Image image;
         Size size = new(data.Image.Width, data.Image.Height);
+        bool loadFailed = false;
         if (preview.BoolValue) {
             image = new Image<Rgba32>(size.Width, size.Height);
         } else {
-            image = Image.Load(data.File);
+            try {
+                image = Image.Load(data.File);
+            } catch (Exception) {
+                // Failed to load the image. Draw a placeholder
+                loadFailed = true;
+                image = new Image<Rgba32>(size.Width, size.Height);
+                image.Mutate(bad => {
+                    bad.Fill(Color.Black)
+                        .DrawLines(Pens.Solid(Color.Red, 3),
+                            Point.Empty,
+                            new Point(size.Width, size.Height))
+                        .DrawLines(Pens.Solid(Color.Red, 3),
+                            new Point(size.Width, 0),
+                            new Point(0, size.Height))
+                        .DrawLines(Pens.Solid(Color.Red, 3),
+                            Point.Empty,
+                            new Point(size.Width, 0),
+                            new Point(size.Width, size.Height),
+                            new Point(0, size.Height),
+                            Point.Empty);
+                });
+            }
         }
 
         image.Mutate(imageContext => {
@@ -1144,8 +1174,9 @@ public sealed class ContactSheet : IDisposable {
             DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
         }
         // Output status to console
-        Log.Information("({0:P1}) {1} ({2}/{3}) {4}",
-            progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
+        Log.Information("({0:P1}) {1} ({2}/{3}) {4} {5}",
+            progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds,
+                loadFailed ? "(load failed, placeholder drawn)" : string.Empty);
     }
 
     /// <summary>

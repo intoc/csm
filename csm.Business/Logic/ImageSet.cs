@@ -57,20 +57,19 @@ namespace csm.Business.Logic {
                             select file.Path;
                         // Load Image data into list
                         _images.Clear();
-
+                        IList<ImageData> unsorted = new List<ImageData>();
                         IList<Task> tasks = new List<Task>();
                         foreach (string path in files) {
                             ImageData image = new(path);
                             tasks.Add(Task.Run(() => {
                                 _imageSource.LoadImageDimensions(image);
-                                if (image.Width > 0) {
-                                    _images.Add(image);
-                                } else {
-                                    Log.Information("Removing {0} from list because dimensions could not be loaded.", image.FileName);
-                                }
+                                unsorted.Add(image);
                             }));
                         }
                         Task.WaitAll(tasks.ToArray());
+                        foreach (var i in unsorted.OrderBy(i => i.File)) {
+                            _images.Add(i);
+                        }
                         sw.Stop();
                         Log.Debug("{0}.{1} took {2}", GetType().Name, "LoadImageListAsync", sw.Elapsed);
                     } catch (RegexParseException ex) {
@@ -117,7 +116,7 @@ namespace csm.Business.Logic {
             }
 
             string? origPath = param.Path;
-            bool changed = false;
+            bool changed;
             Log.Debug("Guessing {0} (force={1}) using match pattern: {2}", param.Desc, force, pattern);
             try {
                 var files = (await _imageSource.GetFilesAsync(pattern)).ToList();
@@ -141,9 +140,7 @@ namespace csm.Business.Logic {
                 Log.Error(ex, "Error occurred while guessing cover.");
             }
 
-            changed = origPath != param.Path;
-
-            return changed;
+            return origPath != param.Path;
         }
 
         /// <summary>
