@@ -84,10 +84,10 @@ namespace csm.Business.Logic {
 
         private void ExtractWithStats() {
             Stopwatch sw = Stopwatch.StartNew();
-            Log.Debug("{0} - Extracting rar file to {1}", GetType().Name, _tempDir.FullName);
+            Log.Information("{0} - Extracting archive {1} to {2}", GetType().Name, Path.GetFileName(_archiveFilePath), _tempDir.FullName);
             Extract();
             sw.Stop();
-            Log.Debug("{0} - Extraction complete. Time: {1}", GetType().Name, sw.Elapsed);
+            Log.Information("{0} - Extraction complete. Time: {1}", GetType().Name, sw.Elapsed);
         }
 
         protected abstract void Extract();

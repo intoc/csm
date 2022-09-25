@@ -14,6 +14,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="batch.bat" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="batch.bat">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="csm.ico" />
 	</ItemGroup>
 
