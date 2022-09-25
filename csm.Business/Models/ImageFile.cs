@@ -14,6 +14,8 @@ public class ImageFile {
        
     public string Extension => IOPath.GetExtension(Path);
 
+    public long Bytes { get; private set; }
+
     public ImageFile(string path, bool hidden = false) {
         this.Path = path;
         Hidden = hidden;
@@ -22,6 +24,7 @@ public class ImageFile {
     public ImageFile(FileInfo info) {
         Path = info.FullName;
         Hidden = (info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden;
+        Bytes = info.Length;
     }
 }
 

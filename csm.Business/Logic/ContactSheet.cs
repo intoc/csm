@@ -806,7 +806,10 @@ public sealed class ContactSheet : IDisposable {
                             .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
 
                         // Determine how much space the stats will take up in the header
-                        string stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px";
+                        string stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px.";
+                        if (fileSource != null) {
+                            stats += $" {fileSource.Size}";
+                        }
                         var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
                         int statsHeight = (int)statsFontSize.Height + 10;
                         headerHeight = (int)Math.Ceiling(headerFontRect.Height + statsHeight + padding);

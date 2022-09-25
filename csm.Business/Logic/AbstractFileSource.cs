@@ -32,9 +32,24 @@ namespace csm.Business.Logic {
         /// </summary>
         public abstract string? Name { get; }
 
+        /// <summary>
+        /// The total size of all files. KiB or MiB.
+        /// </summary>
+        public string Size { 
+            get {
+                var kb = Bytes / 1024f;
+                if (Bytes < 1024) {
+                    return $"{kb:0.}KiB";
+                } 
+                return $"{kb / 1024f:0.0}MiB";
+            }
+        }
+
         public abstract void Initialize(Action? callback = null);
 
         public abstract Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);
+
+        protected long Bytes;
 
         /// <summary>
         /// Gets the files in a directory recursively, optionally filtered by <paramref name="pattern"/>

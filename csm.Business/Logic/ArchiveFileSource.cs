@@ -42,6 +42,9 @@ namespace csm.Business.Logic {
                 _tempDir.Create();
             }
             _archiveFilePath = path;
+            if (File.Exists(path)) {
+                Bytes = new FileInfo(path).Length;
+            }
         }
 
         /// <summary>

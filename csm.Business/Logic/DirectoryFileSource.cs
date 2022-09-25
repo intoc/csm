@@ -8,6 +8,9 @@ namespace csm.Business.Logic {
         public DirectoryFileSource(string? path = null) {
             if (path != null) {
                 _directory = new DirectoryInfo(path);
+                // Get total size of all files in the directory and subdirectories
+                var files = GetFiles(_directory, "*.*");
+                Bytes = files.Sum(f => f.Bytes);
             }
         }
 

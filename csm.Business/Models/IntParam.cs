@@ -32,18 +32,24 @@ public class IntParam : Param {
 
     public override void ParseVal(string? value) {
         int oldVal = IntValue;
-        if (value == string.Empty) {
+        if (value == "-") {
+            if (MinVal >= 0) {
+                throw new ArgumentOutOfRangeException($"Value for {Desc} must be a positive Integer.");
+            } else {
+                IntValue = 0;
+            }
+        } else if (value == string.Empty) {
             IntValue = 0;
         } else {
             if (int.TryParse(value, out int outVal)) {
                 IntValue = outVal;
             } else {
-                throw new ArgumentException(string.Format("Value for {0} must be an Integer.", Desc));
+                throw new ArgumentException($"Value for {Desc} must be an Integer.");
             }
         }
         if (IntValue < MinVal || IntValue > MaxVal) {
             IntValue = oldVal;
-            throw new ArgumentOutOfRangeException(string.Format("Value for {0} must be at least {1} and at most {2}.", Desc, MinVal, MaxVal));
+            throw new ArgumentOutOfRangeException($"Value for {Desc} must be at least {MinVal} and at most {MaxVal}.");
         }
         Changed(IntValue != oldVal);
     }

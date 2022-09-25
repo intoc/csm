@@ -9,6 +9,8 @@ namespace csm.Business.Logic {
 
         string? Name { get; }
 
+        string Size { get; }
+
         Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);
 
         void Initialize(Action? callback = null);
