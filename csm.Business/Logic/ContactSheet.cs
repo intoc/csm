@@ -1080,7 +1080,6 @@ public sealed class ContactSheet : IDisposable {
     private void DrawThumb(ThumbnailData data) {
         Image image;
         Size size = new(data.Image.Width, data.Image.Height);
-        bool loadFailed = false;
         if (preview.BoolValue) {
             image = new Image<Rgba32>(size.Width, size.Height);
         } else {
@@ -1088,23 +1087,20 @@ public sealed class ContactSheet : IDisposable {
                 image = Image.Load(data.File);
             } catch (Exception) {
                 // Failed to load the image. Draw a placeholder
-                loadFailed = true;
                 image = new Image<Rgba32>(size.Width, size.Height);
                 image.Mutate(bad => {
+                    var pen = Pens.Solid(Color.Red, 4);
+                    var rect = new Rectangle(2, 2, size.Width - 4, size.Height - 4);
                     bad.Fill(Color.Black)
-                        .DrawLines(Pens.Solid(Color.Red, 3),
-                            Point.Empty,
-                            new Point(size.Width, size.Height))
-                        .DrawLines(Pens.Solid(Color.Red, 3),
-                            new Point(size.Width, 0),
-                            new Point(0, size.Height))
-                        .DrawLines(Pens.Solid(Color.Red, 3),
-                            Point.Empty,
-                            new Point(size.Width, 0),
-                            new Point(size.Width, size.Height),
-                            new Point(0, size.Height),
-                            Point.Empty);
+                        .DrawLines(pen,
+                            new Point(rect.Left, rect.Top),
+                            new Point(rect.Right, rect.Bottom))
+                        .DrawLines(pen,
+                            new Point(rect.Right, rect.Top),
+                            new Point(rect.Left, rect.Bottom))
+                        .Draw(pen, rect);
                 });
+                Log.Error("{0} Image load failed, drawing placeholder.", data.Image.FileName);
             }
         }
 
@@ -1174,9 +1170,8 @@ public sealed class ContactSheet : IDisposable {
             DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
         }
         // Output status to console
-        Log.Information("({0:P1}) {1} ({2}/{3}) {4} {5}",
-            progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds,
-                loadFailed ? "(load failed, placeholder drawn)" : string.Empty);
+        Log.Information("({0:P1}) {1} ({2}/{3}) {4}",
+            progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
     }
 
     /// <summary>
