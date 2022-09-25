@@ -89,6 +89,7 @@ public partial class CsmGui : Form {
             elapsedTime.Text = $"{args.Time.Minutes:00}:{args.Time.Seconds:00}";
             if (args.Percentage < 1) {
                 drawStatus.Text = $"Loading Images {args.Percentage:P1}";
+                directoryLabel.Text = $"{args.EntityInProgress} - {drawStatus.Text}";
             } else {
                 drawStatus.Text = "Loading Images Finished!";
             }

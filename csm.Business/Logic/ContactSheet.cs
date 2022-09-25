@@ -77,7 +77,7 @@ public sealed class ContactSheet : IDisposable {
             try {
                 fileSource = _fileSourceBuilder.Build(value);
                 fileSource.LoadProgressChanged += (e) => {
-                    Log.Debug("LoadProgressChanged {0:P1}", e.Percentage);
+                    Log.Debug("Archive extraction progress: {0:P1}", e.Percentage);
                     LoadProgressChanged.Invoke(e);
                 };
             } catch (Exception ex) {

@@ -26,7 +26,7 @@ namespace csm.Business.Logic {
         private bool _extracted = false;
 
         protected Stopwatch? _timer;
- 
+
         /// <summary>
         /// Creates an instance of this file source with the given archive file path
         /// </summary>
@@ -51,10 +51,7 @@ namespace csm.Business.Logic {
         public override void Initialize(Action? callback = null) {
             Task.Run(() => {
                 lock (_dirLock) {
-                    if (!_extracted) {
-                        ExtractWithStats();
-                        _extracted = true;
-                    }
+                    ExtractWithStats();
                     callback?.Invoke();
                 }
             });
@@ -69,10 +66,7 @@ namespace csm.Business.Logic {
             IEnumerable<ImageFile> files = new List<ImageFile>();
             await Task.Run(() => {
                 lock (_dirLock) {
-                    if (!_extracted) {
-                        ExtractWithStats();
-                        _extracted = true;
-                    }
+                    ExtractWithStats();
                     files = GetFiles(_tempDir, pattern);
                 }
             });
@@ -80,13 +74,16 @@ namespace csm.Business.Logic {
         }
 
         private void ExtractWithStats() {
-            _timer = Stopwatch.StartNew();
-            Log.Information("{0} - Extracting archive {1} to {2}", GetType().Name, Path.GetFileName(_archiveFilePath), _tempDir.FullName);
-            UpdateProgress(new ProgressEventArgs(0, 100, _timer.Elapsed));
-            Extract();
-            _timer.Stop();
-            Log.Information("{0} - Extraction complete. Time: {1}", GetType().Name, _timer.Elapsed);
-            UpdateProgress(new ProgressEventArgs(100, 100, _timer.Elapsed));
+            if (!_extracted) {
+                _timer = Stopwatch.StartNew();
+                Log.Information("{0} - Extracting archive {1} to {2}", GetType().Name, Path.GetFileName(_archiveFilePath), _tempDir.FullName);
+                UpdateProgress(new ProgressEventArgs(0, 100, _timer.Elapsed, FullPath));
+                Extract();
+                _timer.Stop();
+                Log.Information("{0} - Extraction complete. Time: {1}", GetType().Name, _timer.Elapsed);
+                UpdateProgress(new ProgressEventArgs(100, 100, _timer.Elapsed, FullPath));
+                _extracted = true;
+            }
         }
 
         protected abstract void Extract();

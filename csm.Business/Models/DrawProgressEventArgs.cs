@@ -6,9 +6,12 @@ public class ProgressEventArgs : EventArgs {
 
     public TimeSpan Time { get; private set; }
 
-    public ProgressEventArgs(int progress, int total, TimeSpan elapsed) {
+    public string EntityInProgress { get; set; }
+
+    public ProgressEventArgs(int progress, int total, TimeSpan elapsed, string? entity = "Unknown Entity") {
         Progress = progress;
         Total = total;
         Time = elapsed;
+        EntityInProgress = entity ?? "Unknown Entity";
     }
 }
