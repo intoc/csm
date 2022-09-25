@@ -36,8 +36,7 @@ then the current executable directory will be used. Parameters may be in any ord
 ### Parameters
 | Parameter | Name | Type | Default | Description |
 | --------- | ---- | ---- | ------- | ----------- |
-| `-nogui` | Don't Launch GUI | true/false | false | Prevents the GUI (Graphical User Interface) from being launched.  |
-| `-filetype` | File Type | Extension | .jpg | The extension of the image file type you want to use.  |
+| `-fregx` | File Name Pattern | Regex | \\.(jpg\|jpeg\|png)$ | A regular expression used to match on file names to be included from the source.  |
 | `-mindiminput` | Minimum Input Dimension (Height and Width) | px | 0 | The minimum width and height for input images to be included in the output sheet. (Changing this option reloads the file list).  |
 | `-width` | Width of Contact Sheet | px | 900 | The width of the contact sheet in pixels.  |
 | `-cols` | Maximum Images per Row | Number | 6 | The maximum number of images per row. Rows with mixed aspect ratios will probably have fewer images.  |
@@ -56,7 +55,7 @@ then the current executable directory will be used. Parameters may be in any ord
 | `-labels` | Show Image Labels | true/false | false | Shows the filename for each image.  |
 | `-lsize` | Image Label Font Size | pt | 8 | The font size of the image label text.  |
 | `-cover` | Show Cover | true/false | false | Show a cover at the top of the sheet. (Changing this option reloads the file list).  |
-| `-cregx` | Cover Pattern | Regex | cover\. | The primary regular expression used to match cover files. (Changing this option reloads the file list).  |
+| `-cregx` | Cover Pattern | Regex | cover\\. | The primary regular expression used to match cover files. (Changing this option reloads the file list).  |
 | `-cfile` | Cover File | file | [none] | The path to the file to use as the cover. (Changing this option reloads the file list). (Not loaded from settings) |
 | `-cfill` | Attempt to Fill Cover Gaps | true/false | false | Fill any gaps on the sides of the cover with thumbnails; moves the cover to the left side.  |
 | `-cmaxw` | Maximum cover width | % | 75 | The maximum percentage of the sheet width that the cover's width can be (approximate)  |
@@ -76,7 +75,8 @@ The source path will be passed in automatically if you drag the folder or archiv
 you don't want to include in the output, use the `-mindiminput` parameter to filter out small images.
 - The `-cregx` parameter uses Regular Expressions. If you want to match on multiple cover name possibilities, 
 you can use something like `(cover|big|max|square|folder)\.(jpg|png)$`. 
-Try [regexr.com](https://regexr.com) to experiment with Regular Expressions.
+- The `-fregx` parameter also uses Regular Expressions so you can match on multiple file types.
+- Try [regexr.com](https://regexr.com) to experiment with Regular Expressions.
 
 ## Linux
 The linux command-line only version of this app requires the dotnet 6 runtime. 

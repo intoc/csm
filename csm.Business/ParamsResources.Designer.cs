@@ -205,20 +205,20 @@ namespace csm.Business {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to File Type.
+        ///   Looks up a localized string similar to File Name Pattern.
         /// </summary>
-        internal static string filetype_desc {
+        internal static string fregx_desc {
             get {
-                return ResourceManager.GetString("filetype_desc", resourceCulture);
+                return ResourceManager.GetString("fregx_desc", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The extension of the image file type you want to use..
+        ///   Looks up a localized string similar to A regular expression used to match on file names to be included from the source..
         /// </summary>
-        internal static string filetype_note {
+        internal static string fregx_note {
             get {
-                return ResourceManager.GetString("filetype_note", resourceCulture);
+                return ResourceManager.GetString("fregx_note", resourceCulture);
             }
         }
         

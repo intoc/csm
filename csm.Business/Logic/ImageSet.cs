@@ -31,41 +31,47 @@ namespace csm.Business.Logic {
         /// <summary>
         /// Load the file list and image information from the source directory if it's set
         /// </summary>
-        /// <param name="fileType">The image file extension to filter on</param>
+        /// <param name="fileRegex">The regex to filter file names</param>
         /// <param name="minDim">The minimum dimension (height and width) of images to include</param>
         /// <param name="outFileName">Output file name to ignore</param>
         /// <param name="coverFileName">Cover file name to ignore</param>
-        public async Task LoadImageListAsync(string fileType, int minDim, string? outFileName, string? coverFileName) {
+        public async Task LoadImageListAsync(string fileRegex, int minDim, string? outFileName, string? coverFileName) {
             await Task.Run(() => {
                 lock (Images) {
-                    
+
                     if (_imageSource == null) {
                         return;
                     }
                     var sw = Stopwatch.StartNew();
 
-                    var getFilesTask = _imageSource.GetFilesAsync($"*{fileType}");
-                    getFilesTask.Wait();
-                    var allFiles = getFilesTask.Result;
+                    try {
+                        var getFilesTask = _imageSource.GetFilesAsync(fileRegex);
+                        getFilesTask.Wait();
+                        var allFiles = getFilesTask.Result;
 
-                    // Get a list of all the images in the source
-                    // Don't include hidden files
-                    IEnumerable<string> files =
-                        from file in allFiles
-                        where !file.Hidden
-                        select file.Path;
-                    // Load Image data into list
-                    _images.Clear();
+                        // Get a list of all the images in the source
+                        // Don't include hidden files
+                        IEnumerable<string> files =
+                            from file in allFiles
+                            where !file.Hidden
+                            select file.Path;
+                        // Load Image data into list
+                        _images.Clear();
 
-                    IList<Task> tasks = new List<Task>();
-                    foreach (string path in files) {
-                        ImageData image = new(path);
-                        _images.Add(image);
-                        tasks.Add(Task.Run(() => _imageSource.LoadImageDimensions(image)));
+                        IList<Task> tasks = new List<Task>();
+                        foreach (string path in files) {
+                            ImageData image = new(path);
+                            _images.Add(image);
+                            tasks.Add(Task.Run(() => _imageSource.LoadImageDimensions(image)));
+                        }
+                        Task.WaitAll(tasks.ToArray());
+                        sw.Stop();
+                        Log.Debug("{0}.{1} took {2}", GetType().Name, "LoadImageListAsync", sw.Elapsed);
+                    } catch (RegexParseException ex) {
+                        Log.Error("Error occurred during file name pattern matching: {0}", ex.Message);
+                    } catch (Exception ex) {
+                        Log.Error(ex, "Error occurred while loading file list.");
                     }
-                    Task.WaitAll(tasks.ToArray());
-                    sw.Stop();
-                    Log.Debug("{0}.{1} took {2}", GetType().Name, "LoadImageListAsync", sw.Elapsed);
                 }
                 RefreshImageList(minDim, outFileName, coverFileName);
             });
@@ -94,25 +100,22 @@ namespace csm.Business.Logic {
         /// <param name="param">The <see cref="FileParam"/> that is being guessed</param>
         /// <param name="pattern">The regular expression</param>
         /// <returns>If a match was found</returns>
-        public async Task<bool> GuessFile(FileParam param, string? fileType, string pattern, bool force = false) {
+        public async Task<bool> GuessFile(FileParam param, string listPattern, string pattern, bool force = false) {
 
-            if (_imageSource == null || string.IsNullOrEmpty(fileType)) {
+            if (_imageSource == null) {
                 return false;
             }
-            
-            // If the command line set the cover file pattern/name,
-            // make sure it exists. If not, guess.
-            if (!(force || param.File == null)) {
+
+            if (!force && param.File != null) {
                 return false;
             }
 
             string? origPath = param.Path;
             bool changed = false;
             Log.Debug("Guessing {0} (force={1}) using match pattern: {2}", param.Desc, force, pattern);
-            var files = (await _imageSource.GetFilesAsync($"*{fileType}")).ToList();
             try {
-                var regex = new Regex(pattern);
-                ImageFile? match = files.FirstOrDefault(f => regex.IsMatch(f.Path));
+                var files = (await _imageSource.GetFilesAsync(pattern)).ToList();
+                ImageFile? match = files.FirstOrDefault();
                 if (match != null) {
                     changed = origPath != match.Path;
                     if (changed) {
@@ -123,17 +126,17 @@ namespace csm.Business.Logic {
                     }
                     return changed;
                 }
+                Log.Information("No match found for {0}, using first file in the directory.", param.Desc);
+                var allFiles = await _imageSource.GetFilesAsync(listPattern);
+                param.Path = allFiles.FirstOrDefault()?.Path;
             } catch (RegexParseException ex) {
                 Log.Error("Error occurred during cover file pattern matching: {0}", ex.Message);
             } catch (Exception ex) {
                 Log.Error(ex, "Error occurred while guessing cover.");
             }
-            if (files.Any()) {
-                Log.Information("No match found for {0}, using first file in the directory.", param.Desc);
-                param.Path = files.First().Path;
-            }
+
             changed = origPath != param.Path;
-            
+
             return changed;
         }
 

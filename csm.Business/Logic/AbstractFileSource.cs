@@ -1,5 +1,6 @@
 ﻿using csm.Business.Models;
 using SixLabors.ImageSharp;
+using System.Text.RegularExpressions;
 
 namespace csm.Business.Logic {
 
@@ -58,8 +59,11 @@ namespace csm.Business.Logic {
         /// <param name="pattern">The file name match pattern. Can use * and ? wildcards, but not regular expressions.</param>
         /// <returns>The files</returns>
         protected IEnumerable<ImageFile> GetFiles(DirectoryInfo directory, string? pattern) {
-            return (pattern == null ? directory.EnumerateFiles() : directory.EnumerateFiles(pattern))
-                .Select(f => new ImageFile(f))
+            var files = directory.EnumerateFiles();
+            if (pattern != null) {
+                files = files.Where(f => Regex.IsMatch(f.Name, pattern));
+            }
+            return files.Select(f => new ImageFile(f))
                 .Concat(directory.GetDirectories().SelectMany(d => GetFiles(d, pattern)));
         }
 

@@ -165,11 +165,11 @@
   <data name="exit_note" xml:space="preserve">
     <value>Close the GUI when the sheet is finished. Doesn't apply to the command-line.</value>
   </data>
-  <data name="filetype_desc" xml:space="preserve">
-    <value>File Type</value>
+  <data name="fregx_desc" xml:space="preserve">
+    <value>File Name Pattern</value>
   </data>
-  <data name="filetype_note" xml:space="preserve">
-    <value>The extension of the image file type you want to use.</value>
+  <data name="fregx_note" xml:space="preserve">
+    <value>A regular expression used to match on file names to be included from the source.</value>
   </data>
   <data name="hbold_desc" xml:space="preserve">
     <value>Bold Header</value>

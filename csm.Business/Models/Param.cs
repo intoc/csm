@@ -96,7 +96,7 @@ public abstract class Param {
         string? value = Value;
         value = string.IsNullOrEmpty(value) ? "[none]" : value;
         if (isMarkDown) {
-            help.AppendLine($"| `{CmdParameter}` | {Desc} | {Units} | {value} | {Note} {(!LoadFromSettings ? "(Not loaded from settings)" : string.Empty)} |");
+            help.AppendLine($"| `{CmdParameter}` | {Desc} | {Units} | {value.Replace(@"\", @"\\")} | {Note} {(!LoadFromSettings ? "(Not loaded from settings)" : string.Empty)} |");
         } else {
             string unitsDefaults = $"[{Units}, Default={value}{(!LoadFromSettings ? " (Not loaded from settings)" : string.Empty)}]";
             help.AppendLine(CmdParameter == "null" ? string.Empty : $"{CmdParameter}: {Desc} {unitsDefaults}. {Note}");

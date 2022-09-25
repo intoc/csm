@@ -26,6 +26,7 @@ public sealed class ContactSheet : IDisposable {
 
     #region Private Constants
 
+    private static readonly string defaultFilePattern = @"\.(jpg|jpeg|png)$";
     private static readonly string coverRegexes = @"(cover|big|max|square|front|folder)\.";
     private static readonly string[] helpStrings = { "--help", "-help", "/?", "-?" };
     private const int DEFAULT_WIDTH = 900;
@@ -150,7 +151,7 @@ public sealed class ContactSheet : IDisposable {
     private readonly IntParam quality;
     private readonly IntParam sheetWidth;
     private readonly StringParam coverPattern;
-    private readonly StringParam fileType;
+    private readonly StringParam filePattern;
     private readonly StringParam headerTitle;
     private readonly StringParam outputFilePath;
 
@@ -180,8 +181,8 @@ public sealed class ContactSheet : IDisposable {
             LoadFromSettings = false
         };
 
-        fileType = new StringParam("-filetype", ".jpg", "Extension") {
-            MaxChars = 4
+        filePattern = new StringParam("-fregx", defaultFilePattern, "Regex") {
+            MaxChars = 20
         };
 
         minDimInput = new IntParam("-mindiminput", 0, "px") {
@@ -227,7 +228,7 @@ public sealed class ContactSheet : IDisposable {
         openOutputDirectoryOnComplete = new BoolParam("-openoutdir", true);
 
         var generalParams = new NullParam("General");
-        generalParams.AddSubParam(fileType);
+        generalParams.AddSubParam(filePattern);
         generalParams.AddSubParam(minDimInput);
         generalParams.AddSubParam(sheetWidth);
         generalParams.AddSubParam(columns);
@@ -297,7 +298,7 @@ public sealed class ContactSheet : IDisposable {
         #region Event Subscriptions
 
         // Setup all instances where a file list reload is required
-        fileType.ParamChanged += async (path) => await LoadFileList(path);
+        filePattern.ParamChanged += async (path) => await LoadFileList(path);
         SourceChanged += async (path) => {
             Log.Information("Source set to {0}", path);
             imageSet.Source = fileSource ?? new DirectoryFileSource();
@@ -476,8 +477,9 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="force">Proceed even if the cover file path has already been set</param>
     private async Task<bool> GuessCover(bool force) {
-        string pattern = coverPattern.ParsedValue ?? coverRegexes;
-        return await imageSet.GuessFile(coverFile, fileType.Value, pattern, force);
+        string listRegex = filePattern.Value ?? defaultFilePattern;
+        string coverRegex = coverPattern.Value ?? coverRegexes;
+        return await imageSet.GuessFile(coverFile, listRegex, coverRegex, force);
     }
 
     /// <summary>
@@ -488,7 +490,7 @@ public sealed class ContactSheet : IDisposable {
         if (p != null) {
             Log.Information("Reloading file list due to change in {0}", p.CmdParameter);
         }
-        await imageSet.LoadImageListAsync(fileType.ParsedValue ?? ".jpg", minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
+        await imageSet.LoadImageListAsync(filePattern.ParsedValue ?? defaultFilePattern, minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
         ImageListChanged?.Invoke();
     }
 
@@ -560,7 +562,7 @@ public sealed class ContactSheet : IDisposable {
             imageCount = images.Count();
 
             if (imageCount == 0) {
-                ErrorOccurred?.Invoke($"No valid/selected {fileType.ParsedValue} Images in {Source}!");
+                ErrorOccurred?.Invoke($"No valid/selected {filePattern.ParsedValue} Images in {Source}!");
                 return false; // Don't exit the GUI
             }
 
