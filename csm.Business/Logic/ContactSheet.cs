@@ -1094,8 +1094,7 @@ public sealed class ContactSheet : IDisposable {
                     bad.Fill(Color.Black)
                         .DrawLines(pen,
                             new Point(rect.Left, rect.Top),
-                            new Point(rect.Right, rect.Bottom))
-                        .DrawLines(pen,
+                            new Point(rect.Right, rect.Bottom),
                             new Point(rect.Right, rect.Top),
                             new Point(rect.Left, rect.Bottom))
                         .Draw(pen, rect);
