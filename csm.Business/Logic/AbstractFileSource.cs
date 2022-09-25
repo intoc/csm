@@ -59,7 +59,7 @@ namespace csm.Business.Logic {
         /// <param name="directory">The directory to query</param>
         /// <param name="pattern">The file name match pattern. Can use * and ? wildcards, but not regular expressions.</param>
         /// <returns>The files</returns>
-        protected IEnumerable<ImageFile> GetFiles(DirectoryInfo directory, string? pattern) {
+        protected IEnumerable<ImageFile> GetFiles(DirectoryInfo directory, string? pattern = null) {
             var files = directory.EnumerateFiles();
             if (pattern != null) {
                 files = files.Where(f => Regex.IsMatch(f.Name, pattern));
