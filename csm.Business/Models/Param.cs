@@ -68,6 +68,7 @@ public abstract class Param {
     protected Param(string cmdParameter, string? units = null) : this() {
         CmdParameter = cmdParameter;
         Units = units;
+        LoadFromSettings = true;
     }
 
     /// <summary>
