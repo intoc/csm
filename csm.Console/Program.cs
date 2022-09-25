@@ -1,9 +1,10 @@
-﻿// Logging configuration
+﻿
 using csm.Business.Logic;
 using csm.Business.Models;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
+// Logging configuration
 var builder = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 var config = builder.Build();
@@ -12,7 +13,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 try {
-    using ContactSheet cs = new(new FileSourceBuilder());
+    using ContactSheet cs = new(new FileSourceBuilder(), false);
     cs.ErrorOccurred += (msg, ex) => Log.Error(ex, msg);
 
     // Check for a -help parameter and handle it
@@ -26,8 +27,8 @@ try {
         cs.LoadParamsFromFile(Param.GetValueFromCmdParamAndValue(sFileParamAndValue));
     }
 
-    // Ignore the nogui parameter because it doesn't matter
-    cs.LoadParamsFromCommandLine(args.Where(a => !a.StartsWith("-nogui=")));
+    // Override loaded settings that were passed in from the command line
+    cs.LoadParamsFromCommandLine(args);
 
     // Search all arguments for a path, use the first one that shows up
     var path = args.FirstOrDefault(a => !a.StartsWith("-"));

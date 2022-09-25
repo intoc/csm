@@ -165,7 +165,9 @@ public sealed class ContactSheet : IDisposable {
     /// <summary>
     /// Create a contact sheet instance
     /// </summary>
-    public ContactSheet(IFileSourceBuilder fileSourceBuilder) {
+    /// <param name="fileSourceBuilder">The file source builder</param>
+    /// <param name="hasGui">If false, removes the -nogui parameter</param>
+    public ContactSheet(IFileSourceBuilder fileSourceBuilder, bool hasGui = true) {
 
         _fileSourceBuilder = fileSourceBuilder;
         _firstLoadIncomplete = true;
@@ -313,12 +315,17 @@ public sealed class ContactSheet : IDisposable {
 
         // Load top-level params into externaly visible Param list (ordered)
         Params = new List<Param> {
-            noGui,
             generalParams,
             header,
             labels,
             cover
         };
+
+        if (hasGui) {
+            Params.Insert(0, noGui);
+        } else {
+            noGui.BoolValue = true;
+        }
     }
 
     private async Task HandleShowCoverChanged() {
