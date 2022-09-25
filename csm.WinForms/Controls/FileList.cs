@@ -77,7 +77,7 @@ public partial class FileList : Form {
     /// </summary>
     /// <param name="args"></param>
     void UpdateList() {
-        Log.Debug("FileList-UpdateList");
+        Log.Debug("FileList-UpdateList");  
         if (binder.DataSource == null && cs.ImageList.Any()) {
             binder.DataSource = new BindingList<ImageData>(cs.ImageList);
         } else {
@@ -86,7 +86,7 @@ public partial class FileList : Form {
                 image.InclusionPinned = true;
             }
             binder.ResetBindings(false);
-        }
+        }     
         UpdateStatus();
     }
 

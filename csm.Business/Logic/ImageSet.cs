@@ -61,8 +61,14 @@ namespace csm.Business.Logic {
                         IList<Task> tasks = new List<Task>();
                         foreach (string path in files) {
                             ImageData image = new(path);
-                            _images.Add(image);
-                            tasks.Add(Task.Run(() => _imageSource.LoadImageDimensions(image)));
+                            tasks.Add(Task.Run(() => {
+                                _imageSource.LoadImageDimensions(image);
+                                if (image.Width > 0) {
+                                    _images.Add(image);
+                                } else {
+                                    Log.Information("Removing {0} from list because dimensions could not be loaded.", image.FileName);
+                                }
+                            }));
                         }
                         Task.WaitAll(tasks.ToArray());
                         sw.Stop();

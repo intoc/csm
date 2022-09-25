@@ -1,4 +1,5 @@
 ﻿using csm.Business.Models;
+using Serilog;
 using SixLabors.ImageSharp;
 using System.Text.RegularExpressions;
 
@@ -72,9 +73,13 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="image">The <see cref="ImageData"/> to initialize</param>
         public void LoadImageDimensions(ImageData image) {
-            using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
-            using var fromStream = Image.Load(stream);
-            image.InitSize(new Size(fromStream.Width, fromStream.Height));
+            try {
+                using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
+                using var fromStream = Image.Load(stream);
+                image.InitSize(fromStream.Size());
+            } catch (Exception ex) {
+                Log.Error(ex, "Unable to load image dimensions for {0}", image.FileName);
+            }
         }
 
         /// <summary>

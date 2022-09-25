@@ -17,14 +17,12 @@ public partial class CsmGui : Form {
     /// </summary>
     public CsmGui(ContactSheet sheet) {
         InitializeComponent();
-        SetButtonsEnabled(sheet.FirstLoadComplete, sheet.Source == null || sheet.FirstLoadComplete);
-
+        
         // Initialize status elements
         drawStatus.Text = string.Empty;
         settingsFileStatus.Text = string.Empty;
         var directoryLabelText = (string? path) => string.IsNullOrEmpty(path) ? "None Selected" : path;
         directoryLabel.Text = directoryLabelText(sheet.Source);
-
         cs = sheet;
 
         foreach (Param p in cs.Params) {
@@ -42,6 +40,11 @@ public partial class CsmGui : Form {
         settingsLabel.Text = cs.SettingsFile;
 
         fileListWindow = new FileList(cs);
+        SetButtonsEnabledIfFilesLoaded();
+    }
+
+    private void SetButtonsEnabledIfFilesLoaded() {
+        SetButtonsEnabled(cs.FirstLoadComplete, cs.Source != null || cs.FirstLoadComplete);
     }
 
     private void SetButtonsEnabled(bool run, bool choose) {
@@ -181,6 +184,7 @@ public partial class CsmGui : Form {
     }
 
     private void ViewFiles(object sender, EventArgs e) {
+        SetButtonsEnabledIfFilesLoaded();
         if (!fileListWindow.Visible) {
             fileListWindow.Show(this);
         }
