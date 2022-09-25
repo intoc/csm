@@ -1,7 +1,12 @@
 ﻿using csm.Business.Models;
 
 namespace csm.Business.Logic {
+
+    public delegate void FileLoadProgressEventHandler(ProgressEventArgs args);
+
     public interface IFileSource : IDisposable {
+
+        event FileLoadProgressEventHandler LoadProgressChanged;
 
         string? FullPath { get; }
 

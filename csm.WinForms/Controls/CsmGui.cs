@@ -7,7 +7,7 @@ public partial class CsmGui : Form {
 
     private readonly ContactSheet cs;
 
-    public delegate void UpdateProgressDelegate(DrawProgressEventArgs args);
+    public delegate void UpdateProgressDelegate(ProgressEventArgs args);
     public delegate void UpdateSettingsStatusDelegate(SettingsChangedEventArgs args);
 
     private readonly FileList fileListWindow;
@@ -17,7 +17,7 @@ public partial class CsmGui : Form {
     /// </summary>
     public CsmGui(ContactSheet sheet) {
         InitializeComponent();
-        
+
         // Initialize status elements
         drawStatus.Text = string.Empty;
         settingsFileStatus.Text = string.Empty;
@@ -29,13 +29,14 @@ public partial class CsmGui : Form {
             paramsPanel.AddParamControl(p);
         }
 
-        cs.DrawProgressChanged += new DrawProgressEventHandler(DrawProgressChanged);
-        cs.SettingsChanged += new SettingsChangedEventHandler(SettingsChanged);
-        cs.ErrorOccurred += new ExceptionEventHandler(ExceptionOccurred);
+        cs.DrawProgressChanged += DrawProgressChanged;
+        cs.SettingsChanged += SettingsChanged;
+        cs.ErrorOccurred += ExceptionOccurred;
         cs.SourceChanged += (path) => Invoke(() => {
             Invoke(() => directoryLabel.Text = directoryLabelText(path));
             Invoke(() => SetButtonsEnabled(true, true));
         });
+        cs.LoadProgressChanged += UpdateLoadProgress;
 
         settingsLabel.Text = cs.SettingsFile;
 
@@ -65,7 +66,7 @@ public partial class CsmGui : Form {
             MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
-    void DrawProgressChanged(DrawProgressEventArgs args) {
+    void DrawProgressChanged(ProgressEventArgs args) {
         if (statusStrip.InvokeRequired) {
             object[] argsArr = { args };
             statusStrip.Invoke(new UpdateProgressDelegate(UpdateDrawProgress), argsArr);
@@ -81,12 +82,24 @@ public partial class CsmGui : Form {
             UpdateSettingsStatus(args);
         }
     }
+    
+    public void UpdateLoadProgress(ProgressEventArgs args) {
+        statusStrip.Invoke(() => {
+            drawProgressBar.Value = (int)(args.Percentage * 100);
+            elapsedTime.Text = $"{args.Time.Minutes:00}:{args.Time.Seconds:00}";
+            if (args.Percentage < 1) {
+                drawStatus.Text = $"Loading Images {args.Percentage:P1}";
+            } else {
+                drawStatus.Text = "Loading Images Finished!";
+            }
+        });
+    }
 
-    public void UpdateDrawProgress(DrawProgressEventArgs args) {
-        drawProgressBar.Value = args.Percentage;
+    public void UpdateDrawProgress(ProgressEventArgs args) {
+        drawProgressBar.Value = (int)(args.Percentage * 100);
         elapsedTime.Text = $"{args.Time.Minutes:00}:{args.Time.Seconds:00}";
-        if (args.Percentage < 100) {
-            drawStatus.Text = $"Drawing {args.Percentage}%";
+        if (args.Percentage < 1) {
+            drawStatus.Text = $"Drawing {args.Percentage:P1}";
         } else {
             drawStatus.Text = "Drawing Finished!";
             // Open the folder

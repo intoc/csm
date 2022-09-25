@@ -50,6 +50,15 @@ namespace csm.Business.Logic {
             }
         }
 
+        /// <summary>
+        /// Fired when the file loading progress changes
+        /// </summary>
+        public event FileLoadProgressEventHandler LoadProgressChanged = delegate { };
+
+        protected void UpdateProgress(ProgressEventArgs e) {
+            LoadProgressChanged.Invoke(e);
+        }
+
         public abstract void Initialize(Action? callback = null);
 
         public abstract Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);

@@ -1,6 +1,4 @@
-﻿using Aspose.Zip;
-using Aspose.Zip.Rar;
-using csm.Business.Models;
+﻿using csm.Business.Models;
 using Serilog;
 using System.Diagnostics;
 
@@ -26,6 +24,8 @@ namespace csm.Business.Logic {
         protected readonly string _archiveFilePath;
         private readonly object _dirLock = new();
         private bool _extracted = false;
+
+        protected Stopwatch? _timer;
  
         /// <summary>
         /// Creates an instance of this file source with the given archive file path
@@ -80,19 +80,13 @@ namespace csm.Business.Logic {
         }
 
         private void ExtractWithStats() {
-            Stopwatch sw = Stopwatch.StartNew();
+            _timer = Stopwatch.StartNew();
             Log.Information("{0} - Extracting archive {1} to {2}", GetType().Name, Path.GetFileName(_archiveFilePath), _tempDir.FullName);
+            UpdateProgress(new ProgressEventArgs(0, 100, _timer.Elapsed));
             Extract();
-            sw.Stop();
-            Log.Information("{0} - Extraction complete. Time: {1}", GetType().Name, sw.Elapsed);
-        }
-
-        protected void ArchiveFileSource_ExtractionProgressed(object? sender, ProgressEventArgs e) {
-            if (sender is RarArchiveEntry entry && entry.UncompressedSize == e.ProceededBytes && !entryCompletion[entry.Name]) {
-                entryCompletion[entry.Name] = true;
-                Log.Debug("{0} Extracted ({1}/{2})",
-                entry.Name, entryCompletion.Values.Count(v => v), entryCompletion.Count);
-            }
+            _timer.Stop();
+            Log.Information("{0} - Extraction complete. Time: {1}", GetType().Name, _timer.Elapsed);
+            UpdateProgress(new ProgressEventArgs(100, 100, _timer.Elapsed));
         }
 
         protected abstract void Extract();

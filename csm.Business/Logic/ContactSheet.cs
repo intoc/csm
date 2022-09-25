@@ -14,7 +14,7 @@ using Path = System.IO.Path;
 namespace csm.Business.Logic;
 
 public delegate void SourceChangedEventHandler(string? path);
-public delegate void DrawProgressEventHandler(DrawProgressEventArgs args);
+public delegate void DrawProgressEventHandler(ProgressEventArgs args);
 public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
 public delegate void ImageListChangedEventHandler();
 public delegate void ExceptionEventHandler(string message, Exception? e = null);
@@ -76,6 +76,10 @@ public sealed class ContactSheet : IDisposable {
 
             try {
                 fileSource = _fileSourceBuilder.Build(value);
+                fileSource.LoadProgressChanged += (e) => {
+                    Log.Debug("LoadProgressChanged {0:P1}", e.Percentage);
+                    LoadProgressChanged.Invoke(e);
+                };
             } catch (Exception ex) {
                 ErrorOccurred?.Invoke("Can't load source path.", ex);
             }
@@ -116,6 +120,11 @@ public sealed class ContactSheet : IDisposable {
     /// Fired when the source directory is changed
     /// </summary>
     public event SourceChangedEventHandler SourceChanged = delegate { };
+
+    /// <summary>
+    /// Fired when the file loading progress changes
+    /// </summary>
+    public event FileLoadProgressEventHandler LoadProgressChanged = delegate { };
 
     /// <summary>
     /// Fired when an exception occurred
@@ -1164,7 +1173,7 @@ public sealed class ContactSheet : IDisposable {
         if (step > progressStep) {
             ++progressStep;
             // Send progress to listeners
-            DrawProgressChanged?.Invoke(new DrawProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
+            DrawProgressChanged?.Invoke(new ProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
         }
         // Output status to console
         Log.Information("({0:P1}) {1} ({2}/{3}) {4}",
