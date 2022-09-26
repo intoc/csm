@@ -85,7 +85,7 @@ public partial class FileList : Form {
                 image.Include = PinnedImages[image.File];
                 image.InclusionPinned = true;
             }
-            binder.ResetBindings(false);
+            files.Refresh();
         }     
         UpdateStatus();
     }
