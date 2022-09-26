@@ -22,10 +22,10 @@ namespace csm.Business.Logic {
         protected readonly DirectoryInfo _tempDir;
         protected readonly IDictionary<string, bool> entryCompletion;
         protected readonly string _archiveFilePath;
+        protected Stopwatch _timer = new();
+
         private readonly object _dirLock = new();
         private bool _extracted = false;
-
-        protected Stopwatch? _timer;
 
         /// <summary>
         /// Creates an instance of this file source with the given archive file path
@@ -75,7 +75,7 @@ namespace csm.Business.Logic {
 
         private void ExtractWithStats() {
             if (!_extracted) {
-                _timer = Stopwatch.StartNew();
+                _timer.Start();
                 Log.Information("{0} - Extracting archive {1} to {2}", GetType().Name, Path.GetFileName(_archiveFilePath), _tempDir.FullName);
                 UpdateProgress(new ProgressEventArgs(0, 100, _timer.Elapsed, FullPath));
                 Extract();

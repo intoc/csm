@@ -57,6 +57,7 @@ partial class CsmGui
             this.btnArchive = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.settingsLabel = new System.Windows.Forms.Label();
+            this.batchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip.SuspendLayout();
             this.menu.SuspendLayout();
             this.pnlMain.SuspendLayout();
@@ -169,7 +170,8 @@ partial class CsmGui
             this.chooseFolderToolStripMenuItem,
             this.chooseArchiveToolStripMenuItem,
             this.viewFilesToolStripMenuItem,
-            this.drawSheetToolStripMenuItem});
+            this.drawSheetToolStripMenuItem,
+            this.batchToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.toolsToolStripMenuItem.Text = "Tools";
@@ -356,6 +358,13 @@ partial class CsmGui
             this.settingsLabel.TabIndex = 4;
             this.settingsLabel.Text = "settingsLabel";
             // 
+            // batchToolStripMenuItem
+            // 
+            this.batchToolStripMenuItem.Name = "batchToolStripMenuItem";
+            this.batchToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.batchToolStripMenuItem.Text = "Batch";
+            this.batchToolStripMenuItem.Click += new System.EventHandler(this.BatchToolStripMenuItem_Click);
+            // 
             // CsmGui
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -420,4 +429,5 @@ partial class CsmGui
     private System.Windows.Forms.FlowLayoutPanel directoryPanel;
     private Button btnFolder;
     private ToolStripMenuItem chooseArchiveToolStripMenuItem;
+    private ToolStripMenuItem batchToolStripMenuItem;
 }

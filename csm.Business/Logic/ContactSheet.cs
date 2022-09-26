@@ -14,7 +14,8 @@ using Path = System.IO.Path;
 namespace csm.Business.Logic;
 
 public delegate void SourceChangedEventHandler(string? path);
-public delegate void DrawProgressEventHandler(ProgressEventArgs args);
+public delegate void DrawProgressEventHandler(ContactSheet sender, ProgressEventArgs args);
+public delegate void LoadProgressEventHandler(ContactSheet sender, ProgressEventArgs args);
 public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
 public delegate void ImageListChangedEventHandler();
 public delegate void ExceptionEventHandler(string message, Exception? e = null);
@@ -64,6 +65,10 @@ public sealed class ContactSheet : IDisposable {
 
     public bool FirstLoadComplete => !_firstLoadIncomplete;
 
+    public double LoadProgress { get; private set; }
+
+    public double DrawProgress { get; private set; }
+
     /// <summary>
     /// The source path
     /// </summary>
@@ -78,7 +83,7 @@ public sealed class ContactSheet : IDisposable {
                 fileSource = _fileSourceBuilder.Build(value);
                 fileSource.LoadProgressChanged += (e) => {
                     Log.Debug("Archive extraction progress: {0:P1}", e.Percentage);
-                    LoadProgressChanged.Invoke(e);
+                    LoadProgressChanged.Invoke(this, e);
                 };
             } catch (Exception ex) {
                 ErrorOccurred?.Invoke("Can't load source path.", ex);
@@ -124,7 +129,7 @@ public sealed class ContactSheet : IDisposable {
     /// <summary>
     /// Fired when the file loading progress changes
     /// </summary>
-    public event FileLoadProgressEventHandler LoadProgressChanged = delegate { };
+    public event LoadProgressEventHandler LoadProgressChanged = delegate { };
 
     /// <summary>
     /// Fired when an exception occurred
@@ -134,6 +139,8 @@ public sealed class ContactSheet : IDisposable {
     #endregion
 
     #region Private Fields
+
+    private static readonly object GlobalDrawLock = new();
 
     private IFileSource? fileSource;
     private readonly IImageSet imageSet = new ImageSet();
@@ -320,6 +327,9 @@ public sealed class ContactSheet : IDisposable {
             // First loading has finished, stop blocking DrawAndSave
             _firstLoadIncomplete = false;
         };
+        LoadProgressChanged += (source, e) => {
+            LoadProgress = e.Percentage;
+        };
 
         // Setup all instances where a image list refresh is required without a full reload
         coverFile.ParamChanged += RefreshImageList;
@@ -452,6 +462,16 @@ public sealed class ContactSheet : IDisposable {
         // If the GUI is enabled, remove the No GUI option
         if (GuiEnabled && Params.Contains(noGui)) {
             Params.Remove(noGui);
+        }
+    }
+
+    /// <summary>
+    /// Load parameter values from another <see cref="ContactSheet"/>
+    /// </summary>
+    /// <param name="other">The other sheet</param>
+    public void LoadParamsFromSheet(ContactSheet other) {
+        foreach(var param in Params) {
+            param.Load(other.Params);
         }
     }
 
@@ -964,34 +984,35 @@ public sealed class ContactSheet : IDisposable {
         sheetImage = new Image<Rgba32>(sheetWidth.IntValue, sheetHeight);
 
         // Draw the sheet
-        sheetImage.Mutate(async (sheetContext) => {
+        sheetImage.Mutate(sheetContext => {
+            //lock (GlobalDrawLock) {
+                // We have to make the background white because the header text looks bad on a black background
+                sheetContext.Fill(Color.Black);
 
-            // We have to make the background white because the header text looks bad on a black background
-            sheetContext.Fill(Color.Black);
-
-            // Draw the the header
-            if (headerImage != null) {
-                // Draw the header on the sheet
-                Log.Information("Drawing header. {0}", headerImage.Bounds());
-                sheetContext.DrawImage(headerImage, 1);
-            }
-
-            // Draw the cover
-            if (coverImageData != null) {
-                Log.Information("Drawing cover {0}. {1}", Path.GetFileName(coverFile.Path), coverImageData.Bounds);
-                if (preview.BoolValue) {
-                    sheetContext.Fill(Brushes.Solid(Color.White), coverImageData.Bounds);
-                    sheetContext.DrawText(
-                        "COVER", fontFamily.CreateFont(14, FontStyle.Bold), Color.Black,
-                        new PointF(coverImageData.X + coverImageData.Width / 2, coverImageData.Y + coverImageData.Height / 2));
-                } else {
-                    using var coverImage = await Image.LoadAsync(coverImageData.File);
-                    coverImage.Mutate(coverContext => {
-                        coverContext.Resize(coverImageData.Width, coverImageData.Height);
-                    });
-                    sheetContext.DrawImage(coverImage, coverImageData.Origin, 1);
+                // Draw the the header
+                if (headerImage != null) {
+                    // Draw the header on the sheet
+                    Log.Information("Drawing header. {0}", headerImage.Bounds());
+                    sheetContext.DrawImage(headerImage, 1);
                 }
-            }
+
+                // Draw the cover
+                if (coverImageData != null) {
+                    Log.Information("Drawing cover {0}. {1}", Path.GetFileName(coverFile.Path), coverImageData.Bounds);
+                    if (preview.BoolValue) {
+                        sheetContext.Fill(Brushes.Solid(Color.White), coverImageData.Bounds);
+                        sheetContext.DrawText(
+                            "COVER", fontFamily.CreateFont(14, FontStyle.Bold), Color.Black,
+                            new PointF(coverImageData.X + coverImageData.Width / 2, coverImageData.Y + coverImageData.Height / 2));
+                    } else {
+                        using var coverImage = Image.Load(coverImageData.File);
+                        coverImage.Mutate(coverContext => {
+                            coverContext.Resize(coverImageData.Width, coverImageData.Height);
+                        });
+                        sheetContext.DrawImage(coverImage, coverImageData.Origin, 1);
+                    }
+                }
+           // }
         });
 
 
@@ -1166,18 +1187,18 @@ public sealed class ContactSheet : IDisposable {
         // Update counters
         int resolution = 10;
         Interlocked.Increment(ref drawnCount);
-        double progressFraction = drawnCount / (double)data.ImageTotal;
-        int step = (int)Math.Floor(progressFraction * resolution);
+        DrawProgress = drawnCount / (double)data.ImageTotal;
+        int step = (int)Math.Floor(DrawProgress * resolution);
 
         // Send a limited number of progress updates to the listeners
         if (step > progressStep) {
             ++progressStep;
             // Send progress to listeners
-            DrawProgressChanged?.Invoke(new ProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
+            DrawProgressChanged?.Invoke(this, new ProgressEventArgs(drawnCount, data.ImageTotal, DateTime.Now - startTime));
         }
         // Output status to console
         Log.Information("({0:P1}) {1} ({2}/{3}) {4}",
-            progressFraction, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
+            DrawProgress, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
     }
 
     /// <summary>

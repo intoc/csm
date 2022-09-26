@@ -66,7 +66,7 @@ public partial class CsmGui : Form {
             MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
-    void DrawProgressChanged(ProgressEventArgs args) {
+    void DrawProgressChanged(ContactSheet source, ProgressEventArgs args) {
         if (statusStrip.InvokeRequired) {
             object[] argsArr = { args };
             statusStrip.Invoke(new UpdateProgressDelegate(UpdateDrawProgress), argsArr);
@@ -83,7 +83,7 @@ public partial class CsmGui : Form {
         }
     }
     
-    public void UpdateLoadProgress(ProgressEventArgs args) {
+    public void UpdateLoadProgress(ContactSheet source, ProgressEventArgs args) {
         statusStrip.Invoke(() => {
             drawProgressBar.Value = (int)(args.Percentage * 100);
             elapsedTime.Text = $"{args.Time.Minutes:00}:{args.Time.Seconds:00}";
@@ -218,5 +218,10 @@ public partial class CsmGui : Form {
         cs.Dispose();
     }
 
+    private void BatchToolStripMenuItem_Click(object sender, EventArgs e) {
+        BatchForm batch = new(cs);
+        batch.ShowDialog(this);
+        batch.Dispose();
+    }
 }
 
