@@ -22,7 +22,7 @@ static class Program {
 
         try {
             ContactSheet cs = new(new FileSourceBuilder());
-            cs.ErrorOccurred += (msg, ex) => Log.Error(ex, msg);
+            cs.ErrorOccurred += (msg, isFatal, ex) => Log.Error(ex, msg);
 
             // Check for a -help parameter and handle it
             if (cs.Help(args)) {

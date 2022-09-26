@@ -14,7 +14,7 @@ Log.Logger = new LoggerConfiguration()
 
 try {
     using ContactSheet cs = new(new FileSourceBuilder(), false);
-    cs.ErrorOccurred += (msg, ex) => Log.Error(ex, msg);
+    cs.ErrorOccurred += (msg, isFatal, ex) => Log.Error(ex, "{0} {1}", msg, isFatal ? "[FATAL]" : string.Empty);
 
     // Check for a -help parameter and handle it
     if (cs.Help(args)) {

@@ -61,8 +61,8 @@ public partial class CsmGui : Form {
         Close();
     }
 
-    void ExceptionOccurred(string message, Exception? e) {
-        MessageBox.Show($"{message}\n\n{(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!",
+    void ExceptionOccurred(string message, bool isFatal, Exception? e) {
+        MessageBox.Show($"{(isFatal ? "FATAL: " : string.Empty)}{message}\n\n{(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!",
             MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
@@ -125,7 +125,7 @@ public partial class CsmGui : Form {
             }
         } catch (Exception ex) {
             Console.Error.WriteLine(ex);
-            ExceptionOccurred("Unhandled", ex);
+            ExceptionOccurred("Unhandled", true, ex);
         }
     }
 

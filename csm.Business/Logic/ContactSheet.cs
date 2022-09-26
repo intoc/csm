@@ -18,7 +18,7 @@ public delegate void DrawProgressEventHandler(ContactSheet sender, ProgressEvent
 public delegate void LoadProgressEventHandler(ContactSheet sender, ProgressEventArgs args);
 public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
 public delegate void ImageListChangedEventHandler();
-public delegate void ExceptionEventHandler(string message, Exception? e = null);
+public delegate void ExceptionEventHandler(string message, bool isFatal, Exception? e = null);
 
 /// <summary>
 /// Creates contact sheets
@@ -86,7 +86,7 @@ public sealed class ContactSheet : IDisposable {
                     LoadProgressChanged.Invoke(this, e);
                 };
             } catch (Exception ex) {
-                ErrorOccurred?.Invoke("Can't load source path.", ex);
+                ErrorOccurred?.Invoke("Can't load source path.", true, ex);
             }
 
             if (oldSource?.FullPath != fileSource?.FullPath) {
@@ -420,7 +420,7 @@ public sealed class ContactSheet : IDisposable {
         try {
             SettingsFile = Path.GetFullPath(filename);
             if (!File.Exists(SettingsFile)) {
-                ErrorOccurred?.Invoke($"Settings file does not exist ({SettingsFile}).");
+                ErrorOccurred?.Invoke($"Settings file does not exist ({SettingsFile}).", false);
                 return false;
             }
 
@@ -438,7 +438,7 @@ public sealed class ContactSheet : IDisposable {
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(SettingsFile, "Loaded", true));
             return true;
         } catch (Exception e) {
-            ErrorOccurred?.Invoke($"Couldn't load {SettingsFile}!", e);
+            ErrorOccurred?.Invoke($"Couldn't load {SettingsFile}!", false, e);
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(filename, "Load Failed", false));
         }
         return false;
@@ -542,7 +542,7 @@ public sealed class ContactSheet : IDisposable {
     /// <returns>Whether the process is set to exit on complete</returns>
     public async Task<bool> DrawAndSave(bool waitForLoad = false) {
         if (string.IsNullOrEmpty(Source)) {
-            ErrorOccurred?.Invoke("No/invalid Source selected!");
+            ErrorOccurred?.Invoke("No/invalid Source selected!", true);
             return false; // Don't exit the GUI
         }
 
@@ -586,7 +586,7 @@ public sealed class ContactSheet : IDisposable {
             imageCount = images.Count();
 
             if (imageCount == 0) {
-                ErrorOccurred?.Invoke($"No valid/selected {filePattern.ParsedValue} Images in {Source}!");
+                ErrorOccurred?.Invoke($"No valid/selected {filePattern.ParsedValue} Images in {Source}!", true);
                 return false; // Don't exit the GUI
             }
 
@@ -597,7 +597,7 @@ public sealed class ContactSheet : IDisposable {
 
             // Avoid stupidness
             if (drawCover && coverFile.File == null) {
-                ErrorOccurred?.Invoke("Can't draw the cover because there is no cover file set.");
+                ErrorOccurred?.Invoke("Can't draw the cover because there is no cover file set.", false);
                 drawCover = false;
                 fillGap = false;
             }
@@ -761,7 +761,7 @@ public sealed class ContactSheet : IDisposable {
                         // No gap images. Display the cover normally.
                         coverImageData.X = sheetWidth.IntValue / 2 - coverImageData.Width / 2;
                         fillGap = false;
-                        ErrorOccurred?.Invoke("Cover gap fill failed, image is too small. Centering.");
+                        ErrorOccurred?.Invoke("Cover gap fill failed, image is too small. Centering.", false);
                     }
                     // We're done with the gap
                     inGap = false;
@@ -1084,7 +1084,7 @@ public sealed class ContactSheet : IDisposable {
 
             }
         } catch (System.Runtime.InteropServices.ExternalException e) {
-            ErrorOccurred?.Invoke("Can't Save Sheet", e);
+            ErrorOccurred?.Invoke("Can't Save Sheet", true, e);
         } finally {
             Log.Information("---------------------------------------------------------------------------");
             // Clean up

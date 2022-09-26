@@ -26,16 +26,16 @@
             this.components = new System.ComponentModel.Container();
             this.sheetGrid = new System.Windows.Forms.DataGridView();
             this.sourceColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.loadedColumn = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.stateColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.progressColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.drawProgress = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.sheetBinder = new System.Windows.Forms.BindingSource(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
+            this.maxConcurrentLoadLabel = new System.Windows.Forms.Label();
+            this.maxConcurrentLoadSpinner = new System.Windows.Forms.NumericUpDown();
             this.maxConcurrentLabel = new System.Windows.Forms.Label();
-            this.maxConcurrentSpinner = new System.Windows.Forms.NumericUpDown();
+            this.maxConcurrentDrawSpinner = new System.Windows.Forms.NumericUpDown();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.sheetsCountLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.sheetsCountValueLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.loadingCountLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.loadingCountValueLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.loadProgressBar = new System.Windows.Forms.ToolStripProgressBar();
@@ -48,7 +48,6 @@
             this.completedCountLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.completedCountValueLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.completedProgressBar = new System.Windows.Forms.ToolStripProgressBar();
-            this.runAfterLoadCheckBox = new System.Windows.Forms.CheckBox();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.chooseArchivesButton = new System.Windows.Forms.Button();
             this.refreshListButton = new System.Windows.Forms.Button();
@@ -56,7 +55,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.sheetGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.sheetBinder)).BeginInit();
             this.panel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentSpinner)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentLoadSpinner)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentDrawSpinner)).BeginInit();
             this.statusStrip1.SuspendLayout();
             this.flowLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
@@ -70,7 +70,7 @@
             this.sheetGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.sheetGrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.sourceColumn,
-            this.loadedColumn,
+            this.stateColumn,
             this.progressColumn,
             this.drawProgress});
             this.sheetGrid.Location = new System.Drawing.Point(12, 12);
@@ -89,14 +89,14 @@
             this.sourceColumn.Name = "sourceColumn";
             this.sourceColumn.ReadOnly = true;
             // 
-            // loadedColumn
+            // stateColumn
             // 
-            this.loadedColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.loadedColumn.DataPropertyName = "FirstLoadComplete";
-            this.loadedColumn.FillWeight = 34.425F;
-            this.loadedColumn.HeaderText = "Loaded";
-            this.loadedColumn.Name = "loadedColumn";
-            this.loadedColumn.ReadOnly = true;
+            this.stateColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.stateColumn.DataPropertyName = "State";
+            this.stateColumn.FillWeight = 34.425F;
+            this.stateColumn.HeaderText = "State";
+            this.stateColumn.Name = "stateColumn";
+            this.stateColumn.ReadOnly = true;
             // 
             // progressColumn
             // 
@@ -118,10 +118,11 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.maxConcurrentLoadLabel);
+            this.panel1.Controls.Add(this.maxConcurrentLoadSpinner);
             this.panel1.Controls.Add(this.maxConcurrentLabel);
-            this.panel1.Controls.Add(this.maxConcurrentSpinner);
+            this.panel1.Controls.Add(this.maxConcurrentDrawSpinner);
             this.panel1.Controls.Add(this.statusStrip1);
-            this.panel1.Controls.Add(this.runAfterLoadCheckBox);
             this.panel1.Controls.Add(this.flowLayoutPanel1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.panel1.Location = new System.Drawing.Point(0, 427);
@@ -129,27 +130,53 @@
             this.panel1.Size = new System.Drawing.Size(819, 63);
             this.panel1.TabIndex = 3;
             // 
-            // maxConcurrentLabel
+            // maxConcurrentLoadLabel
             // 
-            this.maxConcurrentLabel.AutoSize = true;
-            this.maxConcurrentLabel.Location = new System.Drawing.Point(520, 13);
-            this.maxConcurrentLabel.Name = "maxConcurrentLabel";
-            this.maxConcurrentLabel.Size = new System.Drawing.Size(128, 15);
-            this.maxConcurrentLabel.TabIndex = 0;
-            this.maxConcurrentLabel.Text = "Max Concurrent Draws";
+            this.maxConcurrentLoadLabel.AutoSize = true;
+            this.maxConcurrentLoadLabel.Location = new System.Drawing.Point(339, 13);
+            this.maxConcurrentLoadLabel.Name = "maxConcurrentLoadLabel";
+            this.maxConcurrentLoadLabel.Size = new System.Drawing.Size(122, 15);
+            this.maxConcurrentLoadLabel.TabIndex = 9;
+            this.maxConcurrentLoadLabel.Text = "Max Concurrent Load";
             // 
-            // maxConcurrentSpinner
+            // maxConcurrentLoadSpinner
             // 
-            this.maxConcurrentSpinner.Location = new System.Drawing.Point(654, 11);
-            this.maxConcurrentSpinner.Minimum = new decimal(new int[] {
+            this.maxConcurrentLoadSpinner.Location = new System.Drawing.Point(467, 11);
+            this.maxConcurrentLoadSpinner.Minimum = new decimal(new int[] {
             1,
             0,
             0,
             0});
-            this.maxConcurrentSpinner.Name = "maxConcurrentSpinner";
-            this.maxConcurrentSpinner.Size = new System.Drawing.Size(61, 23);
-            this.maxConcurrentSpinner.TabIndex = 1;
-            this.maxConcurrentSpinner.Value = new decimal(new int[] {
+            this.maxConcurrentLoadSpinner.Name = "maxConcurrentLoadSpinner";
+            this.maxConcurrentLoadSpinner.Size = new System.Drawing.Size(61, 23);
+            this.maxConcurrentLoadSpinner.TabIndex = 10;
+            this.maxConcurrentLoadSpinner.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // maxConcurrentLabel
+            // 
+            this.maxConcurrentLabel.AutoSize = true;
+            this.maxConcurrentLabel.Location = new System.Drawing.Point(534, 13);
+            this.maxConcurrentLabel.Name = "maxConcurrentLabel";
+            this.maxConcurrentLabel.Size = new System.Drawing.Size(123, 15);
+            this.maxConcurrentLabel.TabIndex = 0;
+            this.maxConcurrentLabel.Text = "Max Concurrent Draw";
+            // 
+            // maxConcurrentDrawSpinner
+            // 
+            this.maxConcurrentDrawSpinner.Location = new System.Drawing.Point(663, 11);
+            this.maxConcurrentDrawSpinner.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.maxConcurrentDrawSpinner.Name = "maxConcurrentDrawSpinner";
+            this.maxConcurrentDrawSpinner.Size = new System.Drawing.Size(61, 23);
+            this.maxConcurrentDrawSpinner.TabIndex = 1;
+            this.maxConcurrentDrawSpinner.Value = new decimal(new int[] {
             1,
             0,
             0,
@@ -158,8 +185,6 @@
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.sheetsCountLabel,
-            this.sheetsCountValueLabel,
             this.loadingCountLabel,
             this.loadingCountValueLabel,
             this.loadProgressBar,
@@ -178,18 +203,6 @@
             this.statusStrip1.TabIndex = 8;
             this.statusStrip1.Text = "statusStrip1";
             // 
-            // sheetsCountLabel
-            // 
-            this.sheetsCountLabel.Name = "sheetsCountLabel";
-            this.sheetsCountLabel.Size = new System.Drawing.Size(44, 17);
-            this.sheetsCountLabel.Text = "Sheets:";
-            // 
-            // sheetsCountValueLabel
-            // 
-            this.sheetsCountValueLabel.Name = "sheetsCountValueLabel";
-            this.sheetsCountValueLabel.Size = new System.Drawing.Size(13, 17);
-            this.sheetsCountValueLabel.Text = "0";
-            // 
             // loadingCountLabel
             // 
             this.loadingCountLabel.Name = "loadingCountLabel";
@@ -198,8 +211,9 @@
             // 
             // loadingCountValueLabel
             // 
+            this.loadingCountValueLabel.AutoSize = false;
             this.loadingCountValueLabel.Name = "loadingCountValueLabel";
-            this.loadingCountValueLabel.Size = new System.Drawing.Size(13, 17);
+            this.loadingCountValueLabel.Size = new System.Drawing.Size(25, 17);
             this.loadingCountValueLabel.Text = "0";
             // 
             // loadProgressBar
@@ -215,8 +229,9 @@
             // 
             // drawQueueCountValueLabel
             // 
+            this.drawQueueCountValueLabel.AutoSize = false;
             this.drawQueueCountValueLabel.Name = "drawQueueCountValueLabel";
-            this.drawQueueCountValueLabel.Size = new System.Drawing.Size(13, 17);
+            this.drawQueueCountValueLabel.Size = new System.Drawing.Size(25, 17);
             this.drawQueueCountValueLabel.Text = "0";
             // 
             // queueProgressBar
@@ -232,8 +247,9 @@
             // 
             // drawingCountValueLabel
             // 
+            this.drawingCountValueLabel.AutoSize = false;
             this.drawingCountValueLabel.Name = "drawingCountValueLabel";
-            this.drawingCountValueLabel.Size = new System.Drawing.Size(13, 17);
+            this.drawingCountValueLabel.Size = new System.Drawing.Size(25, 17);
             this.drawingCountValueLabel.Text = "0";
             // 
             // drawingCountBar
@@ -249,26 +265,15 @@
             // 
             // completedCountValueLabel
             // 
+            this.completedCountValueLabel.AutoSize = false;
             this.completedCountValueLabel.Name = "completedCountValueLabel";
-            this.completedCountValueLabel.Size = new System.Drawing.Size(13, 17);
+            this.completedCountValueLabel.Size = new System.Drawing.Size(50, 17);
             this.completedCountValueLabel.Text = "0";
             // 
             // completedProgressBar
             // 
             this.completedProgressBar.Name = "completedProgressBar";
             this.completedProgressBar.Size = new System.Drawing.Size(100, 16);
-            // 
-            // runAfterLoadCheckBox
-            // 
-            this.runAfterLoadCheckBox.AutoSize = true;
-            this.runAfterLoadCheckBox.Location = new System.Drawing.Point(339, 12);
-            this.runAfterLoadCheckBox.Name = "runAfterLoadCheckBox";
-            this.runAfterLoadCheckBox.Size = new System.Drawing.Size(175, 19);
-            this.runAfterLoadCheckBox.TabIndex = 9;
-            this.runAfterLoadCheckBox.Text = "Run after loading completes";
-            this.runAfterLoadCheckBox.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.runAfterLoadCheckBox.UseVisualStyleBackColor = true;
-            this.runAfterLoadCheckBox.CheckedChanged += new System.EventHandler(this.RunAfterLoadCheckBox_CheckedChanged);
             // 
             // flowLayoutPanel1
             // 
@@ -325,7 +330,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.sheetBinder)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentSpinner)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentLoadSpinner)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentDrawSpinner)).EndInit();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             this.flowLayoutPanel1.ResumeLayout(false);
@@ -337,7 +343,7 @@
         private DataGridView sheetGrid;
         private BindingSource sheetBinder;
         private DataGridViewTextBoxColumn sourceColumn;
-        private DataGridViewCheckBoxColumn loadedColumn;
+        private DataGridViewTextBoxColumn stateColumn;
         private DataGridViewTextBoxColumn progressColumn;
         private DataGridViewTextBoxColumn drawProgress;
         private Panel panel1;
@@ -346,10 +352,8 @@
         private Button refreshListButton;
         private Button runButton;
         private Label maxConcurrentLabel;
-        private NumericUpDown maxConcurrentSpinner;
+        private NumericUpDown maxConcurrentDrawSpinner;
         private StatusStrip statusStrip1;
-        private ToolStripStatusLabel sheetsCountLabel;
-        private ToolStripStatusLabel sheetsCountValueLabel;
         private ToolStripStatusLabel loadingCountLabel;
         private ToolStripStatusLabel loadingCountValueLabel;
         private ToolStripStatusLabel drawQueueCountLabel;
@@ -362,6 +366,7 @@
         private ToolStripProgressBar loadProgressBar;
         private ToolStripProgressBar queueProgressBar;
         private ToolStripProgressBar drawingCountBar;
-        private CheckBox runAfterLoadCheckBox;
+        private Label maxConcurrentLoadLabel;
+        private NumericUpDown maxConcurrentLoadSpinner;
     }
 }
