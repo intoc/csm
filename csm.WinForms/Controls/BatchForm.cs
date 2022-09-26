@@ -170,8 +170,7 @@ namespace csm.WinForms.Controls {
         }
 
         private void RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {
-            if (sheetGrid.Rows[e.RowIndex].DataBoundItem is ContactSheet sheet && _erroredSources.Keys.Contains(sheet)) {
-                //sheetGrid.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.DarkSalmon;
+            if (sheetGrid.Rows[e.RowIndex].DataBoundItem is ContactSheet sheet && _erroredSources.ContainsKey(sheet)) {
                 sheetGrid.Rows[e.RowIndex].ErrorText = _erroredSources[sheet];
             }
         }
@@ -180,7 +179,7 @@ namespace csm.WinForms.Controls {
             sheetGrid.FirstDisplayedScrollingRowIndex = _lastScrollIndex;
         }
 
-        private void runAfterLoadCheckBox_CheckedChanged(object sender, EventArgs e) {
+        private void RunAfterLoadCheckBox_CheckedChanged(object sender, EventArgs e) {
             runButton.Enabled = !runAfterLoadCheckBox.Checked;
         }
     }

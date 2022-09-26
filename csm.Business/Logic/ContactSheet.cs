@@ -140,8 +140,6 @@ public sealed class ContactSheet : IDisposable {
 
     #region Private Fields
 
-    private static readonly object GlobalDrawLock = new();
-
     private IFileSource? fileSource;
     private readonly IImageSet imageSet = new ImageSet();
     private readonly IFileSourceBuilder _fileSourceBuilder;
@@ -470,7 +468,7 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="other">The other sheet</param>
     public void LoadParamsFromSheet(ContactSheet other) {
-        foreach(var param in Params) {
+        foreach (var param in Params) {
             param.Load(other.Params);
         }
     }
@@ -985,34 +983,33 @@ public sealed class ContactSheet : IDisposable {
 
         // Draw the sheet
         sheetImage.Mutate(sheetContext => {
-            //lock (GlobalDrawLock) {
-                // We have to make the background white because the header text looks bad on a black background
-                sheetContext.Fill(Color.Black);
 
-                // Draw the the header
-                if (headerImage != null) {
-                    // Draw the header on the sheet
-                    Log.Information("Drawing header. {0}", headerImage.Bounds());
-                    sheetContext.DrawImage(headerImage, 1);
-                }
+            // We have to make the background white because the header text looks bad on a black background
+            sheetContext.Fill(Color.Black);
 
-                // Draw the cover
-                if (coverImageData != null) {
-                    Log.Information("Drawing cover {0}. {1}", Path.GetFileName(coverFile.Path), coverImageData.Bounds);
-                    if (preview.BoolValue) {
-                        sheetContext.Fill(Brushes.Solid(Color.White), coverImageData.Bounds);
-                        sheetContext.DrawText(
-                            "COVER", fontFamily.CreateFont(14, FontStyle.Bold), Color.Black,
-                            new PointF(coverImageData.X + coverImageData.Width / 2, coverImageData.Y + coverImageData.Height / 2));
-                    } else {
-                        using var coverImage = Image.Load(coverImageData.File);
-                        coverImage.Mutate(coverContext => {
-                            coverContext.Resize(coverImageData.Width, coverImageData.Height);
-                        });
-                        sheetContext.DrawImage(coverImage, coverImageData.Origin, 1);
-                    }
+            // Draw the the header
+            if (headerImage != null) {
+                // Draw the header on the sheet
+                Log.Information("Drawing header. {0}", headerImage.Bounds());
+                sheetContext.DrawImage(headerImage, 1);
+            }
+
+            // Draw the cover
+            if (coverImageData != null) {
+                Log.Information("Drawing cover {0}. {1}", Path.GetFileName(coverFile.Path), coverImageData.Bounds);
+                if (preview.BoolValue) {
+                    sheetContext.Fill(Brushes.Solid(Color.White), coverImageData.Bounds);
+                    sheetContext.DrawText(
+                        "COVER", fontFamily.CreateFont(14, FontStyle.Bold), Color.Black,
+                        new PointF(coverImageData.X + coverImageData.Width / 2, coverImageData.Y + coverImageData.Height / 2));
+                } else {
+                    using var coverImage = Image.Load(coverImageData.File);
+                    coverImage.Mutate(coverContext => {
+                        coverContext.Resize(coverImageData.Width, coverImageData.Height);
+                    });
+                    sheetContext.DrawImage(coverImage, coverImageData.Origin, 1);
                 }
-           // }
+            }
         });
 
 

@@ -268,7 +268,7 @@
             this.runAfterLoadCheckBox.Text = "Run after loading completes";
             this.runAfterLoadCheckBox.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.runAfterLoadCheckBox.UseVisualStyleBackColor = true;
-            this.runAfterLoadCheckBox.CheckedChanged += new System.EventHandler(this.runAfterLoadCheckBox_CheckedChanged);
+            this.runAfterLoadCheckBox.CheckedChanged += new System.EventHandler(this.RunAfterLoadCheckBox_CheckedChanged);
             // 
             // flowLayoutPanel1
             // 
