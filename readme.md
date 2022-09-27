@@ -99,6 +99,9 @@ you don't want to include in the output, use the `-mindiminput` parameter to fil
 you can use something like `(cover|big|max|square|folder)\.(jpg|png)$`. 
 - The `-fregx` parameter also uses Regular Expressions so you can match on multiple file types.
 - Try [regexr.com](https://regexr.com) to experiment with Regular Expressions.
+- The appsettings.json file is used for configuration that doesn't make sense to include in the sheet settings. Right now
+it only has a Serilog node, which can be modified to change the logging template or logging level. csm logs at **Debug**, **Information**, and **Error** levels.
+Setting `MinimumLevel` to **Error** may increase performance in GUI mode, but there won't be much output on the console.
 
 ## Linux
 The linux command-line only version of this app requires the dotnet 6 runtime. 
