@@ -1,5 +1,4 @@
 ﻿using csm.Business.Logic;
-using csm.Business.Models;
 using csm.WinForms.Models;
 using Serilog;
 using System.ComponentModel;
@@ -100,6 +99,13 @@ namespace csm.WinForms.Controls {
         private async void RunButton_Click(object sender, EventArgs e) {
             if (_run) {
                 _run = false;
+                // It's a pause button right now. Keep updating the UI but don't process any new things
+                await Task.Run(() => {
+                    while (!_run) {
+                        UpdateStatsAndList();
+                        Thread.Sleep(250);
+                    }
+                });
             } else {
                 await Run();
             }

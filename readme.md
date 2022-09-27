@@ -24,6 +24,25 @@ drawing progress will be shown in the status bar. The program will remain open u
 so you can run again with different settings, and also change the directory using `Choose Folder` or `Choose Archive` in the Tools menu, 
 or the corresponding button.
 
+## Batch Processing
+Once you like the way your output files look and you want to make a lot of them with the
+same settings at once, open up the Batch Processing GUI from the `Tools` menu or hit `ctrl-B`.
+Here you you add all of the items (archives and subdirectories) in a directory, or select
+single or multiple archive files and add them to the list for processing. 
+
+Set the `Max Concurrent Load`
+and `Max Cuncurrent Draw` spinners to your liking; lower numbers will put less strain on your computer
+and larger numbers will make the process go faster (to a point.) 
+
+You can also remove sources
+from the list with the `Remove Selected` button or the `Del` key, as long as they are in
+either the `PreLoad` or `Completed` state.
+
+The `Pause` button will moving states from `PreLoad` to `Loading` or `Queued` to `Drawing`, 
+but sources already in the `Loading` state will continue to load in the background, 
+and sources already in the `Drawing` state will continue to draw in the background.
+
+
 ## Command Line
 csm is also a fully functional command-line program. In order to use it without the GUI, you
 must start it with the `–nogui` option.
@@ -32,6 +51,9 @@ must start it with the `–nogui` option.
 
 You can actually put the path anywhere in the command, as long as it's in quotes. If you omit the path,
 then the current executable directory will be used. Parameters may be in any order, and they don't all have to be used.
+
+For Windows users who would like to do some batch processing without the GUI, there is an example batch file `batch.bat`. 
+Open it in a text editor before trying to use it.
 
 ### Parameters
 | Parameter | Name | Type | Default | Description |
