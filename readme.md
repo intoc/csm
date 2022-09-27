@@ -38,9 +38,8 @@ You can also remove sources
 from the list with the `Remove Selected` button or the `Del` key, as long as they are in
 either the `PreLoad` or `Completed` state.
 
-The `Pause` button will moving states from `PreLoad` to `Loading` or `Queued` to `Drawing`, 
-but sources already in the `Loading` state will continue to load in the background, 
-and sources already in the `Drawing` state will continue to draw in the background.
+The `Pause` button will stop moving states from `PreLoad` to `Loading` or `Queued` to `Drawing`, 
+but sources already in the `Loading` and `Drawing` states will continue processing until the next state, i.e. `Queued` and `Completed/Failed` respectively.
 
 
 ## Command Line
