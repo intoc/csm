@@ -1,5 +1,6 @@
 ﻿using csm.Business.Logic;
 using csm.WinForms.Models;
+using csm.WinForms.Models.Settings;
 using Serilog;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
@@ -22,8 +23,11 @@ namespace csm.WinForms.Controls {
         private int StateCount(SheetState state) => _sheets.Count(s => s.State == state);
         private static bool CanRemove(SheetWrapper sheet) => sheet.State == SheetState.PreLoad || sheet.State == SheetState.Completed;
 
-        public BatchForm(ContactSheet parentSheet) {
+        private readonly AppSettings _appSettings;
+
+        internal BatchForm(ContactSheet parentSheet, AppSettings settings) {
             _parentSheet = parentSheet;
+            _appSettings = settings;
             _sheets = new List<SheetWrapper>();
             
             InitializeComponent();
@@ -34,8 +38,8 @@ namespace csm.WinForms.Controls {
             sheetBinder.DataSource = new BindingList<SheetWrapper>(_sheets);
             sheetGrid.DataSource = sheetBinder;
 
-            maxConcurrentLoadSpinner.Value = 10;
-            maxConcurrentDrawSpinner.Value = 5;
+            maxConcurrentLoadSpinner.Value = _appSettings.BatchProcessing.DefaultMaxLoad;
+            maxConcurrentDrawSpinner.Value = _appSettings.BatchProcessing.DefaultMaxDraw;
             runButton.Enabled = false;
         }
 
@@ -81,13 +85,6 @@ namespace csm.WinForms.Controls {
             }
             ContactSheet newSheet = new(new FileSourceBuilder(), false);
             var wrapper = new SheetWrapper(newSheet, path);
-            newSheet.ErrorOccurred += (msg, isFatal, ex) => {
-                Log.Error(ex, "{0}: {1} {2}", path, msg, isFatal ? "[FATAL]" : string.Empty);
-                if (isFatal) {
-                    wrapper.Failed = true;
-                }
-                wrapper.ErrorText = msg;
-            };
             newSheet.LoadParamsFromSheet(_parentSheet);
             _sheets.Add(wrapper);
         }
@@ -202,12 +199,15 @@ namespace csm.WinForms.Controls {
         }
 
         private async void BatchFormClosing(object sender, FormClosingEventArgs e) {
-            await Task.Run(DisposeSheets);
+            await DisposeSheets();
         }
 
-        private void DisposeSheets() {
-            foreach (SheetWrapper sheet in _sheets) {
-                sheet.Dispose();
+        private async Task DisposeSheets(params SheetWrapper[] sheets) {
+            if (!sheets.Any()) {
+                sheets = _sheets.ToArray();
+            }
+            foreach (SheetWrapper sheet in sheets) {
+                await Task.Run(() => sheet.Dispose());
             }
         }
 
@@ -224,23 +224,24 @@ namespace csm.WinForms.Controls {
             runButton.Enabled = _sheets.Any();
         }
 
-        private void UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e) {
+        private async void UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e) {
             // Only allow deleting sheets in the PreLoad or Completed state
             if (e.Row?.DataBoundItem is SheetWrapper sheet) {
                 if (CanRemove(sheet)) {
-                    sheet.Dispose();
+                    await DisposeSheets(sheet);
                 } else {
                     e.Cancel = true;
                 }
             }
         }
 
-        private void DeleteSelectedRows(object sender, EventArgs e) {
+        private async void DeleteSelectedRows(object sender, EventArgs e) {
             var selectedSheets = sheetGrid.SelectedRows.Cast<DataGridViewRow>()
                 .Where(row => row.DataBoundItem is SheetWrapper sheet && CanRemove(sheet))
                 .Select(row => (SheetWrapper)row.DataBoundItem);
+
             foreach (var sheet in selectedSheets) {
-                sheet.Dispose();
+                await DisposeSheets(sheet);
                 _sheets.Remove(sheet);
             }
 

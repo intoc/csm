@@ -1,9 +1,10 @@
 ﻿using csm.Business.Logic;
 using csm.Business.Models;
+using csm.WinForms.Models.Settings;
 using System.Diagnostics;
 
 namespace csm.WinForms.Controls;
-public partial class CsmGui : Form {
+internal partial class CsmGui : Form {
 
     private readonly ContactSheet cs;
 
@@ -11,13 +12,15 @@ public partial class CsmGui : Form {
     public delegate void UpdateSettingsStatusDelegate(SettingsChangedEventArgs args);
 
     private readonly FileList fileListWindow;
+    private readonly AppSettings _appSettings;
 
     /// <summary>
     /// Main Constructor
     /// </summary>
-    public CsmGui(ContactSheet sheet) {
+    internal CsmGui(ContactSheet sheet, AppSettings settings) {
+        _appSettings = settings;
         InitializeComponent();
-
+        
         // Initialize status elements
         drawStatus.Text = string.Empty;
         settingsFileStatus.Text = string.Empty;
@@ -219,7 +222,7 @@ public partial class CsmGui : Form {
     }
 
     private void BatchToolStripMenuItem_Click(object sender, EventArgs e) {
-        BatchForm batch = new(cs);
+        BatchForm batch = new(cs, _appSettings);
         batch.ShowDialog(this);
         batch.Dispose();
     }

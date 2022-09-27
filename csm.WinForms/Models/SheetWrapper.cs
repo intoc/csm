@@ -1,4 +1,5 @@
 ﻿using csm.Business.Logic;
+using Serilog;
 
 namespace csm.WinForms.Models {
 
@@ -51,6 +52,13 @@ namespace csm.WinForms.Models {
         public SheetWrapper(ContactSheet sheet, string sourcePath) {
             _sheet = sheet;
             _sourcePath = sourcePath;
+            _sheet.ErrorOccurred += (msg, isFatal, ex) => {
+                Log.Error(ex, "{0}: {1} {2}", sourcePath, msg, isFatal ? "[FATAL]" : string.Empty);
+                if (isFatal) {
+                    Failed = true;
+                }
+                ErrorText = msg;
+            };
         }
 
         public void Load() {

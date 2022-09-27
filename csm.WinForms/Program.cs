@@ -1,6 +1,7 @@
 ﻿using csm.Business.Logic;
 using csm.Business.Models;
 using csm.WinForms.Controls;
+using csm.WinForms.Models.Settings;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
@@ -19,6 +20,8 @@ static class Program {
         Log.Logger = new LoggerConfiguration()
             .ReadFrom.Configuration(config)
             .CreateLogger();
+
+        var appSettings = config.GetSection("AppSettings").Get<AppSettings>();
 
         try {
             ContactSheet cs = new(new FileSourceBuilder());
@@ -45,7 +48,7 @@ static class Program {
 
             // Prompt for arguments graphically
             if (cs.GuiEnabled) {
-                CsmGui gui = new(cs);
+                CsmGui gui = new(cs, appSettings);
                 gui.FormClosed += async (sender, args) => await Log.CloseAndFlushAsync();
                 
                 if (path != null) {
