@@ -102,6 +102,12 @@ public sealed class ContactSheet : IDisposable {
         }
     }
 
+    /// <summary>
+    /// The path to the directory containing the source image files
+    /// </summary>
+    public string? SourceImageFileDirectoryPath => fileSource?.ImageFileDirectoryPath;
+    
+
     #endregion
 
     #region Public Events
@@ -315,7 +321,7 @@ public sealed class ContactSheet : IDisposable {
         filePattern.ParamChanged += async (path) => await LoadFileList(path);
         SourceChanged += async (path) => {
             Log.Information("Source set to {0}", path);
-            imageSet.Source = fileSource ?? new DirectoryFileSource();
+            imageSet.Source = fileSource;
             headerTitle.ParseVal(fileSource?.Name);
             Log.Information("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
             await LoadFileList();

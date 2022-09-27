@@ -3,18 +3,22 @@
 namespace csm.Business.Logic {
     public class DirectoryFileSource : AbstractFileSource {
 
-        private readonly DirectoryInfo? _directory;
+        private readonly DirectoryInfo _directory;
 
-        public DirectoryFileSource(string? path = null) : base() {
-            if (path != null) {
-                _directory = new DirectoryInfo(path);
-                // Get total size of all files in the directory and subdirectories
-                var files = GetFiles(_directory);
-                Bytes = files.Sum(f => f.Bytes);
-            }
+        public DirectoryFileSource() : base() {
+            _directory = new DirectoryInfo(@".\");
         }
 
-        public override string? FullPath => _directory?.FullName;
+        public DirectoryFileSource(string path) : base() {
+            _directory = new DirectoryInfo(path);
+            // Get total size of all files in the directory and subdirectories
+            var files = GetFiles(_directory);
+            Bytes = files.Sum(f => f.Bytes);
+        }
+
+        public override string FullPath => _directory.FullName;
+
+        public override string ImageFileDirectoryPath => _directory.FullName;
 
         public override string? Name => _directory?.Name;
 

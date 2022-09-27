@@ -2,6 +2,7 @@
 using csm.Business.Models;
 using Serilog;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace csm.WinForms.Controls;
 
@@ -77,7 +78,7 @@ public partial class FileList : Form {
     /// </summary>
     /// <param name="args"></param>
     void UpdateList() {
-        Log.Debug("FileList-UpdateList");  
+        Log.Debug("FileList-UpdateList");
         if (binder.DataSource == null && cs.ImageList.Any()) {
             binder.DataSource = new BindingList<ImageData>(cs.ImageList);
         } else {
@@ -86,8 +87,9 @@ public partial class FileList : Form {
                 image.InclusionPinned = true;
             }
             files.Refresh();
-        }     
+        }
         UpdateStatus();
+        files.Enabled = true;
     }
 
     private void UpdateStatus() {
@@ -119,13 +121,19 @@ public partial class FileList : Form {
     }
 
     private async void ResetIncluded(object sender, EventArgs e) {
+        files.Enabled = false;
         PinnedImages.Clear();
         await cs.LoadFileList();
     }
 
-    private async void ReloadFiles(object sender, EventArgs e) => await cs.LoadFileList();
+    private async void ReloadFiles(object sender, EventArgs e) {
+        await cs.LoadFileList();
+    }
 
     private void RowPrePaint(object sender, DataGridViewRowPrePaintEventArgs e) {
+        if (e.RowIndex < 0) {
+            return;
+        }
         if (files.Rows[e.RowIndex].DataBoundItem is ImageData image) {
             files.Rows[e.RowIndex].DefaultCellStyle.BackColor =
                 image.Include ? RowColorIncluded(image) : RowColorExcluded(image);
@@ -144,5 +152,10 @@ public partial class FileList : Form {
     }
 
     private void CloseButtonClicked(object sender, EventArgs e) => Hide();
+
+    private void OpenDirectoryButtonClicked(object sender, EventArgs e) {
+        Process.Start(Environment.GetEnvironmentVariable("WINDIR") + @"\explorer.exe", cs.SourceImageFileDirectoryPath ?? string.Empty);
+    }
+
 }
 

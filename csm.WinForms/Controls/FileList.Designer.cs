@@ -30,15 +30,17 @@ partial class FileList {
             this.lblImageCount = new System.Windows.Forms.ToolStripStatusLabel();
             this.pnlCenter = new System.Windows.Forms.Panel();
             this.files = new System.Windows.Forms.DataGridView();
+            this.FileCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.sizeColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Orientation = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.binder = new System.Windows.Forms.BindingSource(this.components);
             this.pnlButtons = new System.Windows.Forms.FlowLayoutPanel();
             this.btnExclude = new System.Windows.Forms.Button();
             this.btnInclude = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
+            this.openDirectoryButton = new System.Windows.Forms.Button();
             this.btnClose = new System.Windows.Forms.Button();
-            this.FileCol = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ImageSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Orientation = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.statusBar.SuspendLayout();
             this.pnlCenter.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.files)).BeginInit();
@@ -84,7 +86,7 @@ partial class FileList {
             this.files.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.files.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.FileCol,
-            this.ImageSize,
+            this.sizeColumn,
             this.Orientation});
             this.files.DataSource = this.binder;
             this.files.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -95,10 +97,37 @@ partial class FileList {
             this.files.RowHeadersVisible = false;
             this.files.RowHeadersWidth = 4;
             this.files.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.files.ShowCellErrors = false;
+            this.files.ShowCellToolTips = false;
+            this.files.ShowEditingIcon = false;
+            this.files.ShowRowErrors = false;
             this.files.Size = new System.Drawing.Size(569, 380);
             this.files.TabIndex = 3;
             this.files.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.RowPrePaint);
             this.files.UserDeletingRow += new System.Windows.Forms.DataGridViewRowCancelEventHandler(this.UserDeletingRow);
+            // 
+            // FileCol
+            // 
+            this.FileCol.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.FileCol.DataPropertyName = "FileName";
+            this.FileCol.HeaderText = "File";
+            this.FileCol.Name = "FileCol";
+            this.FileCol.ReadOnly = true;
+            this.FileCol.Width = 50;
+            // 
+            // sizeColumn
+            // 
+            this.sizeColumn.DataPropertyName = "SizeString";
+            this.sizeColumn.HeaderText = "Size";
+            this.sizeColumn.Name = "sizeColumn";
+            this.sizeColumn.ReadOnly = true;
+            // 
+            // Orientation
+            // 
+            this.Orientation.DataPropertyName = "Orientation";
+            this.Orientation.HeaderText = "Orientation";
+            this.Orientation.Name = "Orientation";
+            this.Orientation.ReadOnly = true;
             // 
             // binder
             // 
@@ -109,6 +138,7 @@ partial class FileList {
             this.pnlButtons.Controls.Add(this.btnExclude);
             this.pnlButtons.Controls.Add(this.btnInclude);
             this.pnlButtons.Controls.Add(this.btnReset);
+            this.pnlButtons.Controls.Add(this.openDirectoryButton);
             this.pnlButtons.Controls.Add(this.btnClose);
             this.pnlButtons.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.pnlButtons.Location = new System.Drawing.Point(0, 380);
@@ -152,9 +182,19 @@ partial class FileList {
             this.btnReset.UseVisualStyleBackColor = true;
             this.btnReset.Click += new System.EventHandler(this.ResetIncluded);
             // 
+            // openDirectoryButton
+            // 
+            this.openDirectoryButton.Location = new System.Drawing.Point(325, 3);
+            this.openDirectoryButton.Name = "openDirectoryButton";
+            this.openDirectoryButton.Size = new System.Drawing.Size(107, 27);
+            this.openDirectoryButton.TabIndex = 4;
+            this.openDirectoryButton.Text = "Open Directory";
+            this.openDirectoryButton.UseVisualStyleBackColor = true;
+            this.openDirectoryButton.Click += new System.EventHandler(this.OpenDirectoryButtonClicked);
+            // 
             // btnClose
             // 
-            this.btnClose.Location = new System.Drawing.Point(326, 3);
+            this.btnClose.Location = new System.Drawing.Point(439, 3);
             this.btnClose.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(88, 27);
@@ -163,28 +203,12 @@ partial class FileList {
             this.btnClose.UseVisualStyleBackColor = true;
             this.btnClose.Click += new System.EventHandler(this.CloseButtonClicked);
             // 
-            // FileCol
-            // 
-            this.FileCol.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-            this.FileCol.DataPropertyName = "FileName";
-            this.FileCol.HeaderText = "File";
-            this.FileCol.Name = "FileCol";
-            this.FileCol.ReadOnly = true;
-            this.FileCol.Width = 50;
-            // 
-            // Size
+            // ImageSize
             // 
             this.ImageSize.DataPropertyName = "SizeString";
             this.ImageSize.HeaderText = "Size";
             this.ImageSize.Name = "ImageSize";
-            this.ImageSize.ReadOnly = true;
-            // 
-            // Orientation
-            // 
-            this.Orientation.DataPropertyName = "Orientation";
-            this.Orientation.HeaderText = "Orientation";
-            this.Orientation.Name = "Orientation";
-            this.Orientation.ReadOnly = true;
+            this.ImageSize.Width = 258;
             // 
             // FileList
             // 
@@ -228,7 +252,9 @@ partial class FileList {
     private Button btnClose;
     private BindingSource binder;
     private Button btnReset;
-    private DataGridViewTextBoxColumn FileCol;
     private DataGridViewTextBoxColumn ImageSize;
+    private Button openDirectoryButton;
+    private DataGridViewTextBoxColumn FileCol;
+    private DataGridViewTextBoxColumn sizeColumn;
     private DataGridViewTextBoxColumn Orientation;
 }

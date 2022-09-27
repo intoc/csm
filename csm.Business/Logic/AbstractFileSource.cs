@@ -19,6 +19,8 @@ namespace csm.Business.Logic {
         /// </summary>
         public abstract string? FullPath { get; }
 
+        public abstract string ImageFileDirectoryPath { get; }
+
         public string? ParentDirectoryPath {
             get {
                 if (FileExists(FullPath)) {

@@ -1,6 +1,7 @@
 ﻿using csm.Business.Models;
 using Serilog;
 using System.Diagnostics;
+using System.IO;
 
 namespace csm.Business.Logic {
 
@@ -13,6 +14,12 @@ namespace csm.Business.Logic {
         /// The full path of the archive file
         /// </summary>
         public override string? FullPath => Path.GetFullPath(_archiveFilePath);
+
+        /// <summary>
+        /// The full path of the temp image file directory
+        /// </summary>
+        public override string ImageFileDirectoryPath => _tempDir.FullName;
+
 
         /// <summary>
         /// The name of the archive file without its extension

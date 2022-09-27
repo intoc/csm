@@ -12,6 +12,8 @@ namespace csm.Business.Logic {
 
         string? ParentDirectoryPath { get; }
 
+        string ImageFileDirectoryPath { get;  }
+
         string? Name { get; }
 
         string Size { get; }
