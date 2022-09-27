@@ -44,7 +44,7 @@ but sources already in the `Loading` and `Drawing` states will continue processi
 
 ## Command Line
 csm is also a fully functional command-line program. In order to use it without the GUI, you
-must start it with the `–nogui` option.
+must start it with the `–nogui=true` option.
 
 *Usage*: `csm [path to image directory or archive] [param1=val1] [param2=val2] [...]`
 
