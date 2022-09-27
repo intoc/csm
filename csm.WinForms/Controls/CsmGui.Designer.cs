@@ -45,6 +45,7 @@ partial class CsmGui
             this.chooseArchiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.drawSheetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.batchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pnlMain = new System.Windows.Forms.Panel();
             this.directoryPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.directoryLabelLabel = new System.Windows.Forms.Label();
@@ -57,7 +58,6 @@ partial class CsmGui
             this.btnArchive = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.settingsLabel = new System.Windows.Forms.Label();
-            this.batchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip.SuspendLayout();
             this.menu.SuspendLayout();
             this.pnlMain.SuspendLayout();
@@ -167,11 +167,11 @@ partial class CsmGui
             // toolsToolStripMenuItem
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.batchToolStripMenuItem,
             this.chooseFolderToolStripMenuItem,
             this.chooseArchiveToolStripMenuItem,
             this.viewFilesToolStripMenuItem,
-            this.drawSheetToolStripMenuItem,
-            this.batchToolStripMenuItem});
+            this.drawSheetToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.toolsToolStripMenuItem.Text = "Tools";
@@ -180,7 +180,7 @@ partial class CsmGui
             // 
             this.chooseFolderToolStripMenuItem.Name = "chooseFolderToolStripMenuItem";
             this.chooseFolderToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
-            this.chooseFolderToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.chooseFolderToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.chooseFolderToolStripMenuItem.Text = "Choose Folder";
             this.chooseFolderToolStripMenuItem.Click += new System.EventHandler(this.ChooseFolder);
             // 
@@ -188,7 +188,7 @@ partial class CsmGui
             // 
             this.chooseArchiveToolStripMenuItem.Name = "chooseArchiveToolStripMenuItem";
             this.chooseArchiveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
-            this.chooseArchiveToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.chooseArchiveToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.chooseArchiveToolStripMenuItem.Text = "Choose Archive";
             this.chooseArchiveToolStripMenuItem.Click += new System.EventHandler(this.ChooseArchive);
             // 
@@ -196,7 +196,7 @@ partial class CsmGui
             // 
             this.viewFilesToolStripMenuItem.Name = "viewFilesToolStripMenuItem";
             this.viewFilesToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
-            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.viewFilesToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.viewFilesToolStripMenuItem.Text = "View Files";
             this.viewFilesToolStripMenuItem.Click += new System.EventHandler(this.ViewFiles);
             // 
@@ -204,9 +204,17 @@ partial class CsmGui
             // 
             this.drawSheetToolStripMenuItem.Name = "drawSheetToolStripMenuItem";
             this.drawSheetToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.drawSheetToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.drawSheetToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
             this.drawSheetToolStripMenuItem.Text = "Draw Sheet";
             this.drawSheetToolStripMenuItem.Click += new System.EventHandler(this.RunSheet);
+            // 
+            // batchToolStripMenuItem
+            // 
+            this.batchToolStripMenuItem.Name = "batchToolStripMenuItem";
+            this.batchToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
+            this.batchToolStripMenuItem.Size = new System.Drawing.Size(231, 22);
+            this.batchToolStripMenuItem.Text = "Open Batch Processor";
+            this.batchToolStripMenuItem.Click += new System.EventHandler(this.BatchToolStripMenuItem_Click);
             // 
             // pnlMain
             // 
@@ -357,13 +365,6 @@ partial class CsmGui
             this.settingsLabel.Size = new System.Drawing.Size(76, 15);
             this.settingsLabel.TabIndex = 4;
             this.settingsLabel.Text = "settingsLabel";
-            // 
-            // batchToolStripMenuItem
-            // 
-            this.batchToolStripMenuItem.Name = "batchToolStripMenuItem";
-            this.batchToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
-            this.batchToolStripMenuItem.Text = "Batch";
-            this.batchToolStripMenuItem.Click += new System.EventHandler(this.BatchToolStripMenuItem_Click);
             // 
             // CsmGui
             // 

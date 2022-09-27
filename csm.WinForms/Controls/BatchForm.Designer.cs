@@ -31,6 +31,7 @@
             this.drawProgress = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.sheetBinder = new System.Windows.Forms.BindingSource(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
+            this.panel2 = new System.Windows.Forms.Panel();
             this.maxConcurrentLoadLabel = new System.Windows.Forms.Label();
             this.maxConcurrentLoadSpinner = new System.Windows.Forms.NumericUpDown();
             this.maxConcurrentLabel = new System.Windows.Forms.Label();
@@ -49,12 +50,14 @@
             this.completedCountValueLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.completedProgressBar = new System.Windows.Forms.ToolStripProgressBar();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.chooseDirectoryButton = new System.Windows.Forms.Button();
             this.chooseArchivesButton = new System.Windows.Forms.Button();
-            this.refreshListButton = new System.Windows.Forms.Button();
+            this.deleteButton = new System.Windows.Forms.Button();
             this.runButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.sheetGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.sheetBinder)).BeginInit();
             this.panel1.SuspendLayout();
+            this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentLoadSpinner)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentDrawSpinner)).BeginInit();
             this.statusStrip1.SuspendLayout();
@@ -63,6 +66,7 @@
             // 
             // sheetGrid
             // 
+            this.sheetGrid.AllowUserToAddRows = false;
             this.sheetGrid.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
@@ -73,12 +77,16 @@
             this.stateColumn,
             this.progressColumn,
             this.drawProgress});
-            this.sheetGrid.Location = new System.Drawing.Point(12, 12);
+            this.sheetGrid.Location = new System.Drawing.Point(0, 0);
             this.sheetGrid.Name = "sheetGrid";
+            this.sheetGrid.ReadOnly = true;
             this.sheetGrid.RowTemplate.Height = 25;
-            this.sheetGrid.Size = new System.Drawing.Size(795, 415);
+            this.sheetGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.sheetGrid.Size = new System.Drawing.Size(890, 418);
             this.sheetGrid.TabIndex = 2;
             this.sheetGrid.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.RowPrePaint);
+            this.sheetGrid.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.SheetGrid_UserDeletedRow);
+            this.sheetGrid.UserDeletingRow += new System.Windows.Forms.DataGridViewRowCancelEventHandler(this.SheetGrid_UserDeletingRow);
             // 
             // sourceColumn
             // 
@@ -118,30 +126,42 @@
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.maxConcurrentLoadLabel);
-            this.panel1.Controls.Add(this.maxConcurrentLoadSpinner);
-            this.panel1.Controls.Add(this.maxConcurrentLabel);
-            this.panel1.Controls.Add(this.maxConcurrentDrawSpinner);
+            this.panel1.Controls.Add(this.panel2);
             this.panel1.Controls.Add(this.statusStrip1);
             this.panel1.Controls.Add(this.flowLayoutPanel1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel1.Location = new System.Drawing.Point(0, 427);
+            this.panel1.Location = new System.Drawing.Point(0, 418);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(819, 63);
+            this.panel1.Size = new System.Drawing.Size(890, 63);
             this.panel1.TabIndex = 3;
+            // 
+            // panel2
+            // 
+            this.panel2.AutoSize = true;
+            this.panel2.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.panel2.Controls.Add(this.maxConcurrentLoadLabel);
+            this.panel2.Controls.Add(this.maxConcurrentLoadSpinner);
+            this.panel2.Controls.Add(this.maxConcurrentLabel);
+            this.panel2.Controls.Add(this.maxConcurrentDrawSpinner);
+            this.panel2.Dock = System.Windows.Forms.DockStyle.Right;
+            this.panel2.Location = new System.Drawing.Point(491, 0);
+            this.panel2.Name = "panel2";
+            this.panel2.Padding = new System.Windows.Forms.Padding(0, 0, 6, 0);
+            this.panel2.Size = new System.Drawing.Size(399, 41);
+            this.panel2.TabIndex = 9;
             // 
             // maxConcurrentLoadLabel
             // 
             this.maxConcurrentLoadLabel.AutoSize = true;
-            this.maxConcurrentLoadLabel.Location = new System.Drawing.Point(339, 13);
+            this.maxConcurrentLoadLabel.Location = new System.Drawing.Point(5, 11);
             this.maxConcurrentLoadLabel.Name = "maxConcurrentLoadLabel";
             this.maxConcurrentLoadLabel.Size = new System.Drawing.Size(122, 15);
-            this.maxConcurrentLoadLabel.TabIndex = 9;
+            this.maxConcurrentLoadLabel.TabIndex = 13;
             this.maxConcurrentLoadLabel.Text = "Max Concurrent Load";
             // 
             // maxConcurrentLoadSpinner
             // 
-            this.maxConcurrentLoadSpinner.Location = new System.Drawing.Point(467, 11);
+            this.maxConcurrentLoadSpinner.Location = new System.Drawing.Point(133, 9);
             this.maxConcurrentLoadSpinner.Minimum = new decimal(new int[] {
             1,
             0,
@@ -149,7 +169,7 @@
             0});
             this.maxConcurrentLoadSpinner.Name = "maxConcurrentLoadSpinner";
             this.maxConcurrentLoadSpinner.Size = new System.Drawing.Size(61, 23);
-            this.maxConcurrentLoadSpinner.TabIndex = 10;
+            this.maxConcurrentLoadSpinner.TabIndex = 14;
             this.maxConcurrentLoadSpinner.Value = new decimal(new int[] {
             1,
             0,
@@ -159,15 +179,15 @@
             // maxConcurrentLabel
             // 
             this.maxConcurrentLabel.AutoSize = true;
-            this.maxConcurrentLabel.Location = new System.Drawing.Point(534, 13);
+            this.maxConcurrentLabel.Location = new System.Drawing.Point(200, 11);
             this.maxConcurrentLabel.Name = "maxConcurrentLabel";
             this.maxConcurrentLabel.Size = new System.Drawing.Size(123, 15);
-            this.maxConcurrentLabel.TabIndex = 0;
+            this.maxConcurrentLabel.TabIndex = 11;
             this.maxConcurrentLabel.Text = "Max Concurrent Draw";
             // 
             // maxConcurrentDrawSpinner
             // 
-            this.maxConcurrentDrawSpinner.Location = new System.Drawing.Point(663, 11);
+            this.maxConcurrentDrawSpinner.Location = new System.Drawing.Point(329, 9);
             this.maxConcurrentDrawSpinner.Minimum = new decimal(new int[] {
             1,
             0,
@@ -175,7 +195,7 @@
             0});
             this.maxConcurrentDrawSpinner.Name = "maxConcurrentDrawSpinner";
             this.maxConcurrentDrawSpinner.Size = new System.Drawing.Size(61, 23);
-            this.maxConcurrentDrawSpinner.TabIndex = 1;
+            this.maxConcurrentDrawSpinner.TabIndex = 12;
             this.maxConcurrentDrawSpinner.Value = new decimal(new int[] {
             1,
             0,
@@ -199,7 +219,7 @@
             this.completedProgressBar});
             this.statusStrip1.Location = new System.Drawing.Point(0, 41);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(819, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(890, 22);
             this.statusStrip1.TabIndex = 8;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -272,45 +292,59 @@
             // 
             // completedProgressBar
             // 
+            this.completedProgressBar.AutoSize = false;
             this.completedProgressBar.Name = "completedProgressBar";
-            this.completedProgressBar.Size = new System.Drawing.Size(100, 16);
+            this.completedProgressBar.Size = new System.Drawing.Size(210, 16);
             // 
             // flowLayoutPanel1
             // 
             this.flowLayoutPanel1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.flowLayoutPanel1.AutoSize = true;
+            this.flowLayoutPanel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.flowLayoutPanel1.Controls.Add(this.chooseDirectoryButton);
             this.flowLayoutPanel1.Controls.Add(this.chooseArchivesButton);
-            this.flowLayoutPanel1.Controls.Add(this.refreshListButton);
+            this.flowLayoutPanel1.Controls.Add(this.deleteButton);
             this.flowLayoutPanel1.Controls.Add(this.runButton);
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(6, 6);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(3, 3);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(327, 32);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(480, 29);
             this.flowLayoutPanel1.TabIndex = 7;
+            // 
+            // chooseDirectoryButton
+            // 
+            this.chooseDirectoryButton.Location = new System.Drawing.Point(3, 3);
+            this.chooseDirectoryButton.Name = "chooseDirectoryButton";
+            this.chooseDirectoryButton.Size = new System.Drawing.Size(121, 23);
+            this.chooseDirectoryButton.TabIndex = 4;
+            this.chooseDirectoryButton.Text = "Add Directory Items";
+            this.chooseDirectoryButton.UseVisualStyleBackColor = true;
+            this.chooseDirectoryButton.Click += new System.EventHandler(this.ChooseDirectory_Click);
             // 
             // chooseArchivesButton
             // 
-            this.chooseArchivesButton.Location = new System.Drawing.Point(3, 3);
+            this.chooseArchivesButton.Location = new System.Drawing.Point(130, 3);
             this.chooseArchivesButton.Name = "chooseArchivesButton";
-            this.chooseArchivesButton.Size = new System.Drawing.Size(139, 23);
+            this.chooseArchivesButton.Size = new System.Drawing.Size(110, 23);
             this.chooseArchivesButton.TabIndex = 0;
-            this.chooseArchivesButton.Text = "Choose Archives";
+            this.chooseArchivesButton.Text = "Add Archives";
             this.chooseArchivesButton.UseVisualStyleBackColor = true;
             this.chooseArchivesButton.Click += new System.EventHandler(this.ChooseArchivesButton_Click);
             // 
-            // refreshListButton
+            // deleteButton
             // 
-            this.refreshListButton.Location = new System.Drawing.Point(148, 3);
-            this.refreshListButton.Name = "refreshListButton";
-            this.refreshListButton.Size = new System.Drawing.Size(91, 23);
-            this.refreshListButton.TabIndex = 3;
-            this.refreshListButton.Text = "Refresh List";
-            this.refreshListButton.UseVisualStyleBackColor = true;
-            this.refreshListButton.Click += new System.EventHandler(this.RefreshListButton_Click);
+            this.deleteButton.Location = new System.Drawing.Point(246, 3);
+            this.deleteButton.Name = "deleteButton";
+            this.deleteButton.Size = new System.Drawing.Size(109, 23);
+            this.deleteButton.TabIndex = 3;
+            this.deleteButton.Text = "Remove Selected";
+            this.deleteButton.UseVisualStyleBackColor = true;
+            this.deleteButton.Click += new System.EventHandler(this.DeleteSelectedRows);
             // 
             // runButton
             // 
-            this.runButton.Location = new System.Drawing.Point(245, 3);
+            this.runButton.Location = new System.Drawing.Point(361, 3);
             this.runButton.Name = "runButton";
-            this.runButton.Size = new System.Drawing.Size(75, 23);
+            this.runButton.Size = new System.Drawing.Size(116, 23);
             this.runButton.TabIndex = 1;
             this.runButton.Text = "Run";
             this.runButton.UseVisualStyleBackColor = true;
@@ -320,9 +354,10 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(819, 490);
+            this.ClientSize = new System.Drawing.Size(890, 481);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.sheetGrid);
+            this.MinimumSize = new System.Drawing.Size(906, 200);
             this.Name = "BatchForm";
             this.Text = "Batch Processing";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BatchForm_FormClosing);
@@ -330,6 +365,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.sheetBinder)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
+            this.panel2.ResumeLayout(false);
+            this.panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentLoadSpinner)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.maxConcurrentDrawSpinner)).EndInit();
             this.statusStrip1.ResumeLayout(false);
@@ -349,10 +386,8 @@
         private Panel panel1;
         private FlowLayoutPanel flowLayoutPanel1;
         private Button chooseArchivesButton;
-        private Button refreshListButton;
+        private Button deleteButton;
         private Button runButton;
-        private Label maxConcurrentLabel;
-        private NumericUpDown maxConcurrentDrawSpinner;
         private StatusStrip statusStrip1;
         private ToolStripStatusLabel loadingCountLabel;
         private ToolStripStatusLabel loadingCountValueLabel;
@@ -366,7 +401,11 @@
         private ToolStripProgressBar loadProgressBar;
         private ToolStripProgressBar queueProgressBar;
         private ToolStripProgressBar drawingCountBar;
+        private Panel panel2;
         private Label maxConcurrentLoadLabel;
         private NumericUpDown maxConcurrentLoadSpinner;
+        private Label maxConcurrentLabel;
+        private NumericUpDown maxConcurrentDrawSpinner;
+        private Button chooseDirectoryButton;
     }
 }

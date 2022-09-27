@@ -20,6 +20,7 @@ namespace csm.Business.Logic {
 
         public override void Initialize(Action? callback = null) {
             callback?.Invoke();
+            UpdateProgress(new ProgressEventArgs(1, 1, TimeSpan.Zero, FullPath));
         }
 
         public override async Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null) {
