@@ -27,11 +27,11 @@ or the corresponding button.
 ## Batch Processing
 Once you like the way your output files look and you want to make a lot of them with the
 same settings at once, open up the Batch Processing GUI from the `Tools` menu or hit `ctrl-B`.
-Here you you add all of the items (archives and subdirectories) in a directory, or select
+Here you can add all of the items (archives and subdirectories) in a directory, or select
 single or multiple archive files and add them to the list for processing. 
 
-Set the `Max Concurrent Load`
-and `Max Cuncurrent Draw` spinners to your liking; lower numbers will put less strain on your computer
+Set the `Max Concurrent Load` and `Max Cuncurrent Draw` spinners to your liking; 
+lower numbers will put less strain on your computer
 and larger numbers will make the process go faster (to a point.) 
 
 You can also remove sources
