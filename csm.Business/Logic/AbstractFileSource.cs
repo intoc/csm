@@ -43,7 +43,7 @@ namespace csm.Business.Logic {
         public string Size { 
             get {
                 var kb = Bytes / 1024f;
-                if (Bytes < 1024) {
+                if (kb < 1024) {
                     return $"{kb:0.}KiB";
                 } 
                 return $"{kb / 1024f:0.0}MiB";

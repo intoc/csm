@@ -25,17 +25,17 @@ namespace csm.WinForms.Models {
                 if (Queued) {
                     return SheetState.Queued;
                 }
-                if (_sheet.LoadProgress < 1) {
+                if (!_drawingStarted && _sheet.LoadProgress < 1) {
                     return SheetState.Loading;
                 }
-                if (_sheet.DrawProgress < 1) {
+                if (_drawingStarted && _sheet.DrawProgress < 1) {
                     return SheetState.Drawing;
                 }
                 return SheetState.Completed;
             }
         }
 
-        public bool Queued { get; set; }
+        public bool Queued => !_drawingStarted && LoadProgress == 1;
         public bool Failed { get; set; }
 
         public string? ErrorText { get; set; }
@@ -46,6 +46,7 @@ namespace csm.WinForms.Models {
 
         private readonly ContactSheet _sheet;
         private readonly string _sourcePath;
+        private bool _drawingStarted = false;
 
         public SheetWrapper(ContactSheet sheet, string sourcePath) {
             _sheet = sheet;
@@ -57,6 +58,7 @@ namespace csm.WinForms.Models {
         }
 
         public async Task Draw() {
+            _drawingStarted = true;
             await Task.Factory.StartNew(async () => await _sheet.DrawAndSave(true));
         }
 

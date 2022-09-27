@@ -85,8 +85,8 @@
             this.sheetGrid.Size = new System.Drawing.Size(890, 418);
             this.sheetGrid.TabIndex = 2;
             this.sheetGrid.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.RowPrePaint);
-            this.sheetGrid.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.SheetGrid_UserDeletedRow);
-            this.sheetGrid.UserDeletingRow += new System.Windows.Forms.DataGridViewRowCancelEventHandler(this.SheetGrid_UserDeletingRow);
+            this.sheetGrid.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.UserDeletedRow);
+            this.sheetGrid.UserDeletingRow += new System.Windows.Forms.DataGridViewRowCancelEventHandler(this.UserDeletingRow);
             // 
             // sourceColumn
             // 
@@ -318,7 +318,7 @@
             this.chooseDirectoryButton.TabIndex = 4;
             this.chooseDirectoryButton.Text = "Add Directory Items";
             this.chooseDirectoryButton.UseVisualStyleBackColor = true;
-            this.chooseDirectoryButton.Click += new System.EventHandler(this.ChooseDirectory_Click);
+            this.chooseDirectoryButton.Click += new System.EventHandler(this.ChooseDirectoryClicked);
             // 
             // chooseArchivesButton
             // 
@@ -328,7 +328,7 @@
             this.chooseArchivesButton.TabIndex = 0;
             this.chooseArchivesButton.Text = "Add Archives";
             this.chooseArchivesButton.UseVisualStyleBackColor = true;
-            this.chooseArchivesButton.Click += new System.EventHandler(this.ChooseArchivesButton_Click);
+            this.chooseArchivesButton.Click += new System.EventHandler(this.ChooseArchivesButtonClicked);
             // 
             // deleteButton
             // 
@@ -348,7 +348,7 @@
             this.runButton.TabIndex = 1;
             this.runButton.Text = "Run";
             this.runButton.UseVisualStyleBackColor = true;
-            this.runButton.Click += new System.EventHandler(this.RunButton_Click);
+            this.runButton.Click += new System.EventHandler(this.RunButtonClicked);
             // 
             // BatchForm
             // 
@@ -360,7 +360,7 @@
             this.MinimumSize = new System.Drawing.Size(906, 200);
             this.Name = "BatchForm";
             this.Text = "Batch Processing";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BatchForm_FormClosing);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.BatchFormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.sheetGrid)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.sheetBinder)).EndInit();
             this.panel1.ResumeLayout(false);
