@@ -38,14 +38,13 @@ You can also remove sources
 from the list with the `Remove Selected` button or the `Del` key, as long as they are in
 either the `PreLoad` or `Completed` state.
 
-The `Pause` button will moving states from `PreLoad` to `Loading` or `Queued` to `Drawing`, 
-but sources already in the `Loading` state will continue to load in the background, 
-and sources already in the `Drawing` state will continue to draw in the background.
+The `Pause` button will stop moving states from `PreLoad` to `Loading` or `Queued` to `Drawing`, 
+but sources already in the `Loading` and `Drawing` states will continue processing until the next state, i.e. `Queued` and `Completed/Failed` respectively.
 
 
 ## Command Line
 csm is also a fully functional command-line program. In order to use it without the GUI, you
-must start it with the `–nogui` option.
+must start it with the `–nogui=true` option.
 
 *Usage*: `csm [path to image directory or archive] [param1=val1] [param2=val2] [...]`
 
@@ -99,6 +98,9 @@ you don't want to include in the output, use the `-mindiminput` parameter to fil
 you can use something like `(cover|big|max|square|folder)\.(jpg|png)$`. 
 - The `-fregx` parameter also uses Regular Expressions so you can match on multiple file types.
 - Try [regexr.com](https://regexr.com) to experiment with Regular Expressions.
+- The appsettings.json file is used for configuration that doesn't make sense to include in the sheet settings. Right now
+it only has a Serilog node, which can be modified to change the logging template or logging level. csm logs at **Debug**, **Information**, and **Error** levels.
+Setting `MinimumLevel` to **Error** may increase performance in GUI mode, but there won't be much output on the console.
 
 ## Linux
 The linux command-line only version of this app requires the dotnet 6 runtime. 
