@@ -101,9 +101,9 @@ namespace csm.WinForms.Controls {
                 _run = false;
                 // It's a pause button right now. Keep updating the UI but don't process any new things
                 await Task.Run(() => {
-                    while (!_run) {
-                        UpdateStatsAndList();
+                    while (!_run && !IsDisposed) {
                         Thread.Sleep(250);
+                        UpdateStatsAndList();
                     }
                 });
             } else {
@@ -117,7 +117,7 @@ namespace csm.WinForms.Controls {
             chooseArchivesButton.Enabled = false;
             chooseDirectoryButton.Enabled = false;
             await Task.Run(async () => {
-                while (_run && _sheets.Count(s => s.State == SheetState.Completed) < _sheets.Count(s => !s.Failed)) {
+                while (!IsDisposed && _run && _sheets.Count(s => s.State == SheetState.Completed) < _sheets.Count(s => !s.Failed)) {
                     if (_sheets.Count(s => s.State == SheetState.Loading) < maxConcurrentLoadSpinner.Value
                         && _sheets.Any(s => s.State == SheetState.PreLoad)) {
                         var preloading = _sheets.FirstOrDefault(s => s.State == SheetState.PreLoad);
@@ -149,11 +149,15 @@ namespace csm.WinForms.Controls {
                     UpdateStatsAndList();
                 }
                 UpdateStatsAndList();
-                Invoke(() => {
-                    runButton.Text = "Run";
-                    chooseArchivesButton.Enabled = true;
-                    chooseDirectoryButton.Enabled = true;
-                });
+                try {
+                    Invoke(() => {
+                        runButton.Text = "Run";
+                        chooseArchivesButton.Enabled = true;
+                        chooseDirectoryButton.Enabled = true;
+                    });
+                } catch (Exception) {
+                    // The form is probably disposed, don't worry about it
+                }
             });
         }
         private void UpdateStatsAndList() {
@@ -162,6 +166,9 @@ namespace csm.WinForms.Controls {
         }
 
         private void UpdateStats() {
+            if (IsDisposed) {
+                return;
+            }
             try {
                 Invoke(() => {
                     // Counts
@@ -179,12 +186,15 @@ namespace csm.WinForms.Controls {
                     drawingCountBar.Value = _sheets.Any() ? Math.Min(100, (int)Math.Round(drawing / (float)maxConcurrentDrawSpinner.Value * 100)) : 0;
                     completedProgressBar.Value = _sheets.Any() ? (int)Math.Round(completed / (float)_sheets.Count * 100) : 0;
                 });
-            } catch (TargetInvocationException) {
+            } catch (Exception) {
                 // The form is disposed, nothing here needs to happen anymore
             }
         }
 
         private void RefreshList() {
+            if (IsDisposed) {
+                return;
+            }
             try {
                 Invoke(() => {
                     bool loadComplete = _sheets.All(s => s.State == SheetState.Completed);
@@ -195,13 +205,13 @@ namespace csm.WinForms.Controls {
                     _lastUpdate = DateTime.Now;
                     sheetGrid.Refresh();
                 });
-            } catch (TargetInvocationException) {
+            } catch (Exception) {
                 // The form is disposed, nothing here needs to happen anymore
             }
         }
 
-        private void BatchForm_FormClosing(object sender, FormClosingEventArgs e) {
-            DisposeSheets();
+        private async void BatchForm_FormClosing(object sender, FormClosingEventArgs e) {
+            await Task.Run(DisposeSheets);
         }
 
         private void DisposeSheets() {
