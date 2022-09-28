@@ -13,6 +13,7 @@ namespace csm.Business.Logic {
 
         protected const string CSM_TEMP_FOLDER = "csm_e2bd2683";
         protected readonly DirectoryInfo _csmTempFolder;
+        protected bool _isDisposed = false;
 
         /// <summary>
         /// The full path of the source
@@ -82,6 +83,9 @@ namespace csm.Business.Logic {
         /// <param name="pattern">The file name match pattern. Can use * and ? wildcards, but not regular expressions.</param>
         /// <returns>The files</returns>
         protected IEnumerable<ImageFile> GetFiles(DirectoryInfo directory, string? pattern = null) {
+            if (_isDisposed) {
+                return Enumerable.Empty<ImageFile>();
+            }
             var files = directory.EnumerateFiles();
             if (pattern != null) {
                 files = files.Where(f => Regex.IsMatch(f.Name, pattern));
@@ -95,6 +99,9 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="image">The <see cref="ImageData"/> to initialize</param>
         public void LoadImageDimensions(ImageData image) {
+            if (_isDisposed) {
+                return;
+            }
             try {
                 using var stream = new FileStream(image.File, FileMode.Open, FileAccess.Read);
                 using var fromStream = Image.Load(stream);
@@ -140,6 +147,7 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing) {
+            _isDisposed = true;
             // Look for old temp directories and delete them
             var dirs = _csmTempFolder.GetDirectories();
             foreach (var dir in dirs) {

@@ -56,6 +56,9 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="callback">Called when extraction complets</param>
         public override void Initialize(Action? callback = null) {
+            if (_isDisposed) {
+                return;
+            }
             Task.Run(() => {
                 lock (_dirLock) {
                     ExtractWithStats();
@@ -70,6 +73,9 @@ namespace csm.Business.Logic {
         /// <param name="pattern">The search pattern for the files</param>
         /// <returns>The files as <see cref="ImageFile"/> instances</returns>
         public override async Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null) {
+            if (_isDisposed) {
+                return Enumerable.Empty<ImageFile>();
+            }
             IEnumerable<ImageFile> files = new List<ImageFile>();
             await Task.Run(() => {
                 lock (_dirLock) {
@@ -100,6 +106,7 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="disposing"></param>
         protected override void Dispose(bool disposing) {
+            _isDisposed = true;
             lock (_dirLock) {
                 if (_tempDir.Exists) {
                     lock (_dirLock) {

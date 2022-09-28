@@ -13,13 +13,6 @@ using Path = System.IO.Path;
 
 namespace csm.Business.Logic;
 
-public delegate void SourceChangedEventHandler(string? path);
-public delegate void DrawProgressEventHandler(ContactSheet sender, ProgressEventArgs args);
-public delegate void LoadProgressEventHandler(ContactSheet sender, ProgressEventArgs args);
-public delegate void SettingsChangedEventHandler(SettingsChangedEventArgs args);
-public delegate void ImageListChangedEventHandler();
-public delegate void ExceptionEventHandler(string message, bool isFatal, Exception? e = null);
-
 /// <summary>
 /// Creates contact sheets
 /// </summary>
@@ -91,7 +84,7 @@ public sealed class ContactSheet : IDisposable {
 
             if (oldSource?.FullPath != fileSource?.FullPath) {
                 oldSource?.Dispose();
-                fileSource?.Initialize(() => SourceChanged?.Invoke(fileSource?.FullPath));
+                fileSource?.Initialize(() => SourceChanged?.Invoke(this));
             } else {
                 // It's the same source, we don't need the new one
                 fileSource?.Dispose();
@@ -115,32 +108,33 @@ public sealed class ContactSheet : IDisposable {
     /// <summary>
     /// Fired when the progress of drawing the output contact sheet changes
     /// </summary>
-    public event DrawProgressEventHandler DrawProgressChanged = delegate { };
+    public event Action<ContactSheet, ProgressEventArgs> DrawProgressChanged = delegate { };
 
     /// <summary>
     /// Fired when there is a change to the contents of the image list
     /// </summary>
-    public event ImageListChangedEventHandler ImageListChanged = delegate { };
+    public event Action<ContactSheet> ImageListChanged = delegate { };
 
     /// <summary>
     /// Fired when the settings file changes and is loaded
     /// </summary>
-    public event SettingsChangedEventHandler SettingsChanged = delegate { };
+    public event Action<SettingsChangedEventArgs> SettingsChanged = delegate { };
 
     /// <summary>
     /// Fired when the source directory is changed
     /// </summary>
-    public event SourceChangedEventHandler SourceChanged = delegate { };
+    public event Action<ContactSheet> SourceChanged = delegate { };
 
     /// <summary>
     /// Fired when the file loading progress changes
     /// </summary>
-    public event LoadProgressEventHandler LoadProgressChanged = delegate { };
+    public event Action<ContactSheet, ProgressEventArgs> LoadProgressChanged = delegate { };
 
     /// <summary>
     /// Fired when an exception occurred
     /// </summary>
     public event ExceptionEventHandler ErrorOccurred = delegate { };
+    public delegate void ExceptionEventHandler(string message, bool isFatal, Exception? e = null);
 
     #endregion
 
@@ -180,6 +174,7 @@ public sealed class ContactSheet : IDisposable {
     private int drawnCount, progressStep;
     private readonly object graphicsLock = new();
     private bool _firstLoadIncomplete;
+    private bool _isDisposed = false;
 
     #endregion
 
@@ -361,7 +356,7 @@ public sealed class ContactSheet : IDisposable {
     }
 
     private async Task HandleShowCoverChanged() {
-        if (fileSource == null) {
+        if (fileSource == null || _isDisposed) {
             return;
         }
         if (cover.BoolValue) {
@@ -377,7 +372,7 @@ public sealed class ContactSheet : IDisposable {
     }
 
     private async Task HandleCoverPatternChanged() {
-        if (!cover.BoolValue || fileSource == null) {
+        if (!cover.BoolValue || fileSource == null || _isDisposed) {
             return;
         }
         if (await GuessCover(true)) {
@@ -510,6 +505,9 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="force">Proceed even if the cover file path has already been set</param>
     private async Task<bool> GuessCover(bool force) {
+        if (_isDisposed) {
+            return false;
+        }
         string listRegex = filePattern.Value ?? defaultFilePattern;
         string coverRegex = coverPattern.Value ?? coverRegexes;
         return await imageSet.GuessFile(coverFile, listRegex, coverRegex, force);
@@ -520,11 +518,14 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need</param>
     public async Task LoadFileList(Param? p = null) {
+        if (_isDisposed) {
+            return;
+        }
         if (p != null) {
             Log.Information("Reloading file list due to change in {0}", p.CmdParameter);
         }
         await imageSet.LoadImageListAsync(filePattern.ParsedValue ?? defaultFilePattern, minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
-        ImageListChanged?.Invoke();
+        ImageListChanged?.Invoke(this);
     }
 
     /// <summary>
@@ -532,14 +533,14 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <param name="p">The <see cref="Param"/> that caused the need for the refresh</param>
     public void RefreshImageList(Param? p = null) {
-        if (!imageSet.Images.Any()) {
+        if (!imageSet.Images.Any() || _isDisposed) {
             return;
         }
         if (p != null) {
             Log.Debug("Refreshing image list due to change in {0}", p.Desc);
         }
         imageSet.RefreshImageList(minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
-        ImageListChanged?.Invoke();
+        ImageListChanged?.Invoke(this);
     }
 
     /// <summary>
@@ -547,6 +548,10 @@ public sealed class ContactSheet : IDisposable {
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
     public async Task<bool> DrawAndSave(bool waitForLoad = false) {
+        if (_isDisposed) {
+            Log.Debug("DrawAndSave called on disposed sheet, cancelling...");
+            return false;
+        }
         if (string.IsNullOrEmpty(Source)) {
             ErrorOccurred?.Invoke("No/invalid Source selected!", true);
             return false; // Don't exit the GUI
@@ -582,6 +587,9 @@ public sealed class ContactSheet : IDisposable {
                 break;
             }
             Thread.Sleep(250);
+            if (_isDisposed) {
+                return false;
+            }
         }
 
         Log.Debug("DrawAndSave starting");
@@ -978,9 +986,9 @@ public sealed class ContactSheet : IDisposable {
 
             // Calculate final sheet height
             sheetHeight = last.Y + last.Height + borderWidth;
-        }
 
-        #endregion
+            #endregion
+        }
 
         #region Drawing
 
@@ -1001,7 +1009,7 @@ public sealed class ContactSheet : IDisposable {
             }
 
             // Draw the cover
-            if (coverImageData != null) {
+            if (coverImageData != null && !_isDisposed) {
                 Log.Information("Drawing cover {0}. {1}", Path.GetFileName(coverFile.Path), coverImageData.Bounds);
                 if (preview.BoolValue) {
                     sheetContext.Fill(Brushes.Solid(Color.White), coverImageData.Bounds);
@@ -1028,7 +1036,9 @@ public sealed class ContactSheet : IDisposable {
         Font labelFont = fontFamily.CreateFont(labels.BoolValue ? labelFontSize.IntValue : 0, FontStyle.Bold);
 
         foreach (ImageData image in analyses.SelectMany(row => row.Select(image => image))) {
-
+            if (_isDisposed) {
+                break;
+            }
             // Create info for threaded load/draw operation
             ThumbnailData tdata = new(image, sheetImage, labelFont) {
                 Index = index++,
@@ -1038,6 +1048,9 @@ public sealed class ContactSheet : IDisposable {
             drawThumbTasks.Add(Task.Factory.StartNew(() => DrawThumb(tdata)));
         }
 
+        if (_isDisposed) {
+            return false;
+        }
         await Task.WhenAll(drawThumbTasks);
 
         DateTime endTime = DateTime.Now;
@@ -1045,10 +1058,15 @@ public sealed class ContactSheet : IDisposable {
 
         #endregion
 
-        #region Finish
+        #region Output
+
+        if (_isDisposed) {
+            sheetImage.Dispose();
+            return false;
+        }
 
         // Update list watchers so they see the new sizes
-        ImageListChanged?.Invoke();
+        ImageListChanged?.Invoke(this);
 
         Log.Information("---------------------------------------------------------------------------");
         Log.Information("Completed! It took {0}", duration);
@@ -1115,6 +1133,10 @@ public sealed class ContactSheet : IDisposable {
             image = new Image<Rgba32>(size.Width, size.Height);
         } else {
             try {
+                if (_isDisposed) {
+                    Log.Debug("{0}({1}): Disposed, cancelling...", "DrawThumb", data.Image.FileName);
+                    return;
+                }
                 image = Image.Load(data.File);
             } catch (Exception) {
                 // Failed to load the image. Draw a placeholder
@@ -1317,6 +1339,12 @@ public sealed class ContactSheet : IDisposable {
     }
 
     public void Dispose() {
+        _isDisposed = true;
+        if (fileSource == null) {
+            return;
+        }
+        Log.Debug("{0} Disposing", Source);
         fileSource?.Dispose();
+        Log.Debug("{0} Disposed", Source);
     }
 }

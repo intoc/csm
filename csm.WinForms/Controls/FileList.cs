@@ -36,7 +36,7 @@ public partial class FileList : Form {
     /// <param name="sender"></param>
     /// <param name="e"></param>
     private void FileListLoaded(object sender, EventArgs e) {
-        cs.ImageListChanged += new ImageListChangedEventHandler(ImageListChanged);
+        cs.ImageListChanged += ImageListChanged;
         Rectangle bounds = Owner.Bounds;
         Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
         cs.SourceChanged += SourceChanged;
@@ -45,22 +45,22 @@ public partial class FileList : Form {
         fileWatcher.Deleted += ReloadFiles;
         fileWatcher.Created += ReloadFiles;
         fileWatcher.Renamed += ReloadFiles;
-        UpdateList();
+        UpdateList(cs);
     }
 
     /// <summary>
     /// Invoked by the back end whenever the source changes
     /// </summary>
     /// <param name="path"></param>
-    void SourceChanged(string? path) {
+    void SourceChanged(ContactSheet sheet) {
         Log.Debug("FileList-SourceChanged");
-        if (!string.IsNullOrEmpty(path) && Directory.Exists(path)) {
-            fileWatcher.Path = path;
+        if (!string.IsNullOrEmpty(sheet.Source) && Directory.Exists(sheet.Source)) {
+            fileWatcher.Path = sheet.Source;
             fileWatcher.EnableRaisingEvents = true;
         } else {
             fileWatcher.EnableRaisingEvents = false;
         }
-        Text = path?.Split('\\').Last() ?? "No Source Selected";
+        Text = sheet.Source?.Split('\\').Last() ?? "No Source Selected";
         PinnedImages.Clear();
     }
 
@@ -68,21 +68,21 @@ public partial class FileList : Form {
     /// Invoked by the back end whenever the image list is loaded
     /// </summary>
     /// <param name="args"></param>
-    void ImageListChanged() {
+    void ImageListChanged(ContactSheet source) {
         Log.Debug("FileList-ImageListChanged");
-        Invoke(new MethodInvoker(UpdateList));
+        Invoke(() => UpdateList(source));
     }
 
     /// <summary>
     /// Invoked by cs_ImageListChanged
     /// </summary>
     /// <param name="args"></param>
-    void UpdateList() {
+    void UpdateList(ContactSheet source) {
         Log.Debug("FileList-UpdateList");
-        if (binder.DataSource == null && cs.ImageList.Any()) {
-            binder.DataSource = new BindingList<ImageData>(cs.ImageList);
+        if (binder.DataSource == null && source.ImageList.Any()) {
+            binder.DataSource = new BindingList<ImageData>(source.ImageList);
         } else {
-            foreach (ImageData image in cs.ImageList.Where(i => PinnedImages.ContainsKey(i.File))) {
+            foreach (ImageData image in source.ImageList.Where(i => PinnedImages.ContainsKey(i.File))) {
                 image.Include = PinnedImages[image.File];
                 image.InclusionPinned = true;
             }
@@ -93,7 +93,9 @@ public partial class FileList : Form {
     }
 
     private void UpdateStatus() {
-        lblImageCount.Text = string.Format("{0} Images ({1} Excluded, {2} Included)", binder.Count, cs.ImageList.Count(i => !i.Include), cs.ImageList.Count(i => i.Include));
+        int included = cs.ImageList.Count(i => !i.Include);
+        int excluded = cs.ImageList.Count - included;
+        lblImageCount.Text = $"{cs.ImageList.Count} Images ({included} Excluded, {excluded} Included)";
     }
 
     private void PinImage(ImageData image) {
@@ -134,11 +136,13 @@ public partial class FileList : Form {
         if (e.RowIndex < 0) {
             return;
         }
-        if (files.Rows[e.RowIndex].DataBoundItem is ImageData image) {
-            files.Rows[e.RowIndex].DefaultCellStyle.BackColor =
-                image.Include ? RowColorIncluded(image) : RowColorExcluded(image);
+        var row = files.Rows[e.RowIndex];
+        if (row.DataBoundItem is ImageData image) {
+            row.DefaultCellStyle.BackColor = RowColor(image);
         }
     }
+
+    private static Color RowColor(ImageData image) => image.Include ? RowColorIncluded(image) : RowColorExcluded(image);
     private static Color RowColorIncluded(ImageData image) => image.InclusionPinned ? (Color.Beige) : (Color.White);
     private static Color RowColorExcluded(ImageData image) => image.InclusionPinned ? (Color.DarkGray) : (Color.LightGray);
 

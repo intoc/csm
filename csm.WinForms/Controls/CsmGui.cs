@@ -35,8 +35,8 @@ internal partial class CsmGui : Form {
         cs.DrawProgressChanged += DrawProgressChanged;
         cs.SettingsChanged += SettingsChanged;
         cs.ErrorOccurred += ExceptionOccurred;
-        cs.SourceChanged += (path) => Invoke(() => {
-            Invoke(() => directoryLabel.Text = directoryLabelText(path));
+        cs.SourceChanged += (sheet) => Invoke(() => {
+            Invoke(() => directoryLabel.Text = directoryLabelText(sheet.Source));
             Invoke(() => SetButtonsEnabled(true, true));
         });
         cs.LoadProgressChanged += UpdateLoadProgress;
