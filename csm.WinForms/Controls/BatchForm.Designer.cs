@@ -175,6 +175,7 @@
             0,
             0,
             0});
+            this.maxConcurrentLoadSpinner.ValueChanged += new System.EventHandler(this.MaxConcurrentLoadSpinnerValueChanged);
             // 
             // maxConcurrentLabel
             // 
@@ -201,6 +202,7 @@
             0,
             0,
             0});
+            this.maxConcurrentDrawSpinner.ValueChanged += new System.EventHandler(this.MaxConcurrentDrawSpinnerValueChanged);
             // 
             // statusStrip1
             // 

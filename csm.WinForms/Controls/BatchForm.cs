@@ -1,7 +1,6 @@
 ﻿using csm.Business.Logic;
 using csm.WinForms.Models;
 using csm.WinForms.Models.Settings;
-using Serilog;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
@@ -9,33 +8,23 @@ namespace csm.WinForms.Controls {
 
     public partial class BatchForm : Form {
 
-        private readonly ContactSheet _parentSheet;
-        private readonly IList<SheetWrapper> _sheets;
-        private IEnumerable<SheetWrapper> LoadQueue => _sheets.Where(s => s.State == SheetState.PreLoad);
-        private IEnumerable<SheetWrapper> DrawQueue => _sheets.Where(s => s.Queued);
-
-        private DateTime _lastUpdate = DateTime.Now;
-        private bool _run = false;
-
-        private bool CanStartLoad => _sheets.Count(s => s.State == SheetState.Loading) < maxConcurrentLoadSpinner.Value;
-        private bool CanStartDraw => _sheets.Count(s => s.State == SheetState.Drawing) < maxConcurrentDrawSpinner.Value;
-        private bool IsCompleted => StateCount(SheetState.Completed) >= (_sheets.Count - StateCount(SheetState.Failed));
-        private int StateCount(SheetState state) => _sheets.Count(s => s.State == state);
-        private static bool CanRemove(SheetWrapper sheet) => sheet.State == SheetState.PreLoad || sheet.State == SheetState.Completed;
+        private readonly SheetCollection _batch;
 
         private readonly AppSettings _appSettings;
 
         internal BatchForm(ContactSheet parentSheet, AppSettings settings) {
-            _parentSheet = parentSheet;
+
             _appSettings = settings;
-            _sheets = new List<SheetWrapper>();
-            
+            _batch = new SheetCollection(parentSheet);
+            _batch.Updated += UpdateStatsAndList;
+            _batch.DrawCompleted += SheetsDrawCompleted;
+
             InitializeComponent();
-            
+
             sheetGrid.Columns[2].DefaultCellStyle.Format = "#0%";
             sheetGrid.Columns[3].DefaultCellStyle.Format = "#0%";
             sheetGrid.AutoGenerateColumns = false;
-            sheetBinder.DataSource = new BindingList<SheetWrapper>(_sheets);
+            sheetBinder.DataSource = new BindingList<SheetWrapper>(_batch.Sheets);
             sheetGrid.DataSource = sheetBinder;
 
             maxConcurrentLoadSpinner.Value = _appSettings.BatchProcessing.DefaultMaxLoad;
@@ -53,10 +42,10 @@ namespace csm.WinForms.Controls {
                 var directories = dir.GetDirectories()
                     .Select(d => d.FullName);
                 foreach (var path in directories.Concat(archives)) {
-                    AddSheet(path);
+                    _batch.AddSheet(path);
                 }
                 sheetBinder.ResetBindings(false);
-                runButton.Enabled = _sheets.Any();
+                runButton.Enabled = _batch.Sheets.Any();
                 UpdateStats();
             }
         }
@@ -71,86 +60,33 @@ namespace csm.WinForms.Controls {
             };
             if (ofd.ShowDialog() == DialogResult.OK) {
                 foreach (var path in ofd.FileNames) {
-                    AddSheet(path);
+                    _batch.AddSheet(path);
                 }
                 sheetBinder.ResetBindings(false);
-                runButton.Enabled = _sheets.Any();
+                runButton.Enabled = _batch.Sheets.Any();
                 UpdateStats();
             }
         }
 
-        private void AddSheet(string path) {
-            if (_sheets.Any(s => s.Source == path)) {
-                return;
-            }
-            ContactSheet newSheet = new(new FileSourceBuilder(), false);
-            var wrapper = new SheetWrapper(newSheet, path);
-            newSheet.LoadParamsFromSheet(_parentSheet);
-            _sheets.Add(wrapper);
-        }
-
         private async void RunButtonClicked(object sender, EventArgs e) {
-            if (_run) {
-                _run = false;
-                // It's a pause button right now. Keep updating the UI but don't process any new things
-                await Task.Run(() => {
-                    while (!_run && !IsDisposed) {
-                        Thread.Sleep(250);
-                        UpdateStatsAndList();
-                    }
-                });
+            if (!_batch.Paused) {
+                _batch.Paused = true;
+                runButton.Text = "Run";
+                chooseArchivesButton.Enabled = true;
+                chooseDirectoryButton.Enabled = true;
             } else {
-                await Run();
+                runButton.Text = "Pause";
+                chooseArchivesButton.Enabled = false;
+                chooseDirectoryButton.Enabled = false;
+                await _batch.LoadAndDraw();
             }
-        }
-
-        private async Task Run() {
-            runButton.Text = "Pause";
-            _run = true;
-            chooseArchivesButton.Enabled = false;
-            chooseDirectoryButton.Enabled = false;
-            await Task.Run(async () => {
-                while (!IsDisposed && _run && !IsCompleted) {
-                    if (CanStartLoad && LoadQueue.Any()) {
-                        var preloading = LoadQueue.First();
-                        preloading.Load();
-                    }
-                    // Check for any sheets loaded and ready to draw
-                    // As long as there is a space available
-                    if (CanStartDraw && DrawQueue.Any()) {
-                        var sheet = DrawQueue.First();
-                        try {
-                            if (sheet.Source != null) {
-                                await sheet.Draw();
-                            }
-                        } catch (Exception ex) {
-                            sheet.Failed = true;
-                            sheet.ErrorText = ex.Message;
-                            Log.Error(ex, "Failed to draw sheet for {0}", sheet.Source);
-                        }
-                    }
-                    UpdateStatsAndList();
-                    // Wait to poll again
-                    Thread.Sleep(250);
-                }
-                UpdateStatsAndList();
-                try {
-                    Invoke(() => {
-                        runButton.Text = "Run";
-                        chooseArchivesButton.Enabled = true;
-                        chooseDirectoryButton.Enabled = true;
-                    });
-                } catch (Exception) {
-                    // The form is probably disposed, don't worry about it
-                }
-            });
         }
 
         private void UpdateStatsAndList() {
             RefreshList();
             UpdateStats();
         }
-       
+
         private void UpdateStats() {
             if (IsDisposed) {
                 return;
@@ -158,26 +94,33 @@ namespace csm.WinForms.Controls {
             try {
                 Invoke(() => {
                     // Counts
-                    int loading = StateCount(SheetState.Loading);
-                    int drawing = StateCount(SheetState.Drawing);
-                    int completed = StateCount(SheetState.Completed);
-                    loadingCountValueLabel.Text = loading.ToString();
-                    drawQueueCountValueLabel.Text = DrawQueue.Count().ToString();
-                    drawingCountValueLabel.Text = drawing.ToString();
-                    completedCountValueLabel.Text = $"{completed}/{_sheets.Count}";
+                    loadingCountValueLabel.Text = _batch.LoadingCount.ToString();
+                    drawQueueCountValueLabel.Text = _batch.QueuedCount.ToString();
+                    drawingCountValueLabel.Text = _batch.DrawingCount.ToString();
+                    completedCountValueLabel.Text = $"{_batch.CompletedCount}/{_batch.Sheets.Count}";
 
                     // Progress Bars
-                    loadProgressBar.Value = _sheets.Any() ? 
-                        (int)Math.Round(loading / (float)maxConcurrentLoadSpinner.Value * 100) : 0;
-                    queueProgressBar.Value = _sheets.Any() ? 
-                        (int)Math.Round(DrawQueue.Count() / Math.Max(1, (float)_sheets.Count(s => s.State != SheetState.Completed)) * 100) : 0;
-                    drawingCountBar.Value = _sheets.Any() ? 
-                        Math.Min(100, (int)Math.Round(drawing / (float)maxConcurrentDrawSpinner.Value * 100)) : 0;
-                    completedProgressBar.Value = _sheets.Any() ?
-                        (int)Math.Round(completed / (float)_sheets.Count * 100) : 0;
+                    loadProgressBar.Value = _batch.LoadingPercent;
+                    queueProgressBar.Value = _batch.QueuedPercent;
+                    drawingCountBar.Value = _batch.DrawingPercent;
+                    completedProgressBar.Value = _batch.CompletedPercent;
                 });
             } catch (Exception) {
                 // The form is disposed, nothing here needs to happen anymore
+            }
+        }
+
+        private void SheetsDrawCompleted() {
+            try {
+                // Wait a half second just to make sure the stats are right
+                UpdateStatsAndList();
+                Invoke(() => {
+                    runButton.Text = "Run";
+                    chooseArchivesButton.Enabled = true;
+                    chooseDirectoryButton.Enabled = true;
+                });
+            } catch (Exception) {
+                // The form is probably disposed, don't worry about it
             }
         }
 
@@ -187,10 +130,6 @@ namespace csm.WinForms.Controls {
             }
             try {
                 Invoke(() => {
-                    if ((DateTime.Now - _lastUpdate < TimeSpan.FromSeconds(2))) {
-                        return;
-                    }
-                    _lastUpdate = DateTime.Now;
                     sheetGrid.Refresh();
                 });
             } catch (Exception) {
@@ -198,17 +137,8 @@ namespace csm.WinForms.Controls {
             }
         }
 
-        private async void BatchFormClosing(object sender, FormClosingEventArgs e) {
-            await DisposeSheets();
-        }
-
-        private async Task DisposeSheets(params SheetWrapper[] sheets) {
-            if (!sheets.Any()) {
-                sheets = _sheets.ToArray();
-            }
-            foreach (SheetWrapper sheet in sheets) {
-                await Task.Run(() => sheet.Dispose());
-            }
+        private void BatchFormClosing(object sender, FormClosingEventArgs e) {
+            _batch.Dispose();
         }
 
         #region Grid Event Handlers
@@ -221,35 +151,42 @@ namespace csm.WinForms.Controls {
 
         private void UserDeletedRow(object sender, DataGridViewRowEventArgs e) {
             UpdateStats();
-            runButton.Enabled = _sheets.Any();
+            runButton.Enabled = _batch.Any();
         }
 
         private async void UserDeletingRow(object sender, DataGridViewRowCancelEventArgs e) {
-            // Only allow deleting sheets in the PreLoad or Completed state
-            if (e.Row?.DataBoundItem is SheetWrapper sheet) {
-                if (CanRemove(sheet)) {
-                    await DisposeSheets(sheet);
-                } else {
-                    e.Cancel = true;
-                }
+            if (e.Row?.DataBoundItem is SheetWrapper sheet && SheetCollection.CanRemove(sheet)) {
+                await Task.Run(() => sheet.Dispose());
+            } else {
+                e.Cancel = true;
             }
         }
 
         private async void DeleteSelectedRows(object sender, EventArgs e) {
             var selectedSheets = sheetGrid.SelectedRows.Cast<DataGridViewRow>()
-                .Where(row => row.DataBoundItem is SheetWrapper sheet && CanRemove(sheet))
+                .Where(row => row.DataBoundItem is SheetWrapper sheet)
                 .Select(row => (SheetWrapper)row.DataBoundItem);
 
+            bool removed = false;
             foreach (var sheet in selectedSheets) {
-                await DisposeSheets(sheet);
-                _sheets.Remove(sheet);
+                removed = removed || await _batch.Remove(sheet);
             }
 
-            sheetBinder.ResetBindings(false);
-            UpdateStats();
-            runButton.Enabled = _sheets.Any();
+            if (removed) {
+                sheetBinder.ResetBindings(false);
+                UpdateStats();
+                runButton.Enabled = _batch.Any();
+            }
         }
 
         #endregion
+
+        private void MaxConcurrentLoadSpinnerValueChanged(object sender, EventArgs e) {
+            _batch.MaxConcurrentLoad = (int)maxConcurrentLoadSpinner.Value;
+        }
+
+        private void MaxConcurrentDrawSpinnerValueChanged(object sender, EventArgs e) {
+            _batch.MaxConcurrentDraw = (int)maxConcurrentDrawSpinner.Value;
+        }
     }
 }
