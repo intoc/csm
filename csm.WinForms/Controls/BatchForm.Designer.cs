@@ -25,10 +25,6 @@
         private void InitializeComponent() {
             this.components = new System.ComponentModel.Container();
             this.sheetGrid = new System.Windows.Forms.DataGridView();
-            this.sourceColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.stateColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.progressColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.drawProgress = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.sheetBinder = new System.Windows.Forms.BindingSource(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -54,6 +50,11 @@
             this.chooseArchivesButton = new System.Windows.Forms.Button();
             this.deleteButton = new System.Windows.Forms.Button();
             this.runButton = new System.Windows.Forms.Button();
+            this.sourceColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.outfileColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.stateColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.loadProgressColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.drawProgressColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.sheetGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.sheetBinder)).BeginInit();
             this.panel1.SuspendLayout();
@@ -74,9 +75,10 @@
             this.sheetGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.sheetGrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.sourceColumn,
+            this.outfileColumn,
             this.stateColumn,
-            this.progressColumn,
-            this.drawProgress});
+            this.loadProgressColumn,
+            this.drawProgressColumn});
             this.sheetGrid.Location = new System.Drawing.Point(0, 0);
             this.sheetGrid.Name = "sheetGrid";
             this.sheetGrid.ReadOnly = true;
@@ -87,42 +89,6 @@
             this.sheetGrid.RowPrePaint += new System.Windows.Forms.DataGridViewRowPrePaintEventHandler(this.RowPrePaint);
             this.sheetGrid.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.UserDeletedRow);
             this.sheetGrid.UserDeletingRow += new System.Windows.Forms.DataGridViewRowCancelEventHandler(this.UserDeletingRow);
-            // 
-            // sourceColumn
-            // 
-            this.sourceColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.sourceColumn.DataPropertyName = "Source";
-            this.sourceColumn.FillWeight = 258.7197F;
-            this.sourceColumn.HeaderText = "Source";
-            this.sourceColumn.Name = "sourceColumn";
-            this.sourceColumn.ReadOnly = true;
-            // 
-            // stateColumn
-            // 
-            this.stateColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.stateColumn.DataPropertyName = "State";
-            this.stateColumn.FillWeight = 34.425F;
-            this.stateColumn.HeaderText = "State";
-            this.stateColumn.Name = "stateColumn";
-            this.stateColumn.ReadOnly = true;
-            // 
-            // progressColumn
-            // 
-            this.progressColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.progressColumn.DataPropertyName = "LoadProgress";
-            this.progressColumn.FillWeight = 45.94163F;
-            this.progressColumn.HeaderText = "Load Progress";
-            this.progressColumn.Name = "progressColumn";
-            this.progressColumn.ReadOnly = true;
-            // 
-            // drawProgress
-            // 
-            this.drawProgress.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.drawProgress.DataPropertyName = "DrawProgress";
-            this.drawProgress.FillWeight = 60.9137F;
-            this.drawProgress.HeaderText = "Draw Progress";
-            this.drawProgress.Name = "drawProgress";
-            this.drawProgress.ReadOnly = true;
             // 
             // panel1
             // 
@@ -352,6 +318,49 @@
             this.runButton.UseVisualStyleBackColor = true;
             this.runButton.Click += new System.EventHandler(this.RunButtonClicked);
             // 
+            // sourceColumn
+            // 
+            this.sourceColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.sourceColumn.DataPropertyName = "Source";
+            this.sourceColumn.FillWeight = 258.7197F;
+            this.sourceColumn.HeaderText = "Source";
+            this.sourceColumn.Name = "sourceColumn";
+            this.sourceColumn.ReadOnly = true;
+            // 
+            // Outfile
+            // 
+            this.outfileColumn.HeaderText = "Outfile Path";
+            this.outfileColumn.Name = "outfileColumn";
+            this.outfileColumn.DataPropertyName = "Outfile";
+            this.outfileColumn.ReadOnly = true;
+            // 
+            // stateColumn
+            // 
+            this.stateColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.stateColumn.DataPropertyName = "State";
+            this.stateColumn.FillWeight = 34.425F;
+            this.stateColumn.HeaderText = "State";
+            this.stateColumn.Name = "stateColumn";
+            this.stateColumn.ReadOnly = true;
+            // 
+            // progressColumn
+            // 
+            this.loadProgressColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.loadProgressColumn.DataPropertyName = "LoadProgress";
+            this.loadProgressColumn.FillWeight = 45.94163F;
+            this.loadProgressColumn.HeaderText = "Load Progress";
+            this.loadProgressColumn.Name = "progressColumn";
+            this.loadProgressColumn.ReadOnly = true;
+            // 
+            // drawProgress
+            // 
+            this.drawProgressColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.drawProgressColumn.DataPropertyName = "DrawProgress";
+            this.drawProgressColumn.FillWeight = 60.9137F;
+            this.drawProgressColumn.HeaderText = "Draw Progress";
+            this.drawProgressColumn.Name = "drawProgress";
+            this.drawProgressColumn.ReadOnly = true;
+            // 
             // BatchForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -381,10 +390,6 @@
         #endregion
         private DataGridView sheetGrid;
         private BindingSource sheetBinder;
-        private DataGridViewTextBoxColumn sourceColumn;
-        private DataGridViewTextBoxColumn stateColumn;
-        private DataGridViewTextBoxColumn progressColumn;
-        private DataGridViewTextBoxColumn drawProgress;
         private Panel panel1;
         private FlowLayoutPanel flowLayoutPanel1;
         private Button chooseArchivesButton;
@@ -409,5 +414,10 @@
         private Label maxConcurrentLabel;
         private NumericUpDown maxConcurrentDrawSpinner;
         private Button chooseDirectoryButton;
+        private DataGridViewTextBoxColumn sourceColumn;
+        private DataGridViewTextBoxColumn outfileColumn;
+        private DataGridViewTextBoxColumn stateColumn;
+        private DataGridViewTextBoxColumn loadProgressColumn;
+        private DataGridViewTextBoxColumn drawProgressColumn;
     }
 }

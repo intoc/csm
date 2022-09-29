@@ -21,8 +21,8 @@ namespace csm.WinForms.Controls {
 
             InitializeComponent();
 
-            sheetGrid.Columns[2].DefaultCellStyle.Format = "#0%";
-            sheetGrid.Columns[3].DefaultCellStyle.Format = "#0%";
+            loadProgressColumn.DefaultCellStyle.Format = "#0%";
+            drawProgressColumn.DefaultCellStyle.Format = "#0%";
             sheetGrid.AutoGenerateColumns = false;
             sheetBinder.DataSource = new BindingList<SheetWrapper>(_batch.Sheets);
             sheetGrid.DataSource = sheetBinder;

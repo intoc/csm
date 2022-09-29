@@ -14,6 +14,8 @@ namespace csm.WinForms.Models {
 
     internal sealed class SheetWrapper : IDisposable {
         public string? Source => _sourcePath;
+
+        public string Outfile => _sheet.OutFilePath();
         public SheetState State {
 
             get {
