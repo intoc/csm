@@ -113,7 +113,7 @@ public sealed class ContactSheet : IDisposable {
     /// <summary>
     /// Fired when there is a change to the contents of the image list
     /// </summary>
-    public event Action<ContactSheet> ImageListChanged = delegate { };
+    public event Action<ContactSheet, bool> ImageListChanged = delegate { };
 
     /// <summary>
     /// Fired when the settings file changes and is loaded
@@ -524,8 +524,8 @@ public sealed class ContactSheet : IDisposable {
         if (p != null) {
             Log.Information("Reloading file list due to change in {0}", p.CmdParameter);
         }
-        await imageSet.LoadImageListAsync(filePattern.ParsedValue ?? defaultFilePattern, minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
-        ImageListChanged?.Invoke(this);
+        bool filesAddedOrRemoved = await imageSet.LoadImageListAsync(filePattern.ParsedValue ?? defaultFilePattern, minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
+        ImageListChanged?.Invoke(this, filesAddedOrRemoved);
     }
 
     /// <summary>
@@ -540,7 +540,7 @@ public sealed class ContactSheet : IDisposable {
             Log.Debug("Refreshing image list due to change in {0}", p.Desc);
         }
         imageSet.RefreshImageList(minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
-        ImageListChanged?.Invoke(this);
+        ImageListChanged?.Invoke(this, false);
     }
 
     /// <summary>
@@ -1066,7 +1066,7 @@ public sealed class ContactSheet : IDisposable {
         }
 
         // Update list watchers so they see the new sizes
-        ImageListChanged?.Invoke(this);
+        ImageListChanged?.Invoke(this, false);
 
         Log.Information("---------------------------------------------------------------------------");
         Log.Information("Completed! It took {0}", duration);

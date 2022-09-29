@@ -35,7 +35,8 @@ namespace csm.Business.Logic {
         /// <param name="minDim">The minimum dimension (height and width) of images to include</param>
         /// <param name="outFileName">Output file name to ignore</param>
         /// <param name="coverFileName">Cover file name to ignore</param>
-        public async Task LoadImageListAsync(string fileRegex, int minDim, string? outFileName, string? coverFileName) {
+        public async Task<bool> LoadImageListAsync(string fileRegex, int minDim, string? outFileName, string? coverFileName) {
+            var originalCount = Images.Count;
             await Task.Run(() => {
                 lock (Images) {
 
@@ -80,6 +81,7 @@ namespace csm.Business.Logic {
                 }
                 RefreshImageList(minDim, outFileName, coverFileName);
             });
+            return Images.Count != originalCount;
         }
 
         /// <summary>

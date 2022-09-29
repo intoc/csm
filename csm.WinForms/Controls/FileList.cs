@@ -45,7 +45,8 @@ public partial class FileList : Form {
         fileWatcher.Deleted += ReloadFiles;
         fileWatcher.Created += ReloadFiles;
         fileWatcher.Renamed += ReloadFiles;
-        UpdateList(cs);
+        fileWatcher.IncludeSubdirectories = true;
+        UpdateList(cs, false);
     }
 
     /// <summary>
@@ -54,8 +55,8 @@ public partial class FileList : Form {
     /// <param name="path"></param>
     void SourceChanged(ContactSheet sheet) {
         Log.Debug("FileList-SourceChanged");
-        if (!string.IsNullOrEmpty(sheet.Source) && Directory.Exists(sheet.Source)) {
-            fileWatcher.Path = sheet.Source;
+        if (!string.IsNullOrEmpty(sheet.Source) && Directory.Exists(sheet.SourceImageFileDirectoryPath)) {
+            fileWatcher.Path = sheet.SourceImageFileDirectoryPath;
             fileWatcher.EnableRaisingEvents = true;
         } else {
             fileWatcher.EnableRaisingEvents = false;
@@ -68,16 +69,16 @@ public partial class FileList : Form {
     /// Invoked by the back end whenever the image list is loaded
     /// </summary>
     /// <param name="args"></param>
-    void ImageListChanged(ContactSheet source) {
+    void ImageListChanged(ContactSheet source, bool filesAddedOrRemoved) {
         Log.Debug("FileList-ImageListChanged");
-        Invoke(() => UpdateList(source));
+        Invoke(() => UpdateList(source, filesAddedOrRemoved));
     }
 
     /// <summary>
     /// Invoked by cs_ImageListChanged
     /// </summary>
     /// <param name="args"></param>
-    void UpdateList(ContactSheet source) {
+    void UpdateList(ContactSheet source, bool reset) {
         Log.Debug("FileList-UpdateList");
         if (binder.DataSource == null && source.ImageList.Any()) {
             binder.DataSource = new BindingList<ImageData>(source.ImageList);
@@ -86,7 +87,11 @@ public partial class FileList : Form {
                 image.Include = PinnedImages[image.File];
                 image.InclusionPinned = true;
             }
-            files.Refresh();
+            if (reset) {
+                binder.ResetBindings(false);
+            } else {
+                files.Refresh();
+            }
         }
         UpdateStatus();
         files.Enabled = true;
