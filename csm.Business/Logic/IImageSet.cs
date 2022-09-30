@@ -4,7 +4,7 @@ namespace csm.Business.Logic;
 internal interface IImageSet : IDisposable {
 
     event Action<ProgressEventArgs> LoadProgressChanged;
-    event Action<IFileSource> SourceChanged;
+    event Action<IFileSource> LoadCompleted;
 
     bool Loaded { get; }
 

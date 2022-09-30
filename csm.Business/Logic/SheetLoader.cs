@@ -78,7 +78,7 @@ public sealed class SheetLoader : IDisposable {
                     LoadProgress = e.Percentage;
                     LoadProgressChanged(this, e);
                 };
-                _imageSet.SourceChanged += (e) => SourceChanged(this, e);
+                _imageSet.LoadCompleted += (e) => LoadCompleted(this, e);
             } else {
                 await _imageSet.SetSource(fileSource);
             }
@@ -115,12 +115,13 @@ public sealed class SheetLoader : IDisposable {
     /// <summary>
     /// Fired when the source directory is changed
     /// </summary>
-    public event Action<SheetLoader, IFileSource> SourceChanged = delegate { };
+    public event Action<SheetLoader, IFileSource> LoadCompleted = delegate { };
 
     /// <summary>
     /// Fired when the file loading progress changes
     /// </summary>
     public event Action<SheetLoader, ProgressEventArgs> LoadProgressChanged = delegate { };
+
 
     /// <summary>
     /// Fired when an exception occurred
@@ -302,7 +303,7 @@ public sealed class SheetLoader : IDisposable {
 
         // Setup all instances where a file list reload is required
         filePattern.ParamChanged += async (path) => await LoadFileList(path);
-        SourceChanged += async (sheet, source) => {
+        LoadCompleted += async (sheet, source) => {
             Log.Debug("Source set to {0}", sheet.Source);
             headerTitle.ParseVal(_imageSet?.Source.Name);
             Log.Debug("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);

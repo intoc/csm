@@ -64,11 +64,13 @@ static class Program {
                 gui.Activate();
             } else {
                 if (path != null) {
+                    // Parameters are as they were entered, just go
                     cs.SetSourcePath(path).Wait();
+                    cs.DrawAndSave().Wait();
+                    cs.Dispose();
+                } else {
+                    Log.Error("No source path specified. Provide a source path as a nameless argument. Exiting.");
                 }
-                // Parameters are as they were entered, just go
-                cs.DrawAndSave().Wait();
-                cs.Dispose();
             }
         } catch (Exception ex) {
             Log.Error(ex, "An unhandled Exception occurred.");

@@ -24,7 +24,7 @@ namespace csm.Business.Logic {
         }
 
         public event Action<ProgressEventArgs> LoadProgressChanged = delegate { };
-        public event Action<IFileSource> SourceChanged = delegate { };
+        public event Action<IFileSource> LoadCompleted = delegate { };
 
         public async Task SetSource(IFileSource source) {
             if (source == _imageSource || source.FullPath == _imageSource.FullPath) {
@@ -37,7 +37,7 @@ namespace csm.Business.Logic {
             _imageSource.LoadProgressChanged += (e) => {
                 LoadProgressChanged.Invoke(e);
             };
-            await _imageSource.Initialize(() => SourceChanged?.Invoke(_imageSource));
+            await _imageSource.Initialize(() => LoadCompleted?.Invoke(_imageSource));
         }
 
         /// <summary>

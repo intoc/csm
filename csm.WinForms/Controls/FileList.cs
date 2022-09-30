@@ -39,7 +39,7 @@ public partial class FileList : Form {
         cs.ImageListChanged += ImageListChanged;
         Rectangle bounds = Owner.Bounds;
         Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
-        cs.SourceChanged += SourceChanged;
+        cs.LoadCompleted += SourceChanged;
         fileWatcher.NotifyFilter = NotifyFilters.FileName;
         fileWatcher.Changed += ReloadFiles;
         fileWatcher.Deleted += ReloadFiles;
