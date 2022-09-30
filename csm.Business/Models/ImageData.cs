@@ -9,6 +9,8 @@ public class ImageData {
     public bool IsLandscape { get; private set; }
     public int X { get; set; }
     public int Y { get; set; }
+    public int Right => X + Width;
+    public int Bottom => Y + Height;
     public string File { get; set; }
     public Size OriginalSize { get; private set; }
     public bool Include { get; set; } = true;
