@@ -301,7 +301,7 @@ namespace csm.Business.Logic {
                 foreach (ImageData im in row) {
                     im.Y = curPoint.Y;
                 }
-                curPoint.Y += row.First().Height;
+                curPoint.Y = row.First().Bottom;
             }
 
             #endregion
