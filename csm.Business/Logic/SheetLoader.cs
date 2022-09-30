@@ -97,7 +97,7 @@ public sealed class SheetLoader : IDisposable {
     /// The path to the directory containing the source image files
     /// </summary>
     public string? SourceImageFileDirectoryPath => _fileSource?.ImageFileDirectoryPath;
-    
+
 
     #endregion
 
@@ -310,10 +310,10 @@ public sealed class SheetLoader : IDisposable {
         // Setup all instances where a file list reload is required
         filePattern.ParamChanged += async (path) => await LoadFileList(path);
         SourceChanged += async (sheet, source) => {
-            Log.Information("Source set to {0}", sheet.Source);
+            Log.Debug("Source set to {0}", sheet.Source);
             _imageSet = new ImageSet(source);
             headerTitle.ParseVal(_fileSource?.Name);
-            Log.Information("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
+            Log.Debug("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
             await LoadFileList();
             if (cover.BoolValue) {
                 await GuessCover(true);
@@ -543,6 +543,10 @@ public sealed class SheetLoader : IDisposable {
     /// </summary>
     /// <returns>Whether the process is set to exit on complete</returns>
     public async Task<bool> DrawAndSave() {
+
+        Log.Debug("SheetLoader.DrawAndSave starting");
+
+        // Check for blockers
         if (_isDisposed) {
             Log.Debug("DrawAndSave called on disposed sheet, cancelling...");
             return false;
@@ -570,20 +574,18 @@ public sealed class SheetLoader : IDisposable {
             }
         }
 
-        Log.Debug("DrawAndSave starting");
-
         SheetBuilder sheet = new(_imageSet) {
             BorderWidth = borders.IntValue,
             CoverFile = coverFile.File,
             DrawCover = cover.BoolValue,
             DrawHeader = header.BoolValue,
             DrawHeaderStats = headerStats.BoolValue,
+            DrawLabels = labels.BoolValue,
             FillGap = fillCoverGap.BoolValue,
             FontFamily = fontFamily,
             HeaderTitle = headerTitle.ParsedValue,
             HeaderTitleFontSize = headerFontSize.IntValue,
             IsHeaderTitleBold = headerBold.BoolValue,
-            DrawLabels = labels.BoolValue,
             LabelFontSize = labelFontSize.IntValue,
             MaxColumns = columns.IntValue,
             MaxCoverWidthPercent = maxCoverWidthPercent.IntValue,
@@ -596,15 +598,14 @@ public sealed class SheetLoader : IDisposable {
             DrawProgress = args.Percentage;
             DrawProgressChanged?.Invoke(this, args);
         };
+        sheet.ErrorOccurred += (message, isFatal) => ErrorOccurred(message, isFatal);
 
         Stopwatch sw = Stopwatch.StartNew();
 
+        Log.Information("Starting to draw {0}", Source);
         lock (_imageSet.Images) {
-
             sheet.BuildLayout();
         }
-
-        #region Drawing
 
         var sheetImage = await sheet.Draw();
 
@@ -621,54 +622,52 @@ public sealed class SheetLoader : IDisposable {
             Log.Information("Min/Max Images per Row: {0}/{1}", sheet.RowLayout.Max(r => r.Count), sheet.RowLayout.Min(r => r.Count));
             Log.Information("Output Quality: {0}%", quality.IntValue);
             Log.Information("---------------------------------------------------------------------------");
-        }
 
-        try {
-            lock (_imageSet.Images) {
-                int suffix = 0;
-                string outPath = OutFilePath(suffix);
-                Log.Information("Saving to {0}... ", outPath);
-                if (File.Exists(outPath)) {
-                    Log.Information("File exists. Attempting to delete... ");
-                    try {
-                        File.Delete(outPath);
-                        Log.Information("Deleted.");
-                    } catch (IOException ioEx) {
-                        Log.Information("can't delete: {0}", ioEx.Message);
-                        while (File.Exists(outPath)) {
-                            outPath = OutFilePath(++suffix);
-                            Log.Information("Trying a new output file name: {0}", outPath);
+            try {
+                lock (_imageSet.Images) {
+                    int suffix = 0;
+                    string outPath = OutFilePath(suffix);
+                    Log.Information("Saving to {0}... ", outPath);
+                    if (File.Exists(outPath)) {
+                        Log.Information("File exists. Attempting to delete... ");
+                        try {
+                            File.Delete(outPath);
+                            Log.Information("Deleted.");
+                        } catch (IOException ioEx) {
+                            Log.Information("can't delete: {0}", ioEx.Message);
+                            while (File.Exists(outPath)) {
+                                outPath = OutFilePath(++suffix);
+                                Log.Information("Trying a new output file name: {0}", outPath);
+                            }
                         }
                     }
-                }
 
-                string? dir = Path.GetDirectoryName(OutFilePath(suffix));
-                if (dir != null && !Directory.Exists(dir)) {
-                    Log.Information("Creating Directory: {0}", dir);
-                    Directory.CreateDirectory(dir);
-                }
-                sheetImage.SaveAsJpeg(OutFilePath(suffix), new JpegEncoder {
-                    Quality = quality.IntValue
-                });
-                Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
+                    string? dir = Path.GetDirectoryName(OutFilePath(suffix));
+                    if (dir != null && !Directory.Exists(dir)) {
+                        Log.Information("Creating Directory: {0}", dir);
+                        Directory.CreateDirectory(dir);
+                    }
+                    sheetImage.SaveAsJpeg(OutFilePath(suffix), new JpegEncoder {
+                        Quality = quality.IntValue
+                    });
+                    Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
 
+                }
+            } catch (System.Runtime.InteropServices.ExternalException e) {
+                ErrorOccurred?.Invoke("Can't Save Sheet", true, e);
+            } finally {
+                Log.Information("---------------------------------------------------------------------------");
+                // Clean up
+                sheetImage.Dispose();
             }
-        } catch (System.Runtime.InteropServices.ExternalException e) {
-            ErrorOccurred?.Invoke("Can't Save Sheet", true, e);
-        } finally {
-            Log.Information("---------------------------------------------------------------------------");
-            // Clean up
-            sheetImage.Dispose();
-        }
-        if (!noGui.BoolValue) {
-            Log.Information("Exit on Complete: {0}", exitOnComplete.BoolValue);
+            if (!noGui.BoolValue) {
+                Log.Debug("Exit on Complete: {0}", exitOnComplete.BoolValue);
+            }
         }
         return exitOnComplete.BoolValue;
-
-        #endregion
     }
 
- 
+
 
     /// <summary>
     /// Check if the supplied command-line arguments include a Help argument.
