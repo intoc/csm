@@ -8,19 +8,19 @@ namespace csm.Business.Logic {
 
         event FileLoadProgressEventHandler LoadProgressChanged;
 
-        string? FullPath { get; }
+        string FullPath { get; }
 
-        string? ParentDirectoryPath { get; }
+        string ParentDirectoryPath { get; }
 
         string ImageFileDirectoryPath { get;  }
 
-        string? Name { get; }
+        string Name { get; }
 
         string Size { get; }
 
         Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);
 
-        void Initialize(Action? callback = null);
+        Task Initialize(Action? callback = null);
 
         void LoadImageDimensions(ImageData image);
 

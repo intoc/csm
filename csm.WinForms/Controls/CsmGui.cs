@@ -142,7 +142,7 @@ internal partial class CsmGui : Form {
         return directory ?? string.Empty;
     }
 
-    public void ChooseArchive() {
+    public async Task ChooseArchive() {
         OpenFileDialog ofd = new() {
             Title = "Select the archive containing the images",
             InitialDirectory = GetDirectoryFromSource(),
@@ -153,24 +153,24 @@ internal partial class CsmGui : Form {
         };
         if (ofd.ShowDialog() == DialogResult.OK) {
             SetButtonsEnabled(false, false);
-            cs.Source = ofd.FileName;
+            await cs.SetSourcePath(ofd.FileName);
         }
     }
 
-    public void ChooseFolder() {
+    public async Task ChooseFolder() {
         FolderBrowserDialog folder = new() {
             Description = "Select the folder containing the images",
             SelectedPath = GetDirectoryFromSource()
         };
         if (folder.ShowDialog() == DialogResult.OK) {
             SetButtonsEnabled(false, false);
-            cs.Source = folder.SelectedPath;
+            await cs.SetSourcePath(folder.SelectedPath);
         }
     }
 
-    private void ChooseArchive(object sender, EventArgs e) => ChooseArchive();
+    private async void ChooseArchive(object sender, EventArgs e) => await ChooseArchive();
 
-    private void ChooseFolder(object sender, EventArgs e) => ChooseFolder();
+    private async void ChooseFolder(object sender, EventArgs e) => await ChooseFolder();
 
 
     private void LoadSettings(object sender, EventArgs e) {

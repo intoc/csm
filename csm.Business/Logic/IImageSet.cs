@@ -1,13 +1,18 @@
 ﻿using csm.Business.Models;
 
-namespace csm.Business.Logic; 
-internal interface IImageSet {
+namespace csm.Business.Logic;
+internal interface IImageSet : IDisposable {
+
+    event Action<ProgressEventArgs> LoadProgressChanged;
+    event Action<IFileSource> SourceChanged;
 
     bool Loaded { get; }
 
     IList<ImageData> Images { get; }
 
-    IFileSource Source { get; set; }
+    IFileSource Source { get; }
+
+    Task SetSource(IFileSource source);
 
     Task<bool> LoadImageListAsync(string fileRegex, int minDim, string? outFileName, string? coverFileName);
 

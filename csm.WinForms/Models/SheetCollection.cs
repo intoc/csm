@@ -78,7 +78,7 @@ namespace csm.WinForms.Models {
                 while (_run && !IsCompleted) {
                     if (CanStartLoad && LoadQueue.Any()) {
                         var preloading = LoadQueue.First();
-                        preloading.Load();
+                        await preloading.Load();
                     }
                     // Check for any sheets loaded and ready to draw
                     // As long as there is a space available
@@ -113,7 +113,7 @@ namespace csm.WinForms.Models {
             return false;
         }
 
-        private async Task DisposeSheets(params SheetWrapper[] sheets) {
+        private static async Task DisposeSheets(params SheetWrapper[] sheets) {
             foreach (SheetWrapper sheet in sheets) {
                 await Task.Run(() => sheet.Dispose());
             }

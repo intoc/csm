@@ -33,10 +33,10 @@ try {
     // Search all arguments for a path, use the first one that shows up
     var path = args.FirstOrDefault(a => !a.StartsWith("-"));
     if (path != null) {
-        cs.Source = path;
+        await cs.SetSourcePath(path);
     }
 
-    cs.DrawAndSave(true).Wait();
+    await cs.DrawAndSave();
 } catch (Exception ex) {
     Log.Error(ex, "An unhandled Exception occurred.");
 } finally {

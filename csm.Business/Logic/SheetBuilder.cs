@@ -201,7 +201,7 @@ namespace csm.Business.Logic {
                          minRowDims.Width < MinThumbDim ||
                          minRowDims.Height < MinThumbDim ||
                          RowLayout[rowIndex].Count > MaxColumns)) {
-                    ShiftImage(RowLayout, rowIndex, rowIndex + 1);
+                    ShiftImage(rowIndex, rowIndex + 1);
                     rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);
                     minRowDims = MinDims(RowLayout[rowIndex]);
                 }
@@ -214,7 +214,7 @@ namespace csm.Business.Logic {
                         // This row is too tall to fit in the gap.
                         // Move all images in the row to the next one
                         while (RowLayout[rowIndex].Count > 0) {
-                            ShiftImage(RowLayout, rowIndex, rowIndex + 1);
+                            ShiftImage(rowIndex, rowIndex + 1);
                         }
                         // Remove this empty row
                         Log.Debug("Removing row " + rowIndex);
@@ -275,7 +275,7 @@ namespace csm.Business.Logic {
                     // Don't adjust if the last row was in the cover gap
                     bool lastRowInGap = rowIndex > 0 && RowLayout[rowIndex - 1].Last().Y < (_coverImageData?.Height ?? 0);
                     while (!lastRowInGap && rowHeight > lastRowHeight * 2 && RowLayout[rowIndex - 1].Count > 1) {
-                        ShiftImage(RowLayout, rowIndex - 1, rowIndex);
+                        ShiftImage(rowIndex - 1, rowIndex);
                         lastRowHeight = ScaleRow(RowLayout[rowIndex - 1], lastRowWidth);
                         RowLayout[rowIndex][0].X = curPoint.X;
                         RowLayout[rowIndex][0].Y += lastRowHeight;
@@ -652,16 +652,16 @@ namespace csm.Business.Logic {
         /// <param name="list">The list of rows of images</param>
         /// <param name="fromRow">The index of the source row</param>
         /// <param name="toRow">The index of the target row</param>
-        private static void ShiftImage(List<List<ImageData>> list, int fromRow, int toRow) {
+        private void ShiftImage(int fromRow, int toRow) {
             if (fromRow < toRow) {
-                if (list.Count <= toRow) {
-                    list.Add(new List<ImageData>());
+                if (RowLayout.Count <= toRow) {
+                    RowLayout.Add(new List<ImageData>());
                 }
-                list[toRow].Insert(0, list[fromRow].Last());
-                list[fromRow].Remove(list[fromRow].Last());
+                RowLayout[toRow].Insert(0, RowLayout[fromRow].Last());
+                RowLayout[fromRow].Remove(RowLayout[fromRow].Last());
             } else {
-                list[toRow].Add(list[fromRow].First());
-                list[fromRow].Remove(list[fromRow].First());
+                RowLayout[toRow].Add(RowLayout[fromRow].First());
+                RowLayout[fromRow].Remove(RowLayout[fromRow].First());
             }
         }
 

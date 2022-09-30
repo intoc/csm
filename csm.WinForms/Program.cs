@@ -54,7 +54,7 @@ static class Program {
                 if (path != null) {
                     // Delay setting the source path until after the main GUI has loaded
                     // so the buttons will be set to enabled/disabled correctly
-                    gui.Load += (sender, args) => cs.Source = path;
+                    gui.Load += async (sender, args) => await cs.SetSourcePath(path);
                 }
 
                 // Show a GUI for parameter customization
@@ -64,7 +64,7 @@ static class Program {
                 gui.Activate();
             } else {
                 if (path != null) {
-                    cs.Source = path;
+                    cs.SetSourcePath(path).Wait();
                 }
                 // Parameters are as they were entered, just go
                 cs.DrawAndSave().Wait();

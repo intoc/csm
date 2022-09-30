@@ -46,11 +46,11 @@ public class ImageSetTests {
     }
 
     [Fact]
-    public void SourceChanged_OldSourceIsDisposed() {
+    public async Task SourceChanged_OldSourceIsDisposed() {
         Mock<IFileSource> source = new();
         ImageSet set = new(source.Object);
         Mock<IFileSource> source2 = new();
-        set.Source = source2.Object;
+        await set.SetSource(source2.Object);
 
         source.Verify(mock => mock.Dispose(), Times.Once());
         source2.Verify(mock => mock.Dispose(), Times.Never());

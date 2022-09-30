@@ -15,22 +15,25 @@ namespace csm.Business.Logic {
         protected readonly DirectoryInfo _csmTempFolder;
         protected bool _isDisposed = false;
 
+        private static IFileSource _empty = new DirectoryFileSource();
+        public static IFileSource Empty => _empty;
+
         /// <summary>
         /// The full path of the source
         /// </summary>
-        public abstract string? FullPath { get; }
+        public abstract string FullPath { get; }
 
         public abstract string ImageFileDirectoryPath { get; }
 
-        public string? ParentDirectoryPath {
+        public string ParentDirectoryPath {
             get {
                 if (FileExists(FullPath)) {
-                    return Path.GetDirectoryName(FullPath);
+                    return Path.GetDirectoryName(FullPath) ?? string.Empty;
                 }
                 if (FullPath != null) {
-                    return Directory.GetParent(FullPath)?.FullName;
+                    return Directory.GetParent(FullPath)?.FullName ?? string.Empty;
                 }
-                return null;
+                return string.Empty;
             }
             
         }
@@ -38,7 +41,7 @@ namespace csm.Business.Logic {
         /// <summary>
         /// The name of the source
         /// </summary>
-        public abstract string? Name { get; }
+        public abstract string Name { get; }
 
         /// <summary>
         /// The total size of all files. KiB or MiB.
@@ -62,7 +65,7 @@ namespace csm.Business.Logic {
             LoadProgressChanged.Invoke(e);
         }
 
-        public abstract void Initialize(Action? callback = null);
+        public abstract Task Initialize(Action? callback = null);
 
         public abstract Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null);
 

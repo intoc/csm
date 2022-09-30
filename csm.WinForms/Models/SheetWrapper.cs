@@ -63,8 +63,8 @@ namespace csm.WinForms.Models {
             };
         }
 
-        public void Load() {
-            _sheet.Source = _sourcePath;
+        public async Task Load() {
+            await _sheet.SetSourcePath(_sourcePath);
         }
 
         public async Task Draw() {

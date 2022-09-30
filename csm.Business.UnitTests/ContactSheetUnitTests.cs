@@ -16,14 +16,13 @@ namespace csm.Business.Logic.UnitTests {
         [InlineData(@"{title}\ContactSheet.jpg", "DocOc", @"H:\FakeDirectory", 42, @"H:\FakeDirectory\DocOc\ContactSheet_42.jpg")]
         [InlineData(@"H:\{title}_Sheets\{title}_sheet1.jpg", "DocOc", @"_", 0, @"H:\DocOc_Sheets\DocOc_sheet1.jpg")]
         [InlineData(@"H:\{title}_Sheets\{title}_sheet1.jpg", "DocOc", @"_", 42, @"H:\DocOc_Sheets\DocOc_sheet1_42.jpg")]
-        public void ContactSheet_OutFilePath_Theory(string outfilePathParamValue, string htitleParamValue, string sourceParent, int suffix, string expected) {
+        public async Task ContactSheet_OutFilePath_Theory(string outfilePathParamValue, string htitleParamValue, string sourceParent, int suffix, string expected) {
             Mock<IFileSourceBuilder> builder = new();
             Mock<IFileSource> source = new();
             builder.Setup(mock => mock.Build(It.IsAny<string>())).Returns(source.Object);
             source.Setup(mock => mock.ParentDirectoryPath).Returns(sourceParent);
-            SheetLoader cs = new(builder.Object) {
-                Source = "_"
-            };
+            SheetLoader cs = new(builder.Object);
+            await cs.SetSourcePath("_");
             cs.LoadParamsFromCommandLine(new string[] { 
                 $"-outfile={outfilePathParamValue}", 
                 $"-htitle={htitleParamValue}" 

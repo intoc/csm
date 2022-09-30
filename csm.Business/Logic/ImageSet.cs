@@ -4,18 +4,12 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace csm.Business.Logic {
-    public class ImageSet : IImageSet {
+    public sealed class ImageSet : IImageSet {
 
         public IList<ImageData> Images => _images;
 
         public IFileSource Source {
             get => _imageSource;
-            set {
-                if (_imageSource != value) {
-                    _imageSource.Dispose();
-                }
-                _imageSource = value;
-            }
         }
 
         public bool Loaded { get; private set; }
@@ -25,7 +19,25 @@ namespace csm.Business.Logic {
         private readonly IList<ImageData> _images = new List<ImageData>();
 
         public ImageSet(IFileSource fileSource) {
-            _imageSource = fileSource;
+            _imageSource = AbstractFileSource.Empty;
+            Task.Run(async () => await SetSource(fileSource));
+        }
+
+        public event Action<ProgressEventArgs> LoadProgressChanged = delegate { };
+        public event Action<IFileSource> SourceChanged = delegate { };
+
+        public async Task SetSource(IFileSource source) {
+            if (source == _imageSource || source.FullPath == _imageSource.FullPath) {
+                // It's the same source, we don't need the new one
+                source.Dispose();
+                return;
+            }
+            _imageSource.Dispose();
+            _imageSource = source;
+            _imageSource.LoadProgressChanged += (e) => {
+                LoadProgressChanged.Invoke(e);
+            };
+            await _imageSource.Initialize(() => SourceChanged?.Invoke(_imageSource));
         }
 
         /// <summary>
@@ -174,6 +186,10 @@ namespace csm.Business.Logic {
                 return false;
             }
             return image.FileName.Equals(coverFileName);
+        }
+
+        public void Dispose() {
+            _imageSource.Dispose();
         }
     }
 }

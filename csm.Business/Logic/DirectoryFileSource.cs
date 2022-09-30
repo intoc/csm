@@ -20,11 +20,11 @@ namespace csm.Business.Logic {
 
         public override string ImageFileDirectoryPath => _directory.FullName;
 
-        public override string? Name => _directory?.Name;
+        public override string Name => _directory.Name;
 
-        public override void Initialize(Action? callback = null) {
+        public override async Task Initialize(Action? callback = null) {
             callback?.Invoke();
-            UpdateProgress(new ProgressEventArgs(1, 1, TimeSpan.Zero, FullPath));
+            await Task.Run(() => UpdateProgress(new ProgressEventArgs(1, 1, TimeSpan.Zero, FullPath)));
         }
 
         public override async Task<IEnumerable<ImageFile>> GetFilesAsync(string? pattern = null) {

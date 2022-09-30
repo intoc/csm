@@ -65,38 +65,32 @@ public sealed class SheetLoader : IDisposable {
     /// </summary>
     public string? Source {
         get {
-            return _fileSource?.FullPath;
+            return _imageSet?.Source.FullPath;
         }
-        set {
-            var oldSource = _fileSource;
+    }
 
-            try {
-                _fileSource = _fileSourceBuilder.Build(value);
-                _fileSource.LoadProgressChanged += (e) => {
-                    Log.Debug("Archive extraction progress: {0:P1}", e.Percentage);
-                    LoadProgressChanged.Invoke(this, e);
+    public async Task SetSourcePath(string path) {
+       try {
+            var fileSource = _fileSourceBuilder.Build(path);
+            if (_imageSet == null) {
+                _imageSet = new ImageSet(fileSource);
+                _imageSet.LoadProgressChanged += (e) => {
+                    LoadProgress = e.Percentage;
+                    LoadProgressChanged(this, e);
                 };
-            } catch (Exception ex) {
-                ErrorOccurred?.Invoke("Can't load source path.", true, ex);
-            }
-
-            if (oldSource?.FullPath != _fileSource?.FullPath) {
-                oldSource?.Dispose();
-                _fileSource?.Initialize(() => SourceChanged?.Invoke(this, _fileSource));
+                _imageSet.SourceChanged += (e) => SourceChanged(this, e);
             } else {
-                // It's the same source, we don't need the new one
-                _fileSource?.Dispose();
-                if (oldSource != null) {
-                    _fileSource = oldSource;
-                }
+                await _imageSet.SetSource(fileSource);
             }
+        } catch (Exception ex) {
+            ErrorOccurred?.Invoke("Can't load source path.", true, ex);
         }
     }
 
     /// <summary>
     /// The path to the directory containing the source image files
     /// </summary>
-    public string? SourceImageFileDirectoryPath => _fileSource?.ImageFileDirectoryPath;
+    public string? SourceImageFileDirectoryPath => _imageSet?.Source.ImageFileDirectoryPath;
 
 
     #endregion
@@ -138,7 +132,6 @@ public sealed class SheetLoader : IDisposable {
 
     #region Private Fields
 
-    private IFileSource? _fileSource;
     private IImageSet? _imageSet;
     private readonly IFileSourceBuilder _fileSourceBuilder;
 
@@ -311,8 +304,7 @@ public sealed class SheetLoader : IDisposable {
         filePattern.ParamChanged += async (path) => await LoadFileList(path);
         SourceChanged += async (sheet, source) => {
             Log.Debug("Source set to {0}", sheet.Source);
-            _imageSet = new ImageSet(source);
-            headerTitle.ParseVal(_fileSource?.Name);
+            headerTitle.ParseVal(_imageSet?.Source.Name);
             Log.Debug("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
             await LoadFileList();
             if (cover.BoolValue) {
@@ -320,9 +312,6 @@ public sealed class SheetLoader : IDisposable {
             }
             // First loading has finished, stop blocking DrawAndSave
             _firstLoadIncomplete = false;
-        };
-        LoadProgressChanged += (source, e) => {
-            LoadProgress = e.Percentage;
         };
 
         // Setup all instances where a image list refresh is required without a full reload
@@ -351,7 +340,7 @@ public sealed class SheetLoader : IDisposable {
     }
 
     private async Task HandleShowCoverChanged() {
-        if (_fileSource == null || _isDisposed) {
+        if (_imageSet == null || _isDisposed) {
             return;
         }
         if (cover.BoolValue) {
@@ -367,7 +356,7 @@ public sealed class SheetLoader : IDisposable {
     }
 
     private async Task HandleCoverPatternChanged() {
-        if (!cover.BoolValue || _fileSource == null || _isDisposed) {
+        if (!cover.BoolValue || _imageSet == null || _isDisposed) {
             return;
         }
         if (await GuessCover(true)) {
@@ -396,12 +385,12 @@ public sealed class SheetLoader : IDisposable {
         if (Path.IsPathRooted(path)) {
             return path;
         }
-        if (_fileSource == null) {
+        if (_imageSet == null) {
             return string.Empty;
         }
 
         // Use the parent directory
-        var outputDirectory = _fileSource?.ParentDirectoryPath;
+        var outputDirectory = _imageSet?.Source.ParentDirectoryPath;
         if (outputDirectory == null) {
             return string.Empty;
         }
@@ -617,11 +606,9 @@ public sealed class SheetLoader : IDisposable {
         lock (_logLock) {
             Log.Information("---------------------------------------------------------------------------");
             Log.Information("Completed {0}! It took {1}", Source, sw.Elapsed);
-            Log.Information("---------------------------------------------------------------------------");
             Log.Information("Sheet Size: {0} images, {1} rows, {2}x{3}px", sheet.RowLayout.Sum(r => r.Count), sheet.RowLayout.Count, sheetImage.Width, sheetImage.Height);
             Log.Information("Min/Max Images per Row: {0}/{1}", sheet.RowLayout.Max(r => r.Count), sheet.RowLayout.Min(r => r.Count));
             Log.Information("Output Quality: {0}%", quality.IntValue);
-            Log.Information("---------------------------------------------------------------------------");
 
             try {
                 lock (_imageSet.Images) {
@@ -656,12 +643,12 @@ public sealed class SheetLoader : IDisposable {
             } catch (System.Runtime.InteropServices.ExternalException e) {
                 ErrorOccurred?.Invoke("Can't Save Sheet", true, e);
             } finally {
+                if (!noGui.BoolValue) {
+                    Log.Debug("Exit on Complete: {0}", exitOnComplete.BoolValue);
+                }
                 Log.Information("---------------------------------------------------------------------------");
                 // Clean up
                 sheetImage.Dispose();
-            }
-            if (!noGui.BoolValue) {
-                Log.Debug("Exit on Complete: {0}", exitOnComplete.BoolValue);
             }
         }
         return exitOnComplete.BoolValue;
@@ -703,11 +690,11 @@ public sealed class SheetLoader : IDisposable {
 
     public void Dispose() {
         _isDisposed = true;
-        if (_fileSource == null) {
+        if (_imageSet == null) {
             return;
         }
         Log.Debug("{0} Disposing", Source);
-        _fileSource?.Dispose();
+        _imageSet.Dispose();
         Log.Debug("{0} Disposed", Source);
     }
 }

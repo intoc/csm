@@ -13,7 +13,7 @@ namespace csm.Business.Logic {
         /// <summary>
         /// The full path of the archive file
         /// </summary>
-        public override string? FullPath => Path.GetFullPath(_archiveFilePath);
+        public override string FullPath => Path.GetFullPath(_archiveFilePath);
 
         /// <summary>
         /// The full path of the temp image file directory
@@ -24,7 +24,7 @@ namespace csm.Business.Logic {
         /// <summary>
         /// The name of the archive file without its extension
         /// </summary>
-        public override string? Name => Path.GetFileNameWithoutExtension(_archiveFilePath);
+        public override string Name => Path.GetFileNameWithoutExtension(_archiveFilePath);
 
         protected readonly DirectoryInfo _tempDir;
         protected readonly IDictionary<string, bool> entryCompletion;
@@ -55,11 +55,11 @@ namespace csm.Business.Logic {
         /// Extracts the archive file to a temp directory so that the files inside it can be accessed
         /// </summary>
         /// <param name="callback">Called when extraction complets</param>
-        public override void Initialize(Action? callback = null) {
+        public override async Task Initialize(Action? callback = null) {
             if (_isDisposed) {
                 return;
             }
-            Task.Run(() => {
+            await Task.Run(() => {
                 lock (_dirLock) {
                     ExtractWithStats();
                     callback?.Invoke();
@@ -109,9 +109,7 @@ namespace csm.Business.Logic {
             _isDisposed = true;
             lock (_dirLock) {
                 if (_tempDir.Exists) {
-                    lock (_dirLock) {
-                        _tempDir.Delete(true);
-                    }
+                    _tempDir.Delete(true);
                     Log.Debug("Deleted {0}", _tempDir.FullName);
                 }
                 base.Dispose(disposing);
