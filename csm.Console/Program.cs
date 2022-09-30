@@ -13,7 +13,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 try {
-    using ContactSheet cs = new(new FileSourceBuilder(), false);
+    using SheetLoader cs = new(new FileSourceBuilder(), false);
     cs.ErrorOccurred += (msg, isFatal, ex) => Log.Error(ex, "{0} {1}", msg, isFatal ? "[FATAL]" : string.Empty);
 
     // Check for a -help parameter and handle it

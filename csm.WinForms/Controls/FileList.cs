@@ -8,12 +8,12 @@ namespace csm.WinForms.Controls;
 
 public partial class FileList : Form {
 
-    readonly ContactSheet cs;
+    readonly SheetLoader cs;
 
     private readonly IDictionary<string, bool> PinnedImages = new Dictionary<string, bool>();
     private readonly FileSystemWatcher fileWatcher = new();
 
-    public FileList(ContactSheet sheet) {
+    public FileList(SheetLoader sheet) {
         InitializeComponent();
         cs = sheet;
         if (cs.Source != null) {
@@ -25,7 +25,7 @@ public partial class FileList : Form {
                 Text = Path.GetFileName(cs.Source);
             }
         }
-        if (cs.ImageList.Any()) {
+        if (cs.ImageList?.Any() ?? false) {
             binder.DataSource = new BindingList<ImageData>(cs.ImageList);
         }
     }
@@ -53,10 +53,10 @@ public partial class FileList : Form {
     /// Invoked by the back end whenever the source changes
     /// </summary>
     /// <param name="path"></param>
-    void SourceChanged(ContactSheet sheet) {
+    void SourceChanged(SheetLoader sheet, IFileSource source) {
         Log.Debug("FileList-SourceChanged");
-        if (!string.IsNullOrEmpty(sheet.Source) && Directory.Exists(sheet.SourceImageFileDirectoryPath)) {
-            fileWatcher.Path = sheet.SourceImageFileDirectoryPath;
+        if (Directory.Exists(source.ImageFileDirectoryPath)) {
+            fileWatcher.Path = source.ImageFileDirectoryPath;
             fileWatcher.EnableRaisingEvents = true;
         } else {
             fileWatcher.EnableRaisingEvents = false;
@@ -69,7 +69,7 @@ public partial class FileList : Form {
     /// Invoked by the back end whenever the image list is loaded
     /// </summary>
     /// <param name="args"></param>
-    void ImageListChanged(ContactSheet source, bool filesAddedOrRemoved) {
+    void ImageListChanged(SheetLoader source, bool filesAddedOrRemoved) {
         Log.Debug("FileList-ImageListChanged");
         Invoke(() => UpdateList(source, filesAddedOrRemoved));
     }
@@ -78,8 +78,11 @@ public partial class FileList : Form {
     /// Invoked by cs_ImageListChanged
     /// </summary>
     /// <param name="args"></param>
-    void UpdateList(ContactSheet source, bool reset) {
+    void UpdateList(SheetLoader source, bool reset) {
         Log.Debug("FileList-UpdateList");
+        if (source.ImageList == null) {
+            return;
+        }
         if (binder.DataSource == null && source.ImageList.Any()) {
             binder.DataSource = new BindingList<ImageData>(source.ImageList);
         } else {
@@ -98,6 +101,9 @@ public partial class FileList : Form {
     }
 
     private void UpdateStatus() {
+        if (cs.ImageList == null) {
+            return;
+        }
         int included = cs.ImageList.Count(i => !i.Include);
         int excluded = cs.ImageList.Count - included;
         lblImageCount.Text = $"{cs.ImageList.Count} Images ({included} Excluded, {excluded} Included)";

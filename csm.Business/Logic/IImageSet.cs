@@ -7,7 +7,7 @@ internal interface IImageSet {
 
     IList<ImageData> Images { get; }
 
-    IFileSource? Source { get; set; }
+    IFileSource Source { get; set; }
 
     Task<bool> LoadImageListAsync(string fileRegex, int minDim, string? outFileName, string? coverFileName);
 

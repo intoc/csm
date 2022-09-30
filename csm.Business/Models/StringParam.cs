@@ -7,13 +7,13 @@ namespace csm.Business.Models;
 public class StringParam : Param {
 
     [XmlIgnore]
-    public string? ParsedValue { get; set; }
+    public string ParsedValue { get; set; } = string.Empty;
 
     [XmlAttribute]
     public override string? Value {
         get => ParsedValue;
         set {
-            ParsedValue = value;
+            ParsedValue = value ?? string.Empty;
         }
     }
 
@@ -29,7 +29,7 @@ public class StringParam : Param {
 
     public override void ParseVal(string? value) {
         bool same = value == ParsedValue;
-        ParsedValue = value;
+        ParsedValue = value ?? string.Empty;
         Changed(!same);
     }
 

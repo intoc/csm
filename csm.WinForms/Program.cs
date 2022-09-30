@@ -24,7 +24,7 @@ static class Program {
         var appSettings = config.GetSection("AppSettings").Get<AppSettings>();
 
         try {
-            ContactSheet cs = new(new FileSourceBuilder());
+            SheetLoader cs = new(new FileSourceBuilder());
             cs.ErrorOccurred += (msg, isFatal, ex) => Log.Error(ex, msg);
 
             // Check for a -help parameter and handle it
@@ -67,7 +67,7 @@ static class Program {
                     cs.Source = path;
                 }
                 // Parameters are as they were entered, just go
-                cs.DrawAndSave(true).Wait();
+                cs.DrawAndSave().Wait();
                 cs.Dispose();
             }
         } catch (Exception ex) {

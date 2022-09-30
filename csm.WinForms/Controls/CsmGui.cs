@@ -6,7 +6,7 @@ using System.Diagnostics;
 namespace csm.WinForms.Controls;
 internal partial class CsmGui : Form {
 
-    private readonly ContactSheet cs;
+    private readonly SheetLoader cs;
 
     public delegate void UpdateProgressDelegate(ProgressEventArgs args);
     public delegate void UpdateSettingsStatusDelegate(SettingsChangedEventArgs args);
@@ -17,7 +17,7 @@ internal partial class CsmGui : Form {
     /// <summary>
     /// Main Constructor
     /// </summary>
-    internal CsmGui(ContactSheet sheet, AppSettings settings) {
+    internal CsmGui(SheetLoader sheet, AppSettings settings) {
         _appSettings = settings;
         InitializeComponent();
         
@@ -35,8 +35,8 @@ internal partial class CsmGui : Form {
         cs.DrawProgressChanged += DrawProgressChanged;
         cs.SettingsChanged += SettingsChanged;
         cs.ErrorOccurred += ExceptionOccurred;
-        cs.SourceChanged += (sheet) => Invoke(() => {
-            Invoke(() => directoryLabel.Text = directoryLabelText(sheet.Source));
+        cs.SourceChanged += (sheet, source) => Invoke(() => {
+            Invoke(() => directoryLabel.Text = directoryLabelText(source.FullPath));
             Invoke(() => SetButtonsEnabled(true, true));
         });
         cs.LoadProgressChanged += UpdateLoadProgress;
@@ -69,7 +69,7 @@ internal partial class CsmGui : Form {
             MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
-    void DrawProgressChanged(ContactSheet source, ProgressEventArgs args) {
+    void DrawProgressChanged(SheetLoader source, ProgressEventArgs args) {
         if (statusStrip.InvokeRequired) {
             object[] argsArr = { args };
             statusStrip.Invoke(new UpdateProgressDelegate(UpdateDrawProgress), argsArr);
@@ -86,7 +86,7 @@ internal partial class CsmGui : Form {
         }
     }
     
-    public void UpdateLoadProgress(ContactSheet source, ProgressEventArgs args) {
+    public void UpdateLoadProgress(SheetLoader source, ProgressEventArgs args) {
         statusStrip.Invoke(() => {
             drawProgressBar.Value = (int)(args.Percentage * 100);
             elapsedTime.Text = $"{args.Time.Minutes:00}:{args.Time.Seconds:00}";

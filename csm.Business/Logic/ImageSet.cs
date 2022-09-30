@@ -8,10 +8,10 @@ namespace csm.Business.Logic {
 
         public IList<ImageData> Images => _images;
 
-        public IFileSource? Source {
+        public IFileSource Source {
             get => _imageSource;
             set {
-                if (_imageSource != null) {
+                if (_imageSource != value) {
                     _imageSource.Dispose();
                 }
                 _imageSource = value;
@@ -20,11 +20,11 @@ namespace csm.Business.Logic {
 
         public bool Loaded { get; private set; }
 
-        private IFileSource? _imageSource;
+        private IFileSource _imageSource;
 
         private readonly IList<ImageData> _images = new List<ImageData>();
 
-        public ImageSet(IFileSource? fileSource = null) {
+        public ImageSet(IFileSource fileSource) {
             _imageSource = fileSource;
         }
 
@@ -37,47 +37,43 @@ namespace csm.Business.Logic {
         /// <param name="coverFileName">Cover file name to ignore</param>
         public async Task<bool> LoadImageListAsync(string fileRegex, int minDim, string? outFileName, string? coverFileName) {
             var originalCount = Images.Count;
-            await Task.Run(() => {
-                lock (Images) {
+            await Task.Run(async () => {
+                if (_imageSource == null) {
+                    return;
+                }
+                var sw = Stopwatch.StartNew();
 
-                    if (_imageSource == null) {
-                        return;
+                try {
+                    var getFilesTask = _imageSource.GetFilesAsync(fileRegex);
+                    getFilesTask.Wait();
+                    var allFiles = getFilesTask.Result;
+
+                    // Get a list of all the images in the source
+                    // Don't include hidden files
+                    IEnumerable<string> files =
+                        from file in allFiles
+                        where !file.Hidden
+                        select file.Path;
+                    // Load Image data into list
+                    _images.Clear();
+                    IList<ImageData> unsorted = new List<ImageData>();
+                    IList<Task> tasks = new List<Task>();
+                    foreach (string path in files) {
+                        ImageData image = new(path);
+                        tasks.Add(Task.Run(() => {
+                            _imageSource.LoadImageDimensions(image);
+                            unsorted.Add(image);
+                        }));
                     }
-                    var sw = Stopwatch.StartNew();
-
-                    try {
-                        var getFilesTask = _imageSource.GetFilesAsync(fileRegex);
-                        getFilesTask.Wait();
-                        var allFiles = getFilesTask.Result;
-
-                        // Get a list of all the images in the source
-                        // Don't include hidden files
-                        IEnumerable<string> files =
-                            from file in allFiles
-                            where !file.Hidden
-                            select file.Path;
-                        // Load Image data into list
-                        _images.Clear();
-                        IList<ImageData> unsorted = new List<ImageData>();
-                        IList<Task> tasks = new List<Task>();
-                        foreach (string path in files) {
-                            ImageData image = new(path);
-                            tasks.Add(Task.Run(() => {
-                                _imageSource.LoadImageDimensions(image);
-                                unsorted.Add(image);
-                            }));
-                        }
-                        Task.WaitAll(tasks.ToArray());
-                        foreach (var i in unsorted.OrderBy(i => i.File)) {
-                            _images.Add(i);
-                        }
-                        sw.Stop();
-                        Log.Debug("{0}.{1} took {2}", GetType().Name, "LoadImageListAsync", sw.Elapsed);
-                    } catch (RegexParseException ex) {
-                        Log.Error("Error occurred during file name pattern matching: {0}", ex.Message);
-                    } catch (Exception ex) {
-                        Log.Error(ex, "Error occurred while loading file list.");
+                    await Task.WhenAll(tasks);
+                    foreach (var i in unsorted.OrderBy(i => i.File)) {
+                        _images.Add(i);
                     }
+                    sw.Stop();
+                } catch (RegexParseException ex) {
+                    Log.Error("Error occurred during file name pattern matching: {0}", ex.Message);
+                } catch (Exception ex) {
+                    Log.Error(ex, "Error occurred while loading file list.");
                 }
                 RefreshImageList(minDim, outFileName, coverFileName);
             });

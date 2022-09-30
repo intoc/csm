@@ -45,7 +45,7 @@ namespace csm.WinForms.Models {
 
         #endregion
 
-        private readonly ContactSheet _parentSheet;
+        private readonly SheetLoader _parentSheet;
         private readonly IList<SheetWrapper> _sheets;
         private bool _run = false;
         private IEnumerable<SheetWrapper> LoadQueue => _sheets.Where(s => s.State == SheetState.PreLoad);
@@ -53,7 +53,7 @@ namespace csm.WinForms.Models {
         private bool CanStartLoad => !Paused && _sheets.Count(s => s.State == SheetState.Loading) < MaxConcurrentLoad;
         private bool CanStartDraw => !Paused && _sheets.Count(s => s.State == SheetState.Drawing) < MaxConcurrentDraw;
 
-        public SheetCollection(ContactSheet parentSheet) {
+        public SheetCollection(SheetLoader parentSheet) {
             _parentSheet = parentSheet;
             _sheets = new List<SheetWrapper>();
             Paused = true;
@@ -63,7 +63,7 @@ namespace csm.WinForms.Models {
             if (_sheets.Any(s => s.Source == path)) {
                 return;
             }
-            ContactSheet newSheet = new(new FileSourceBuilder(), false);
+            SheetLoader newSheet = new(new FileSourceBuilder(), false);
             var wrapper = new SheetWrapper(newSheet, path);
             newSheet.LoadParamsFromSheet(_parentSheet);
             _sheets.Add(wrapper);

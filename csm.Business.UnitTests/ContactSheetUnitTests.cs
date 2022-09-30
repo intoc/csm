@@ -21,7 +21,7 @@ namespace csm.Business.Logic.UnitTests {
             Mock<IFileSource> source = new();
             builder.Setup(mock => mock.Build(It.IsAny<string>())).Returns(source.Object);
             source.Setup(mock => mock.ParentDirectoryPath).Returns(sourceParent);
-            ContactSheet cs = new(builder.Object) {
+            SheetLoader cs = new(builder.Object) {
                 Source = "_"
             };
             cs.LoadParamsFromCommandLine(new string[] { 

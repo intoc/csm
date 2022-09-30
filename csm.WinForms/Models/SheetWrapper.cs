@@ -47,11 +47,11 @@ namespace csm.WinForms.Models {
 
         public double LoadProgress => _sheet.LoadProgress;
 
-        private readonly ContactSheet _sheet;
+        private readonly SheetLoader _sheet;
         private readonly string _sourcePath;
         private bool _drawingStarted = false;
 
-        public SheetWrapper(ContactSheet sheet, string sourcePath) {
+        public SheetWrapper(SheetLoader sheet, string sourcePath) {
             _sheet = sheet;
             _sourcePath = sourcePath;
             _sheet.ErrorOccurred += (msg, isFatal, ex) => {
@@ -69,7 +69,7 @@ namespace csm.WinForms.Models {
 
         public async Task Draw() {
             _drawingStarted = true;
-            await Task.Factory.StartNew(async () => await _sheet.DrawAndSave(true));
+            await Task.Factory.StartNew(async () => await _sheet.DrawAndSave());
         }
 
         public void Dispose() {

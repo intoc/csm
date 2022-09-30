@@ -12,7 +12,7 @@ namespace csm.WinForms.Controls {
 
         private readonly AppSettings _appSettings;
 
-        internal BatchForm(ContactSheet parentSheet, AppSettings settings) {
+        internal BatchForm(SheetLoader parentSheet, AppSettings settings) {
 
             _appSettings = settings;
             _batch = new SheetCollection(parentSheet);

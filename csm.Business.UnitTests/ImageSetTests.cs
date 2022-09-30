@@ -8,9 +8,7 @@ public class ImageSetTests {
     [Fact]
     public async Task LoadImageListAsync_DiscludesExpectedFiles() {
         Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
+        ImageSet set = new(source.Object);
         source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
             .ReturnsAsync(new List<ImageFile> {
                 new ImageFile("file.jpg"),
@@ -32,9 +30,7 @@ public class ImageSetTests {
     [Fact]
     public async Task LoadImageListAsync_GetsImageDimensionsFromSourceForAllNonHiddenImages() {
         Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
+        ImageSet set = new(source.Object);
         source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
             .ReturnsAsync(new List<ImageFile> {
                 new ImageFile("file.jpg"),
@@ -52,9 +48,7 @@ public class ImageSetTests {
     [Fact]
     public void SourceChanged_OldSourceIsDisposed() {
         Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
+        ImageSet set = new(source.Object);
         Mock<IFileSource> source2 = new();
         set.Source = source2.Object;
 
@@ -72,9 +66,7 @@ public class ImageSetTests {
         
         // Setup
         Mock<IFileSource> source = new();
-        ImageSet set = new() {
-            Source = source.Object
-        };
+        ImageSet set = new(source.Object);
         source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
             .ReturnsAsync(sourceFiles.Select(file =>new ImageFile(file)));
         FileParam fParam = new("-cfile", source.Object);

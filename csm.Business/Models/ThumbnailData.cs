@@ -17,4 +17,6 @@ internal class ThumbnailData {
     public int ImageTotal { get; set; }
     public string File => Image.File;
 
+    public DateTime StartTime { get; set; }
+
 }
