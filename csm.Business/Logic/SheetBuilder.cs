@@ -16,7 +16,7 @@ namespace csm.Business.Logic {
 
         public int SheetWidth { get; set; }
         public int SheetHeight { get; set; }
-        public int MaxColumns { get; set; }
+        public int MaxImagesPerRow { get; set; }
         public int MinThumbDim { get; set; }
         public bool DrawCover { get; set; }
         public int MaxCoverWidthPercent { get; set; }
@@ -100,7 +100,7 @@ namespace csm.Business.Logic {
                 Log.Debug("Analyzing cover...");
                 _coverImageData = new ImageData(CoverFile.Path);
                 ImageSet.Source.LoadImageDimensions(_coverImageData);
-                double maxCoverImageScaleForGap = Math.Round(((float)MaxCoverWidthPercent / 100) * MaxColumns) / MaxColumns;
+                double maxCoverImageScaleForGap = Math.Round((MaxCoverWidthPercent / 100f) * MaxImagesPerRow) / MaxImagesPerRow;
 
                 if (_coverImageData.Width >= (SheetWidth * maxCoverImageScaleForGap)) {
                     // We want a gap right? Make the cover smaller.
@@ -129,7 +129,6 @@ namespace csm.Business.Logic {
             // Begin image analysis
             Log.Debug("Pass 1: Analyzing {0} images", imageCount);
 
-
             var maxWidth = images.Max(i => i.Width);
 
             // First pass, add the same number of images to each row,
@@ -144,14 +143,14 @@ namespace csm.Business.Logic {
                     data.InitSize(new Size(maxWidth, maxWidth));
                 }
 
-                if (RowLayout[rowIndex].Count == MaxColumns || data == images.Last()) {
+                if (RowLayout[rowIndex].Count == MaxImagesPerRow || data == images.Last()) {
+
                     // Scale the row to fit the sheetwidth
                     rowHeight = ScaleRow(RowLayout[rowIndex], SheetWidth);
 
-                    // Record max row height
-                    if (RowLayout[rowIndex].Count == MaxColumns) {
-                        maxRowHeight = Math.Max(maxRowHeight, rowHeight);
-                    }
+                    // Record max row height (scaled)
+                    maxRowHeight = Math.Max(maxRowHeight, rowHeight);
+
                     ++rowIndex;
                     RowLayout.Add(new List<ImageData>());
                 }
@@ -186,8 +185,7 @@ namespace csm.Business.Logic {
 
                 // Set the first image's location
                 // Succeeding row images will follow horizontally
-                RowLayout[rowIndex].First().X = curPoint.X;
-                RowLayout[rowIndex].First().Y = curPoint.Y;
+                RowLayout[rowIndex].First().MoveTo(curPoint);
 
                 // Do the scaling/shifting to give the row a similar
                 // height to the rest, with each image's dimensions
@@ -198,7 +196,7 @@ namespace csm.Business.Logic {
                         (rowHeight < maxRowHeight * 0.85 || // TODO: Why 0.85?
                          minRowDims.Width < MinThumbDim ||
                          minRowDims.Height < MinThumbDim ||
-                         RowLayout[rowIndex].Count > MaxColumns)) {
+                         RowLayout[rowIndex].Count > MaxImagesPerRow)) {
                     ShiftImage(rowIndex, rowIndex + 1);
                     rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);
                     minRowDims = MinDims(RowLayout[rowIndex]);
@@ -415,20 +413,19 @@ namespace csm.Business.Logic {
                 var lastRowImage = row.Last();
 
                 // Calculate image with scale factor
-                double hScale = 1.0;
                 borderSum = BorderWidth * (row.Count + 1);
                 double reduceImageWidth = (double)borderSum / (SheetWidth - firstRowImage.X);
-                hScale = 1.0 - reduceImageWidth;
+                double hScale = 1.0 - reduceImageWidth;
                 int leftEdge = firstRowImage.X;
-                int lastImageRightEdge = firstRowImage.X;
+                int rightEdge = firstRowImage.X;
 
                 // Scale and shift images to create borders
                 foreach (ImageData image in row) {
                     image.Width = (int)Math.Round(image.Width * hScale);
                     image.Height = (int)Math.Round(image.Height * vScale);
-                    image.X = lastImageRightEdge + BorderWidth;
+                    image.X = rightEdge + BorderWidth;
                     image.Y = top + BorderWidth;
-                    lastImageRightEdge = image.Right;
+                    rightEdge = image.Right;
                 }
 
                 // Correct rounding error Horizontally
@@ -489,10 +486,15 @@ namespace csm.Business.Logic {
                 if (_coverImageData != null && !_isDisposed) {
                     Log.Debug("Drawing cover {0}. {1}", Path.GetFileName(_coverImageData.File), _coverImageData.Bounds);
                     if (PreviewOnly) {
-                        sheetContext.Fill(Brushes.Solid(Color.White), _coverImageData.Bounds);
-                        sheetContext.DrawText(
-                            "COVER", FontFamily.CreateFont(14, FontStyle.Bold), Color.Black,
-                            new PointF(_coverImageData.X + _coverImageData.Width / 2f, _coverImageData.Y + _coverImageData.Height / 2f));
+                        TextOptions options = new(FontFamily.CreateFont(24, FontStyle.Bold)) {
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center,
+                            TextAlignment = TextAlignment.Center,
+                            Origin = new PointF(_coverImageData.X + _coverImageData.Width / 2f, _coverImageData.Y + _coverImageData.Height / 2f)
+                        };
+                        sheetContext
+                            .Fill(Brushes.Solid(Color.White), _coverImageData.Bounds)
+                            .DrawText(options, "COVER", Color.Black);
                     } else {
                         using var coverImage = Image.Load(_coverImageData.File);
                         coverImage.Mutate(coverContext => {

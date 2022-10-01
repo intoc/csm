@@ -74,6 +74,11 @@ public class ImageData {
         Y += padding;
     }
 
+    public void MoveTo(Point p) {
+        X = p.X;
+        Y = p.Y;
+    }
+
     public override string ToString() {
         return FileName;
     }

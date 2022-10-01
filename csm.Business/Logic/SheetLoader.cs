@@ -70,7 +70,7 @@ public sealed class SheetLoader : IDisposable {
     }
 
     public async Task SetSourcePath(string path) {
-       try {
+        try {
             var fileSource = _fileSourceBuilder.Build(path);
             if (_imageSet == null) {
                 _imageSet = new ImageSet(fileSource);
@@ -577,8 +577,8 @@ public sealed class SheetLoader : IDisposable {
             HeaderTitleFontSize = headerFontSize.IntValue,
             IsHeaderTitleBold = headerBold.BoolValue,
             LabelFontSize = labelFontSize.IntValue,
-            MaxColumns = columns.IntValue,
             MaxCoverWidthPercent = maxCoverWidthPercent.IntValue,
+            MaxImagesPerRow = columns.IntValue,
             MinThumbDim = minDimThumbnail.IntValue,
             PreviewOnly = preview.BoolValue,
             SheetWidth = sheetWidth.IntValue
@@ -612,35 +612,32 @@ public sealed class SheetLoader : IDisposable {
             Log.Information("Output Quality: {0}%", quality.IntValue);
 
             try {
-                lock (_imageSet.Images) {
-                    int suffix = 0;
-                    string outPath = OutFilePath(suffix);
-                    Log.Information("Saving to {0}... ", outPath);
-                    if (File.Exists(outPath)) {
-                        Log.Information("File exists. Attempting to delete... ");
-                        try {
-                            File.Delete(outPath);
-                            Log.Information("Deleted.");
-                        } catch (IOException ioEx) {
-                            Log.Information("can't delete: {0}", ioEx.Message);
-                            while (File.Exists(outPath)) {
-                                outPath = OutFilePath(++suffix);
-                                Log.Information("Trying a new output file name: {0}", outPath);
-                            }
+                int suffix = 0;
+                string outPath = OutFilePath(suffix);
+                Log.Information("Saving to {0}... ", outPath);
+                if (File.Exists(outPath)) {
+                    Log.Information("File exists. Attempting to delete... ");
+                    try {
+                        File.Delete(outPath);
+                        Log.Information("Deleted.");
+                    } catch (IOException ioEx) {
+                        Log.Information("can't delete: {0}", ioEx.Message);
+                        while (File.Exists(outPath)) {
+                            outPath = OutFilePath(++suffix);
+                            Log.Information("Trying a new output file name: {0}", outPath);
                         }
                     }
-
-                    string? dir = Path.GetDirectoryName(OutFilePath(suffix));
-                    if (dir != null && !Directory.Exists(dir)) {
-                        Log.Information("Creating Directory: {0}", dir);
-                        Directory.CreateDirectory(dir);
-                    }
-                    sheetImage.SaveAsJpeg(OutFilePath(suffix), new JpegEncoder {
-                        Quality = quality.IntValue
-                    });
-                    Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
-
                 }
+
+                string? dir = Path.GetDirectoryName(OutFilePath(suffix));
+                if (dir != null && !Directory.Exists(dir)) {
+                    Log.Information("Creating Directory: {0}", dir);
+                    Directory.CreateDirectory(dir);
+                }
+                sheetImage.SaveAsJpeg(OutFilePath(suffix), new JpegEncoder {
+                    Quality = quality.IntValue
+                });
+                Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
             } catch (System.Runtime.InteropServices.ExternalException e) {
                 ErrorOccurred?.Invoke("Can't Save Sheet", true, e);
             } finally {
