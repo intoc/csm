@@ -41,7 +41,9 @@ namespace csm.WinForms.Models {
         public bool Queued => !_drawingStarted && LoadProgress == 1;
         public bool Failed { get; set; }
 
-        public string? ErrorText { get; set; }
+        public string? ErrorText => Errors.Any() ? string.Join(@"\n", Errors) : null;
+
+        public IList<string> Errors { get; } = new List<string>();
 
         public double DrawProgress => _sheet.DrawProgress;
 
@@ -59,7 +61,7 @@ namespace csm.WinForms.Models {
                 if (isFatal) {
                     Failed = true;
                 }
-                ErrorText = msg;
+                Errors.Add(msg);
             };
         }
 

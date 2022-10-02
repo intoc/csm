@@ -143,7 +143,7 @@ namespace csm.Business.Logic {
                     data.InitSize(new Size(maxWidth, maxWidth));
                 }
 
-                if (RowLayout[rowIndex].Count == MaxImagesPerRow || data == images.Last()) {
+                if (RowLayout[rowIndex].Count == MaxImagesPerRow) {
 
                     // Scale the row to fit the sheetwidth
                     rowHeight = ScaleRow(RowLayout[rowIndex], SheetWidth);
@@ -155,6 +155,10 @@ namespace csm.Business.Logic {
                     RowLayout.Add(new List<ImageData>());
                 }
             }
+            if (RowLayout.Count == 1) {
+                maxRowHeight = ScaleRow(RowLayout.Single(), SheetWidth);
+            }
+
             Log.Debug("Added {0} rows, maxRowHeight: {1}", RowLayout.Count, maxRowHeight);
 
             #endregion
@@ -193,9 +197,8 @@ namespace csm.Business.Logic {
                 rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);
                 minRowDims = MinDims(RowLayout[rowIndex]);
                 while (RowLayout[rowIndex].Count > 1 &&
-                        (rowHeight < maxRowHeight * 0.85 || // TODO: Why 0.85?
-                         minRowDims.Width < MinThumbDim ||
-                         minRowDims.Height < MinThumbDim ||
+                        (rowHeight < maxRowHeight ||
+                         minRowDims.Width < MinThumbDim || minRowDims.Height < MinThumbDim ||
                          RowLayout[rowIndex].Count > MaxImagesPerRow)) {
                     ShiftImage(rowIndex, rowIndex + 1);
                     rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);

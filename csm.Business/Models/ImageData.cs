@@ -63,8 +63,8 @@ public class ImageData {
     }
 
     public void Scale(double factor) {
-        Width = (int)(Width * factor);
-        Height = (int)(Height * factor);
+        Width = (int)Math.Round(Width * factor);
+        Height = (int)Math.Round(Height * factor);
     }
 
     public void Pad(int padding, bool padRight = false, bool padBottom = false) {

@@ -24,6 +24,8 @@ public sealed class SheetLoader : IDisposable {
     private const int DEFAULT_WIDTH = 900;
     private const int DEFAULT_COLUMNS = 6;
     private const int DEFAULT_QUALITY = 90;
+    private const string FONT_BOLD = "Fonts/OpenSans-Bold.ttf";
+    private const string FONT_REGULAR = "Fonts/OpenSans-Regular.ttf";
 
     #endregion
 
@@ -347,8 +349,8 @@ public sealed class SheetLoader : IDisposable {
         if (cover.BoolValue) {
             if (!await GuessCover(false)) {
                 // Image list will be refreshed via coverFile.ParamChanged
-                // If GuessCover changes its value.
-                // If not, it still needs to be refreshed do to the cover bool switch
+                // if GuessCover changes its value.
+                // If not, it still needs to be refreshed due to the cover bool switch
                 RefreshImageList(cover);
             }
         } else {
@@ -542,14 +544,14 @@ public sealed class SheetLoader : IDisposable {
             return false;
         }
         if (_imageSet == null) {
-            ErrorOccurred?.Invoke("No/invalid Source selected!", true);
+            ErrorOccurred?.Invoke("No/Invalid Source selected!", true);
             return false; // Don't exit the GUI
         }
 
         // Get fonts
         FontCollection fonts = new();
-        fonts.Add("Fonts/OpenSans-Bold.ttf");
-        FontFamily fontFamily = fonts.Add("Fonts/OpenSans-Regular.ttf");
+        fonts.Add(FONT_BOLD);
+        FontFamily fontFamily = fonts.Add(FONT_REGULAR);
 
         // Wait for the image list to be ready
         bool notLoaded = true;

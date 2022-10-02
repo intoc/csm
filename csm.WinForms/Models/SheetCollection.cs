@@ -90,7 +90,7 @@ namespace csm.WinForms.Models {
                             }
                         } catch (Exception ex) {
                             sheet.Failed = true;
-                            sheet.ErrorText = ex.Message;
+                            sheet.Errors.Add(ex.Message);
                             Log.Error(ex, "Failed to draw sheet for {0}", sheet.Source);
                         }
                     }
