@@ -1,5 +1,6 @@
 ﻿using csm.Business.Models;
 using Serilog;
+using Serilog.Context;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -73,9 +74,9 @@ public sealed class SheetLoader : IDisposable {
 
     public async Task SetSourcePath(string path) {
         try {
-            var fileSource = _fileSourceBuilder.Build(path);
+            var fileSource = _fileSourceBuilder.Build(path, _logger);
             if (_imageSet == null) {
-                _imageSet = new ImageSet(fileSource);
+                _imageSet = new ImageSet(fileSource, _logger);
                 _imageSet.LoadProgressChanged += (e) => {
                     LoadProgress = e.Percentage;
                     LoadProgressChanged(this, e);
@@ -163,6 +164,7 @@ public sealed class SheetLoader : IDisposable {
     private readonly StringParam headerTitle;
     private readonly StringParam outputFilePath;
 
+    private ILogger _logger;
     private readonly object _logLock = new();
     private bool _firstLoadIncomplete;
     private bool _isDisposed = false;
@@ -174,8 +176,9 @@ public sealed class SheetLoader : IDisposable {
     /// </summary>
     /// <param name="fileSourceBuilder">The file source builder</param>
     /// <param name="hasGui">If false, removes the -nogui parameter</param>
-    public SheetLoader(IFileSourceBuilder fileSourceBuilder, bool hasGui = true) {
+    public SheetLoader(IFileSourceBuilder fileSourceBuilder, ILogger logger, bool hasGui = true) {
 
+        _logger = logger;
         _fileSourceBuilder = fileSourceBuilder;
         _firstLoadIncomplete = true;
 
@@ -287,7 +290,7 @@ public sealed class SheetLoader : IDisposable {
         coverPattern = new StringParam("-cregx", @"cover\.", "Regex") {
             MaxChars = 20
         };
-        coverFile = new FileParam("-cfile", new DirectoryFileSource()) {
+        coverFile = new FileParam("-cfile", new DirectoryFileSource(_logger)) {
             LoadFromSettings = false
         };
         cover.AddSubParam(coverPattern);
@@ -306,9 +309,10 @@ public sealed class SheetLoader : IDisposable {
         // Setup all instances where a file list reload is required
         filePattern.ParamChanged += async (path) => await LoadFileList(path);
         LoadCompleted += async (sheet, source) => {
-            Log.Debug("Source set to {0}", sheet.Source);
             headerTitle.ParseVal(_imageSet?.Source.Name);
-            Log.Debug("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
+            _logger = _logger.ForContext("Context", headerTitle.Value);
+            _logger.Debug("Source set to {0}", sheet.Source);
+            _logger.Debug("Directory Name -> Header Title: {0}", headerTitle.ParsedValue);
             await LoadFileList();
             if (cover.BoolValue) {
                 await GuessCover(true);
@@ -417,7 +421,7 @@ public sealed class SheetLoader : IDisposable {
             var deserializedList = ser.Deserialize(xmlReader) as List<Param> ?? new List<Param>();
             xmlReader.Close();
 
-            Log.Information("Loading Params from {0}", SettingsFile);
+            _logger.Information("Loading Params from {0}", SettingsFile);
 
             foreach (var param in Params) {
                 param.Load(deserializedList);
@@ -479,10 +483,10 @@ public sealed class SheetLoader : IDisposable {
             new XmlSerializer(Params.GetType()).Serialize(w, Params);
             w.Close();
             SettingsFile = path;
-            Log.Information("Saved settings to {0}", SettingsFile);
+            _logger.Information("Saved settings to {0}", SettingsFile);
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(SettingsFile, "Saved", true));
         } catch (Exception e) {
-            Log.Information("Save failed! :: {0}", e);
+            _logger.Information("Save failed! :: {0}", e);
             SettingsChanged?.Invoke(new SettingsChangedEventArgs(path, "Save Failed", false));
         }
     }
@@ -509,7 +513,7 @@ public sealed class SheetLoader : IDisposable {
             return;
         }
         if (p != null) {
-            Log.Information("Reloading file list due to change in {0}", p.CmdParameter);
+            _logger.Information("Reloading file list due to change in {0}", p.CmdParameter);
         }
         bool filesAddedOrRemoved = await _imageSet.LoadImageListAsync(filePattern.ParsedValue ?? defaultFilePattern, minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
         ImageListChanged?.Invoke(this, filesAddedOrRemoved);
@@ -524,7 +528,7 @@ public sealed class SheetLoader : IDisposable {
             return;
         }
         if (p != null) {
-            Log.Debug("Refreshing image list due to change in {0}", p.Desc);
+            _logger.Debug("Refreshing image list due to change in {0}", p.Desc);
         }
         _imageSet.RefreshImageList(minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
         ImageListChanged?.Invoke(this, false);
@@ -536,11 +540,11 @@ public sealed class SheetLoader : IDisposable {
     /// <returns>Whether the process is set to exit on complete</returns>
     public async Task<bool> DrawAndSave() {
 
-        Log.Debug("SheetLoader.DrawAndSave starting");
+        _logger.Debug("SheetLoader.DrawAndSave starting");
 
         // Check for blockers
         if (_isDisposed) {
-            Log.Debug("DrawAndSave called on disposed sheet, cancelling...");
+            _logger.Debug("DrawAndSave called on disposed sheet, cancelling...");
             return false;
         }
         if (_imageSet == null) {
@@ -559,14 +563,14 @@ public sealed class SheetLoader : IDisposable {
             if (_imageSet.Loaded && !_firstLoadIncomplete) {
                 notLoaded = false;
             }
-            Log.Debug("DrawAndSave waiting for images to be ready...");
+            _logger.Debug("DrawAndSave waiting for images to be ready...");
             Thread.Sleep(250);
             if (_isDisposed) {
                 return false;
             }
         }
 
-        SheetBuilder sheet = new(_imageSet) {
+        SheetBuilder sheet = new(_imageSet, _logger) {
             BorderWidth = borders.IntValue,
             CoverFile = coverFile.File,
             DrawCover = cover.BoolValue,
@@ -594,7 +598,7 @@ public sealed class SheetLoader : IDisposable {
 
         Stopwatch sw = Stopwatch.StartNew();
 
-        Log.Information("Starting to draw {0}", Source);
+        _logger.Information("Starting to draw {0}", Source);
         lock (_imageSet.Images) {
             sheet.BuildLayout();
         }
@@ -607,46 +611,46 @@ public sealed class SheetLoader : IDisposable {
         ImageListChanged?.Invoke(this, false);
 
         lock (_logLock) {
-            Log.Information("---------------------------------------------------------------------------");
-            Log.Information("Completed {0}! It took {1}", Source, sw.Elapsed);
-            Log.Information("Sheet Size: {0} images, {1} rows, {2}x{3}px", sheet.RowLayout.Sum(r => r.Count), sheet.RowLayout.Count, sheetImage.Width, sheetImage.Height);
-            Log.Information("Min/Max Images per Row: {0}/{1}", sheet.RowLayout.Max(r => r.Count), sheet.RowLayout.Min(r => r.Count));
-            Log.Information("Output Quality: {0}%", quality.IntValue);
+            _logger.Information("---------------------------------------------------------------------------");
+            _logger.Information("Completed {0}! It took {1}", Source, sw.Elapsed);
+            _logger.Information("Sheet Size: {0} images, {1} rows, {2}x{3}px", sheet.RowLayout.Sum(r => r.Count), sheet.RowLayout.Count, sheetImage.Width, sheetImage.Height);
+            _logger.Information("Min/Max Images per Row: {0}/{1}", sheet.RowLayout.Max(r => r.Count), sheet.RowLayout.Min(r => r.Count));
+            _logger.Information("Output Quality: {0}%", quality.IntValue);
 
             try {
                 int suffix = 0;
                 string outPath = OutFilePath(suffix);
-                Log.Information("Saving to {0}... ", outPath);
+                _logger.Information("Saving to {0}... ", outPath);
                 if (File.Exists(outPath)) {
-                    Log.Information("File exists. Attempting to delete... ");
+                    _logger.Information("File exists. Attempting to delete... ");
                     try {
                         File.Delete(outPath);
-                        Log.Information("Deleted.");
+                        _logger.Information("Deleted.");
                     } catch (IOException ioEx) {
-                        Log.Information("can't delete: {0}", ioEx.Message);
+                        _logger.Information("can't delete: {0}", ioEx.Message);
                         while (File.Exists(outPath)) {
                             outPath = OutFilePath(++suffix);
-                            Log.Information("Trying a new output file name: {0}", outPath);
+                            _logger.Information("Trying a new output file name: {0}", outPath);
                         }
                     }
                 }
 
                 string? dir = Path.GetDirectoryName(OutFilePath(suffix));
                 if (dir != null && !Directory.Exists(dir)) {
-                    Log.Information("Creating Directory: {0}", dir);
+                    _logger.Information("Creating Directory: {0}", dir);
                     Directory.CreateDirectory(dir);
                 }
                 sheetImage.SaveAsJpeg(OutFilePath(suffix), new JpegEncoder {
                     Quality = quality.IntValue
                 });
-                Log.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
+                _logger.Information("Saved. Size: {0} KiB", new FileInfo(OutFilePath(suffix)).Length / 1024f);
             } catch (System.Runtime.InteropServices.ExternalException e) {
                 ErrorOccurred?.Invoke("Can't Save Sheet", true, e);
             } finally {
                 if (!noGui.BoolValue) {
-                    Log.Debug("Exit on Complete: {0}", exitOnComplete.BoolValue);
+                    _logger.Debug("Exit on Complete: {0}", exitOnComplete.BoolValue);
                 }
-                Log.Information("---------------------------------------------------------------------------");
+                _logger.Information("---------------------------------------------------------------------------");
                 // Clean up
                 sheetImage.Dispose();
             }
@@ -693,8 +697,8 @@ public sealed class SheetLoader : IDisposable {
         if (_imageSet == null) {
             return;
         }
-        Log.Debug("{0} Disposing", Source);
+        _logger.Debug("{0} Disposing", Source);
         _imageSet.Dispose();
-        Log.Debug("{0} Disposed", Source);
+        _logger.Debug("{0} Disposed", Source);
     }
 }

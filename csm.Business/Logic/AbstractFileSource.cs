@@ -14,8 +14,9 @@ namespace csm.Business.Logic {
         protected const string CSM_TEMP_FOLDER = "csm_e2bd2683";
         protected readonly DirectoryInfo _csmTempFolder;
         protected bool _isDisposed = false;
+        protected ILogger _logger;
 
-        private static IFileSource _empty = new DirectoryFileSource();
+        private static readonly IFileSource _empty = new DirectoryFileSource(Log.Logger);
         public static IFileSource Empty => _empty;
 
         /// <summary>
@@ -71,12 +72,13 @@ namespace csm.Business.Logic {
 
         protected long Bytes;
 
-        protected AbstractFileSource() {
+        protected AbstractFileSource(ILogger logger) {
             // Create the parent temp directory for csm if it doesn't exist
             _csmTempFolder = new DirectoryInfo(Path.Combine(Path.GetTempPath(), CSM_TEMP_FOLDER));
             if (!_csmTempFolder.Exists) {
                 _csmTempFolder.Create();
             }
+            _logger = logger;
         }
 
         /// <summary>

@@ -3,28 +3,48 @@ using csm.Business.Models;
 using csm.WinForms.Controls;
 using csm.WinForms.Models.Settings;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace csm;
 static class Program {
 
+    public static IConfigurationRoot ConfigurationRoot { get; }
+    public static AppSettings AppSettings { get; }
+    public static IServiceProvider Services { get; }
+
     private const string DEFAULT_SETTINGS_FILE = "default.xml";
+    private const string APPSETTINGS_JSON_FILE = "appsettings.json";
+
+    static Program() {
+        // Logging configuration
+        var configBuilder = new ConfigurationBuilder()
+            .AddJsonFile(APPSETTINGS_JSON_FILE, optional: true, reloadOnChange: true);
+
+        ConfigurationRoot = configBuilder.Build();
+        AppSettings = ConfigurationRoot.GetSection("AppSettings").Get<AppSettings>();
+
+        var builder = Host.CreateDefaultBuilder()
+            .ConfigureServices((context, services) => {
+                services
+                    .AddTransient(provider => new LoggerConfiguration()
+                        .ReadFrom.Configuration(ConfigurationRoot)
+                        .CreateLogger()
+                        .ForContext("Context", "NoContext"))
+                    .AddTransient<IFileSourceBuilder, FileSourceBuilder>()
+                    .AddTransient<SheetLoader>();
+            });
+        var host = builder.Build();
+        Services = host.Services;
+        Log.Logger = Services.GetRequiredService<ILogger>();
+    }
 
     [STAThread]
     static void Main(string[] args) {
 
-        // Logging configuration
-        var builder = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-        var config = builder.Build();
-        Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(config)
-            .CreateLogger();
-
-        var appSettings = config.GetSection("AppSettings").Get<AppSettings>();
-
         try {
-            SheetLoader cs = new(new FileSourceBuilder());
+            SheetLoader cs = Services.GetRequiredService<SheetLoader>();
             cs.ErrorOccurred += (msg, isFatal, ex) => Log.Error(ex, msg);
 
             // Check for a -help parameter and handle it
@@ -48,7 +68,7 @@ static class Program {
 
             // Prompt for arguments graphically
             if (cs.GuiEnabled) {
-                CsmGui gui = new(cs, appSettings);
+                CsmGui gui = new(cs, AppSettings);
                 gui.FormClosed += async (sender, args) => await Log.CloseAndFlushAsync();
                 
                 if (path != null) {

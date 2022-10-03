@@ -1,4 +1,5 @@
 ﻿using csm.Business.Logic;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 
@@ -63,7 +64,7 @@ namespace csm.WinForms.Models {
             if (_sheets.Any(s => s.Source == path)) {
                 return;
             }
-            SheetLoader newSheet = new(new FileSourceBuilder(), false);
+            SheetLoader newSheet = new(new FileSourceBuilder(), Program.Services.GetRequiredService<ILogger>(), false);
             var wrapper = new SheetWrapper(newSheet, path);
             newSheet.LoadParamsFromSheet(_parentSheet);
             _sheets.Add(wrapper);

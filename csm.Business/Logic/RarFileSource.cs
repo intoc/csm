@@ -1,10 +1,11 @@
 ﻿using Aspose.Zip.Rar;
 using csm.Business.Models;
+using Serilog;
 
 namespace csm.Business.Logic {
     public class RarFileSource : ArchiveFileSource {
 
-        public RarFileSource(string path) : base(path) { }
+        public RarFileSource(string path, ILogger logger) : base(path, logger) { }
 
         public static bool Supports(string extension) => extension == ".rar";
 

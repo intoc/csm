@@ -1,6 +1,8 @@
-﻿namespace csm.Business.Logic {
+﻿using Serilog;
+
+namespace csm.Business.Logic {
     public interface IFileSourceBuilder {
 
-        IFileSource Build(string? path);
+        IFileSource Build(string? path, ILogger logger);
     }
 }

@@ -1,5 +1,6 @@
 using csm.Business.Models;
 using Moq;
+using Serilog;
 
 namespace csm.Business.Logic.UnitTests;
 
@@ -8,7 +9,7 @@ public class ImageSetTests {
     [Fact]
     public async Task LoadImageListAsync_DiscludesExpectedFiles() {
         Mock<IFileSource> source = new();
-        ImageSet set = new(source.Object);
+        ImageSet set = new(source.Object, new Mock<ILogger>().Object);
         source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
             .ReturnsAsync(new List<ImageFile> {
                 new ImageFile("file.jpg"),
@@ -30,7 +31,7 @@ public class ImageSetTests {
     [Fact]
     public async Task LoadImageListAsync_GetsImageDimensionsFromSourceForAllNonHiddenImages() {
         Mock<IFileSource> source = new();
-        ImageSet set = new(source.Object);
+        ImageSet set = new(source.Object, new Mock<ILogger>().Object);
         source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
             .ReturnsAsync(new List<ImageFile> {
                 new ImageFile("file.jpg"),
@@ -48,7 +49,7 @@ public class ImageSetTests {
     [Fact]
     public async Task SourceChanged_OldSourceIsDisposed() {
         Mock<IFileSource> source = new();
-        ImageSet set = new(source.Object);
+        ImageSet set = new(source.Object, new Mock<ILogger>().Object);
         Mock<IFileSource> source2 = new();
         await set.SetSource(source2.Object);
 
@@ -66,7 +67,7 @@ public class ImageSetTests {
         
         // Setup
         Mock<IFileSource> source = new();
-        ImageSet set = new(source.Object);
+        ImageSet set = new(source.Object, new Mock<ILogger>().Object);
         source.Setup(mock => mock.GetFilesAsync(It.IsAny<string>()))
             .ReturnsAsync(sourceFiles.Select(file =>new ImageFile(file)));
         FileParam fParam = new("-cfile", source.Object);

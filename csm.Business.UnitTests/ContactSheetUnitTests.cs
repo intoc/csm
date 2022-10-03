@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Serilog;
 
 namespace csm.Business.Logic.UnitTests {
     public class ContactSheetUnitTests {
@@ -19,9 +20,9 @@ namespace csm.Business.Logic.UnitTests {
         public async Task ContactSheet_OutFilePath_Theory(string outfilePathParamValue, string htitleParamValue, string sourceParent, int suffix, string expected) {
             Mock<IFileSourceBuilder> builder = new();
             Mock<IFileSource> source = new();
-            builder.Setup(mock => mock.Build(It.IsAny<string>())).Returns(source.Object);
+            builder.Setup(mock => mock.Build(It.IsAny<string>(), It.IsAny<ILogger>())).Returns(source.Object);
             source.Setup(mock => mock.ParentDirectoryPath).Returns(sourceParent);
-            SheetLoader cs = new(builder.Object);
+            SheetLoader cs = new(builder.Object, new Mock<ILogger>().Object);
             await cs.SetSourcePath("_");
             cs.LoadParamsFromCommandLine(new string[] { 
                 $"-outfile={outfilePathParamValue}", 

@@ -38,7 +38,7 @@ namespace csm.Business.Logic {
         /// Creates an instance of this file source with the given archive file path
         /// </summary>
         /// <param name="path">The path to the archive file</param>
-        protected ArchiveFileSource(string path) : base() {
+        protected ArchiveFileSource(string path, ILogger logger) : base(logger.ForContext("Context", Path.GetFileNameWithoutExtension(path))) {
             // Create the temp folder for this archive extraction if it doesn't exist
             _tempDir = new DirectoryInfo(Path.Combine(_csmTempFolder.FullName, $"{Guid.NewGuid()}"));
             if (!_tempDir.Exists) {
@@ -89,11 +89,11 @@ namespace csm.Business.Logic {
         private void ExtractWithStats() {
             if (!_extracted) {
                 _timer.Start();
-                Log.Information("{0} - Extracting archive {1} to {2}", GetType().Name, Path.GetFileName(_archiveFilePath), _tempDir.FullName);
+                _logger.Information("{0} - Extracting archive {1} to {2}", GetType().Name, Path.GetFileName(_archiveFilePath), _tempDir.FullName);
                 UpdateProgress(new ProgressEventArgs(0, 100, _timer.Elapsed, FullPath));
                 Extract();
                 _timer.Stop();
-                Log.Information("{0} - Extraction complete. Time: {1}", GetType().Name, _timer.Elapsed);
+                _logger.Information("{0} - Extraction complete. Time: {1}", GetType().Name, _timer.Elapsed);
                 UpdateProgress(new ProgressEventArgs(100, 100, _timer.Elapsed, FullPath));
                 _extracted = true;
             }
@@ -110,7 +110,7 @@ namespace csm.Business.Logic {
             lock (_dirLock) {
                 if (_tempDir.Exists) {
                     _tempDir.Delete(true);
-                    Log.Debug("Deleted {0}", _tempDir.FullName);
+                    _logger.Debug("Deleted {0}", _tempDir.FullName);
                 }
                 base.Dispose(disposing);
             }

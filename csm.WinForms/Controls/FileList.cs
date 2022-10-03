@@ -1,5 +1,6 @@
 ﻿using csm.Business.Logic;
 using csm.Business.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -12,10 +13,12 @@ public partial class FileList : Form {
 
     private readonly IDictionary<string, bool> PinnedImages = new Dictionary<string, bool>();
     private readonly FileSystemWatcher fileWatcher = new();
+    private ILogger _logger;
 
     public FileList(SheetLoader sheet) {
         InitializeComponent();
         cs = sheet;
+        _logger = Program.Services.GetRequiredService<ILogger>().ForContext("Context", "FileList");
         if (cs.Source != null) {
             if (Directory.Exists(cs.Source)) {
                 fileWatcher.Path = cs.Source;

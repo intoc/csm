@@ -1,15 +1,16 @@
 ﻿using csm.Business.Models;
+using Serilog;
 
 namespace csm.Business.Logic {
     public class DirectoryFileSource : AbstractFileSource {
 
         private readonly DirectoryInfo _directory;
 
-        public DirectoryFileSource() : base() {
+        public DirectoryFileSource(ILogger logger) : base(logger.ForContext("Context", @".\")) {
             _directory = new DirectoryInfo(@".\");
         }
 
-        public DirectoryFileSource(string path) : base() {
+        public DirectoryFileSource(string path, ILogger logger) : base(logger.ForContext("Context", Path.GetDirectoryName(path))) {
             _directory = new DirectoryInfo(path);
             // Get total size of all files in the directory and subdirectories
             var files = GetFiles(_directory);

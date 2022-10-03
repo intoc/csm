@@ -15,11 +15,12 @@ namespace csm.Business.Logic {
         public bool Loaded { get; private set; }
 
         private IFileSource _imageSource;
-
+        private ILogger _logger;
         private readonly IList<ImageData> _images = new List<ImageData>();
 
-        public ImageSet(IFileSource fileSource) {
+        public ImageSet(IFileSource fileSource, ILogger logger) {
             _imageSource = AbstractFileSource.Empty;
+            _logger = logger.ForContext("Context", fileSource.Name);
             Task.Run(async () => await SetSource(fileSource));
         }
 
@@ -32,6 +33,7 @@ namespace csm.Business.Logic {
                 source.Dispose();
                 return;
             }
+            _logger = _logger.ForContext("Context", source.Name);
             _imageSource.Dispose();
             _imageSource = source;
             _imageSource.LoadProgressChanged += (e) => {
@@ -83,9 +85,9 @@ namespace csm.Business.Logic {
                     }
                     sw.Stop();
                 } catch (RegexParseException ex) {
-                    Log.Error("Error occurred during file name pattern matching: {0}", ex.Message);
+                    _logger.Error("Error occurred during file name pattern matching: {0}", ex.Message);
                 } catch (Exception ex) {
-                    Log.Error(ex, "Error occurred while loading file list.");
+                    _logger.Error(ex, "Error occurred while loading file list.");
                 }
                 RefreshImageList(minDim, outFileName, coverFileName);
             });
@@ -127,7 +129,7 @@ namespace csm.Business.Logic {
 
             string? origPath = param.Path;
             bool changed;
-            Log.Debug("Guessing {0} (force={1}) using match pattern: {2}", param.Desc, force, pattern);
+            _logger.Debug("Guessing {0} (force={1}) using match pattern: {2}", param.Desc, force, pattern);
             try {
                 var files = (await _imageSource.GetFilesAsync(pattern)).ToList();
                 ImageFile? match = files.FirstOrDefault();
@@ -135,19 +137,19 @@ namespace csm.Business.Logic {
                     changed = origPath != match.Path;
                     if (changed) {
                         param.Path = match.Path;
-                        Log.Information("Matched {0} on {1}", param.Desc, param.FileName);
+                        _logger.Information("Matched {0} on {1}", param.Desc, param.FileName);
                     } else {
-                        Log.Debug("Matched on the same cover file as before");
+                        _logger.Debug("Matched on the same cover file as before");
                     }
                     return changed;
                 }
-                Log.Information("No match found for {0}, using first file in the directory.", param.Desc);
+                _logger.Information("No match found for {0}, using first file in the directory.", param.Desc);
                 var allFiles = await _imageSource.GetFilesAsync(listPattern);
                 param.Path = allFiles.FirstOrDefault()?.Path;
             } catch (RegexParseException ex) {
-                Log.Error("Error occurred during cover file pattern matching: {0}", ex.Message);
+                _logger.Error("Error occurred during cover file pattern matching: {0}", ex.Message);
             } catch (Exception ex) {
-                Log.Error(ex, "Error occurred while guessing cover.");
+                _logger.Error(ex, "Error occurred while guessing cover.");
             }
 
             return origPath != param.Path;

@@ -51,16 +51,19 @@ namespace csm.Business.Logic {
         #region Fields
 
         private readonly object _graphicsLock = new();
+        private readonly ILogger _logger;
         private bool _isDisposed;
         private int _drawnCount;
         private int _progressStep;
         private Image? _headerImage;
         private ImageData? _coverImageData;
+        
 
         #endregion
 
-        public SheetBuilder(IImageSet images) {
+        public SheetBuilder(IImageSet images, ILogger logger) {
             this.ImageSet = images;
+            _logger = logger;
         }
 
         /// <summary>
@@ -97,29 +100,29 @@ namespace csm.Business.Logic {
             // Analyze the cover
             if (DrawCover && ImageSet.Source != null && CoverFile != null) {
                 // Begin image analysis
-                Log.Debug("Analyzing cover...");
+                _logger.Debug("Analyzing cover...");
                 _coverImageData = new ImageData(CoverFile.Path);
                 ImageSet.Source.LoadImageDimensions(_coverImageData);
                 double maxCoverImageScaleForGap = Math.Round((MaxCoverWidthPercent / 100f) * MaxImagesPerRow) / MaxImagesPerRow;
 
                 if (_coverImageData.Width >= (SheetWidth * maxCoverImageScaleForGap)) {
                     // We want a gap right? Make the cover smaller.
-                    Log.Information("Cover image is too large. Reducing size to {0:0.00}% of sheet width.", maxCoverImageScaleForGap * 100);
+                    _logger.Information("Cover image is too large. Reducing size to {0:0.00}% of sheet width.", maxCoverImageScaleForGap * 100);
                     double scaleFactor = (SheetWidth * maxCoverImageScaleForGap) / _coverImageData.Width;
                     _coverImageData.Scale(scaleFactor);
                 }
 
                 if (_coverImageData.Width < SheetWidth && !FillGap) {
                     // Center images smaller than the sheet width
-                    Log.Information("Centering cover image.");
+                    _logger.Information("Centering cover image.");
                     _coverImageData.X = (SheetWidth - _coverImageData.Width) / 2;
                 }
                 if (_coverImageData.Width > SheetWidth) {
                     // Scale the image down to sheet width
-                    Log.Information("Cover image is too large. Reducing size to fit sheet width.");
+                    _logger.Information("Cover image is too large. Reducing size to fit sheet width.");
                     _coverImageData.Scale((double)SheetWidth / _coverImageData.Width);
                 }
-                Log.Debug("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", FillGap, _coverImageData.Bounds);
+                _logger.Debug("Cover analysis complete. Fill gap: {0}, cover bounds: {1}", FillGap, _coverImageData.Bounds);
             }
 
             #endregion
@@ -127,7 +130,7 @@ namespace csm.Business.Logic {
             #region Analysis Pass 1 - Build initial rows scaled to width
 
             // Begin image analysis
-            Log.Debug("Pass 1: Analyzing {0} images", imageCount);
+            _logger.Debug("Pass 1: Analyzing {0} images", imageCount);
 
             var maxWidth = images.Max(i => i.Width);
 
@@ -159,13 +162,13 @@ namespace csm.Business.Logic {
                 maxRowHeight = ScaleRow(RowLayout.Single(), SheetWidth);
             }
 
-            Log.Debug("Added {0} rows, maxRowHeight: {1}", RowLayout.Count, maxRowHeight);
+            _logger.Debug("Added {0} rows, maxRowHeight: {1}", RowLayout.Count, maxRowHeight);
 
             #endregion
 
             #region Analysis Pass 2 - Scale and Shift
 
-            Log.Debug("Pass 2: Analyzing {0} Rows to normalize row height", RowLayout.Count);
+            _logger.Debug("Pass 2: Analyzing {0} Rows to normalize row height", RowLayout.Count);
 
             // Second pass tries to make all rows of similar height by
             // shifting images and rescaling rows.
@@ -216,7 +219,7 @@ namespace csm.Business.Logic {
                             ShiftImage(rowIndex, rowIndex + 1);
                         }
                         // Remove this empty row
-                        Log.Debug("Removing row " + rowIndex);
+                        _logger.Debug("Removing row " + rowIndex);
                         RowLayout.Remove(RowLayout[rowIndex]);
 
                         // Since we removed a row, the next row is now this one.
@@ -245,7 +248,7 @@ namespace csm.Business.Logic {
                             RowLayout[i].First().Y = curPoint.Y;
                             // Scale row width to the new gap
                             rowHeight = ScaleRow(RowLayout[i], SheetWidth - _coverImageData.Width);
-                            Log.Debug("In Gap, Final Scaling, Row {0}", i);
+                            _logger.Debug("In Gap, Final Scaling, Row {0}", i);
                             // Next row
                             curPoint.Y += rowHeight;
                         }
@@ -279,13 +282,13 @@ namespace csm.Business.Logic {
                         RowLayout[rowIndex].First().X = curPoint.X;
                         RowLayout[rowIndex].First().Y += lastRowHeight;
                         rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);
-                        Log.Debug("Row {0} Rescaled, {1} Images. Height: {2}px", rowIndex - 1, RowLayout[rowIndex - 1].Count, lastRowHeight);
+                        _logger.Debug("Row {0} Rescaled, {1} Images. Height: {2}px", rowIndex - 1, RowLayout[rowIndex - 1].Count, lastRowHeight);
                     }
                     done = true;
                 }
 
                 if (rowIndex >= 0) {
-                    Log.Debug("Row {0}: {1} Images. Height: {2}px. Y: {3}", rowIndex, RowLayout[rowIndex].Count, rowHeight, RowLayout[rowIndex].First().Y);
+                    _logger.Debug("Row {0}: {1} Images. Height: {2}px. Y: {3}", rowIndex, RowLayout[rowIndex].Count, rowHeight, RowLayout[rowIndex].First().Y);
                 }
             }
 
@@ -312,11 +315,11 @@ namespace csm.Business.Logic {
             // Draw the header image first since we can't extend the canvas during drawing
 
             if (DrawHeader) {
-                Log.Debug("Building the header {0} stats", DrawHeaderStats ? "with" : "without");
+                _logger.Debug("Building the header {0} stats", DrawHeaderStats ? "with" : "without");
                 _headerImage = new Image<Rgba32>(SheetWidth, SheetWidth);
                 int padding = 5;
                 int headerWidth = SheetWidth - (padding * 2);
-                Log.Debug("Title{1}: {0}", HeaderTitle, IsHeaderTitleBold ? " (bold)" : string.Empty);
+                _logger.Debug("Title{1}: {0}", HeaderTitle, IsHeaderTitleBold ? " (bold)" : string.Empty);
 
                 // Build title font
                 Font titleFont = FontFamily.CreateFont(HeaderTitleFontSize, IsHeaderTitleBold ? FontStyle.Bold : FontStyle.Regular);
@@ -357,7 +360,7 @@ namespace csm.Business.Logic {
                         var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
                         int statsHeight = (int)statsFontSize.Height + 10;
                         headerHeight = (int)Math.Ceiling(headerFontRect.Height + statsHeight + padding);
-                        Log.Debug("Header Stats: {0}", stats);
+                        _logger.Debug("Header Stats: {0}", stats);
 
                         // Pre-draw stats
                         int statsTop = (int)headerFontRect.Height + padding;
@@ -368,7 +371,7 @@ namespace csm.Business.Logic {
 
                     // Get rid of extra height
                     headerImageContext.Crop(SheetWidth, headerHeight);
-                    Log.Debug("Header Height: {0}px", headerHeight);
+                    _logger.Debug("Header Height: {0}px", headerHeight);
                 });
             }
 
@@ -399,7 +402,7 @@ namespace csm.Business.Logic {
 
             #region Calculate Borders
 
-            Log.Debug("Pass 3: Calculating borders (Width {0}px) and accounting for rounding error", BorderWidth);
+            _logger.Debug("Pass 3: Calculating borders (Width {0}px) and accounting for rounding error", BorderWidth);
 
             // Calculate row height scale factor
             ImageData last = RowLayout.Last().First();
@@ -481,13 +484,13 @@ namespace csm.Business.Logic {
                 // Draw the the header
                 if (_headerImage != null) {
                     // Draw the header on the sheet
-                    Log.Debug("Drawing header. {0}", _headerImage.Bounds());
+                    _logger.Debug("Drawing header. {0}", _headerImage.Bounds());
                     sheetContext.DrawImage(_headerImage, 1);
                 }
 
                 // Draw the cover
                 if (_coverImageData != null && !_isDisposed) {
-                    Log.Debug("Drawing cover {0}. {1}", Path.GetFileName(_coverImageData.File), _coverImageData.Bounds);
+                    _logger.Debug("Drawing cover {0}. {1}", Path.GetFileName(_coverImageData.File), _coverImageData.Bounds);
                     if (PreviewOnly) {
                         TextOptions options = new(FontFamily.CreateFont(24, FontStyle.Bold)) {
                             HorizontalAlignment = HorizontalAlignment.Center,
@@ -511,7 +514,7 @@ namespace csm.Business.Logic {
 
             // Draw the thumbnail images
             int index = 1;
-            Log.Debug("Drawing sheet. {0}", sheetImage.Bounds());
+            _logger.Debug("Drawing sheet. {0}", sheetImage.Bounds());
             _drawnCount = 0;
             _progressStep = 0;
             IList<Task> drawThumbTasks = new List<Task>();
@@ -557,7 +560,7 @@ namespace csm.Business.Logic {
             } else {
                 try {
                     if (_isDisposed) {
-                        Log.Debug("{0}({1}): Disposed, cancelling...", "DrawThumb", data.Image.FileName);
+                        _logger.Debug("{0}({1}): Disposed, cancelling...", "DrawThumb", data.Image.FileName);
                         return;
                     }
                     image = Image.Load(data.File);
@@ -575,7 +578,7 @@ namespace csm.Business.Logic {
                                 new Point(rect.Left, rect.Bottom))
                             .Draw(pen, rect);
                     });
-                    Log.Error("{0} Image load failed, drawing placeholder.", data.Image.FileName);
+                    _logger.Error("{0} Image load failed, drawing placeholder.", data.Image.FileName);
                 }
             }
 
@@ -645,7 +648,7 @@ namespace csm.Business.Logic {
                 DrawProgressChanged?.Invoke(new ProgressEventArgs(_drawnCount, data.ImageTotal, DateTime.Now - data.StartTime));
             }
             // Output status to console
-            Log.Debug("({0:P1}) {1} ({2}/{3}) {4}",
+            _logger.Debug("({0:P1}) {1} ({2}/{3}) {4}",
                 drawProgress, data.Image.FileName, data.Index, data.ImageTotal, data.Image.Bounds);
         }
 

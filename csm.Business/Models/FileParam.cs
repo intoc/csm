@@ -1,4 +1,5 @@
 ﻿using csm.Business.Logic;
+using Serilog;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -34,8 +35,8 @@ public class FileParam : Param {
 
     private readonly IFileSource _fileSource;
 
-    public FileParam() : base() { 
-        _fileSource = new DirectoryFileSource();
+    public FileParam() : base() {
+        _fileSource = AbstractFileSource.Empty;
     }
 
     public FileParam(string arg, IFileSource fileSource, string? val = null) : base(arg, "file") {
