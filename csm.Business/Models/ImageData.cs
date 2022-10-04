@@ -23,6 +23,7 @@ public class ImageData {
     public string Orientation => IsLandscape ? "Landscape" : "Portrait";
 
     public string FileName => Path.GetFileName(File);
+    public string FileNameNoExtension => Path.GetFileNameWithoutExtension(File);
 
     public string OriginalSizeString => $"{OriginalSize.Width}x{OriginalSize.Height}";
 

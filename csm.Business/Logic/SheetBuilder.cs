@@ -2,6 +2,7 @@
 using Serilog;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -490,7 +491,7 @@ namespace csm.Business.Logic {
 
                 // Draw the cover
                 if (_coverImageData != null && !_isDisposed) {
-                    _logger.Debug("Drawing cover {0}. {1}", Path.GetFileName(_coverImageData.File), _coverImageData.Bounds);
+                    _logger.Debug("Drawing cover {0}. {1}", _coverImageData.FileName, _coverImageData.Bounds);
                     if (PreviewOnly) {
                         TextOptions options = new(FontFamily.CreateFont(24, FontStyle.Bold)) {
                             HorizontalAlignment = HorizontalAlignment.Center,
@@ -597,7 +598,7 @@ namespace csm.Business.Logic {
                 if (data.LabelFont.Size > 0) {
 
                     // Set label to file name, no extension
-                    string label = Path.GetFileNameWithoutExtension(data.Image.FileName);
+                    string label = data.Image.FileNameNoExtension;
                     TextOptions labelOptions = new(data.LabelFont) {
                         HorizontalAlignment = HorizontalAlignment.Center,
                         TextAlignment = TextAlignment.Center,
@@ -617,6 +618,20 @@ namespace csm.Business.Logic {
                     using Image labelImage = new Image<Rgba32>((int)Math.Round(labelSize.Width), (int)Math.Round(labelSize.Height));
                     labelImage.Mutate(labelContext => {
                         labelContext.Fill(Color.Black).DrawText(labelOptions, label, Color.White);
+
+                        // Round the corners
+                        Size size = labelContext.GetCurrentSize();
+                        IPathCollection corners = BuildCorners(size.Width, data.LabelFont.Size * 2 / 3);
+                        labelContext.SetGraphicsOptions(new GraphicsOptions() {
+                            Antialias = true,
+                            AlphaCompositionMode = PixelAlphaCompositionMode.DestOut // enforces that any part of this shape that has color is punched out of the background
+                        });
+
+                        // mutating in here as we already have a cloned original
+                        // use any color (not Transparent), so the corners will be clipped
+                        foreach (var c in corners) {
+                            labelContext = labelContext.Fill(Color.Red, c);
+                        }
                     });
 
                     // Draw the label image on the thumbnail. Center at the bottom.
@@ -720,6 +735,14 @@ namespace csm.Business.Logic {
         private static Size MinDims(List<ImageData> row) {
             return row.Any() ? new Size(row.Min(img => img.Width), row.Min(img => img.Height)) : new Size();
         }
+        private static IPathCollection BuildCorners(int imageWidth, float cornerRadius) {
+            var rect = new RectangularPolygon(-0.5f, -0.5f, cornerRadius, cornerRadius);
+            IPath cornerTopLeft = rect.Clip(new EllipsePolygon(cornerRadius - 0.5f, cornerRadius - 0.5f, cornerRadius));
+            float rightPos = imageWidth - cornerTopLeft.Bounds.Width + 1;
+            IPath cornerTopRight = cornerTopLeft.RotateDegree(90).Translate(rightPos, 0);
+            return new PathCollection(cornerTopLeft, cornerTopRight);
+        }
+
 
         public void Dispose() {
             _isDisposed = true;
