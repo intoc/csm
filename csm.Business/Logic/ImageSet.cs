@@ -75,7 +75,11 @@ namespace csm.Business.Logic {
                     foreach (string path in files) {
                         ImageData image = new(path);
                         tasks.Add(Task.Run(() => {
-                            _imageSource.LoadImageDimensions(image);
+                            try {
+                                _imageSource.LoadImageDimensions(image);
+                            } catch (Exception ex) {
+                                _logger.Error("Failed to load dimensions for {0}: {1}", image.FileName, ex.Message);
+                            }
                             unsorted.Add(image);
                         }));
                     }
