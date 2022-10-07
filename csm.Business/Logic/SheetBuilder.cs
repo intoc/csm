@@ -305,11 +305,12 @@ namespace csm.Business.Logic {
 
                         curPoint.Y = 0;
                         for (int i = 0; i <= rowIndex; ++i) {
+                            var gapRow = RowLayout[i];
                             // Move images to the start of the new gap
-                            RowLayout[i].First().X = _coverImageData.Width;
-                            RowLayout[i].First().Y = curPoint.Y;
+                            gapRow.First().X = _coverImageData.Width;
+                            gapRow.First().Y = curPoint.Y;
                             // Scale row width to the new gap
-                            rowHeight = ScaleRow(RowLayout[i], SheetWidth - _coverImageData.Width);
+                            rowHeight = ScaleRow(gapRow, SheetWidth - _coverImageData.Width);
                             _logger.Debug("In Gap, Final Scaling, Row {0}", i);
                             // Next row
                             curPoint.Y += rowHeight;
