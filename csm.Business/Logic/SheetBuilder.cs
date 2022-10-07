@@ -33,7 +33,7 @@ namespace csm.Business.Logic {
         public bool PreviewOnly { get; set; }
         public FontFamily FontFamily { get; set; }
 
-        public float ShiftFactor { get; set; } = 0.85f; // TODO: AppSetting?
+        public float ShiftBufferFactor { get; set; } = 0.15f; // TODO: AppSetting?
 
         #endregion
 
@@ -197,7 +197,7 @@ namespace csm.Business.Logic {
                 rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);
                 minRowDims = MinDims(RowLayout[rowIndex]);
                 while (RowLayout[rowIndex].Count > 1 &&
-                        (rowHeight < maxRowHeight * ShiftFactor ||
+                        (rowHeight < maxRowHeight * (1 - ShiftBufferFactor) ||
                          minRowDims.Width < MinThumbDim || minRowDims.Height < MinThumbDim ||
                          RowLayout[rowIndex].Count > MaxImagesPerRow)) {
                     ShiftImage(rowIndex, rowIndex + 1);
@@ -289,7 +289,7 @@ namespace csm.Business.Logic {
             // Adjust the last rows to account for distortion
             if (!isSingleRow) {
                 _logger.Debug("Pass 4: Even out row heights in reverse to reduce massive images at the end");
-                ShiftFromLastRowRecursive(RowLayout.Last(), maxRowHeight, ShiftFactor);
+                ShiftFromLastRowRecursive(RowLayout.Last(), maxRowHeight * (1 + ShiftBufferFactor));
             } else {
                 _logger.Debug("Skipping Pass 4 (Single Row Sheet)");
             }
@@ -510,16 +510,15 @@ namespace csm.Business.Logic {
         /// has a satisfactory height
         /// </summary>
         /// <param name="row">The row to shift images into</param>
-        /// <param name="maxRowHeight">The initial maximum row height</param>
-        /// <param name="shiftFactor">The factor to use when calculating how close to <paramref name="maxRowHeight"/> the row height should be</param>
-        private void ShiftFromLastRowRecursive(List<ImageData> row, int maxRowHeight, float shiftFactor) {
+        /// <param name="minRowHeight">The shift-factored minimum row height</param>
+        private void ShiftFromLastRowRecursive(List<ImageData> row, float minRowHeight) {
             // Be sure to scale the row first, it might be the last one
             int height = ScaleRow(row, SheetWidth);
             if (!PrevRow(row).Any()) {
                 return;
             }
             bool scaled = false;
-            while (PrevRow(row).Any() && height > (maxRowHeight / shiftFactor) && row.Count < MaxImagesPerRow) {
+            while (PrevRow(row).Any() && height > minRowHeight && row.Count < MaxImagesPerRow) {
                 _logger.Debug("Row {0} Too Tall ({1} at {2}px) Shifting from row {3} ({4} left)", RowIndex(row), row.Count, height, RowIndex(PrevRow(row)), PrevRow(row).Count);
                 ShiftImage(PrevRow(row), row);
                 row.First().X = 0;
@@ -528,7 +527,7 @@ namespace csm.Business.Logic {
             }
             if (scaled) {
                 _logger.Debug("Row {0} Rescaled ({1} at {2}px)", RowIndex(row), row.Count, height);
-                ShiftFromLastRowRecursive(PrevRow(row), maxRowHeight, shiftFactor);
+                ShiftFromLastRowRecursive(PrevRow(row), minRowHeight);
             }
         }
 
