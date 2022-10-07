@@ -1,6 +1,5 @@
 ﻿using csm.Business.Models;
 using Serilog;
-using Serilog.Context;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;

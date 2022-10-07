@@ -11,29 +11,27 @@ namespace csm.Business.Logic {
 
     internal sealed class SheetBuilder : IDisposable {
 
-        private readonly IImageSet ImageSet;
-
         #region Public Sheet Parameters
 
-        public int SheetWidth { get; set; }
-        public int SheetHeight { get; set; }
+
+        public bool DrawCover { get; set; }
+        public bool DrawHeader { get; set; }
+        public bool DrawHeaderStats { get; set; }
+        public bool DrawLabels { get; set; }
+        public bool FillGap { get; set; }
+        public bool IsHeaderTitleBold { get; set; }
+        public bool PreviewOnly { get; set; }
+        public float ShiftBufferFactor { get; set; } = 0.15f; // TODO: AppSetting?
+        public FontFamily FontFamily { get; set; }
+        public int BorderWidth { get; set; }
+        public int HeaderTitleFontSize { get; set; }
+        public int LabelFontSize { get; set; }
+        public int MaxCoverWidthPercent { get; set; }
         public int MaxImagesPerRow { get; set; }
         public int MinThumbDim { get; set; }
-        public bool DrawCover { get; set; }
-        public int MaxCoverWidthPercent { get; set; }
-        public bool FillGap { get; set; }
-        public bool DrawHeader { get; set; }
+        public int SheetHeight { get; set; }
+        public int SheetWidth { get; set; }
         public string HeaderTitle { get; set; } = string.Empty;
-        public bool IsHeaderTitleBold { get; set; }
-        public int HeaderTitleFontSize { get; set; }
-        public bool DrawHeaderStats { get; set; }
-        public int BorderWidth { get; set; }
-        public bool DrawLabels { get; set; }
-        public int LabelFontSize { get; set; }
-        public bool PreviewOnly { get; set; }
-        public FontFamily FontFamily { get; set; }
-
-        public float ShiftBufferFactor { get; set; } = 0.15f; // TODO: AppSetting?
 
         #endregion
 
@@ -53,20 +51,27 @@ namespace csm.Business.Logic {
 
         #region Fields
 
-        private readonly object _graphicsLock = new();
-        private readonly ILogger _logger;
         private bool _isDisposed;
-        private int _drawnCount;
-        private int _progressStep;
         private Image? _headerImage;
         private ImageData? _coverImageData;
+        private int _drawnCount;
+        private int _progressStep;
+        private readonly IImageSet ImageSet;
+        private readonly ILogger _logger;
+        private readonly object _graphicsLock = new();
 
         #endregion
+
+        #region Constructors
 
         public SheetBuilder(IImageSet images, ILogger logger) {
             ImageSet = images;
             _logger = logger;
         }
+
+        #endregion
+
+        #region Analysis/Layout Methods
 
         /// <summary>
         /// Analyzes the image set based on all of the parameters and prepares
@@ -531,6 +536,86 @@ namespace csm.Business.Logic {
             }
         }
 
+        /// <summary>
+        /// Shift a thumbnail image from an end of one row to another on the contact sheet
+        /// </summary>
+        /// <param name="fromRow">The index of the source row</param>
+        /// <param name="toRow">The index of the target row</param>
+        private void ShiftImage(int fromRow, int toRow) {
+            if (RowLayout.Count <= toRow) {
+                RowLayout.Add(new List<ImageData>());
+            }
+            ShiftImage(RowLayout[fromRow], RowLayout[toRow]);
+        }
+
+        /// <summary>
+        /// Shift a thumbnail image from an end of one row to another on the contact sheet
+        /// </summary>
+        /// <param name="fromRow">The source row</param>
+        /// <param name="toRow">The target row</param>
+        private static void ShiftImage(List<ImageData> fromRow, List<ImageData> toRow) {
+            toRow.Insert(0, fromRow.Last());
+            fromRow.Remove(fromRow.Last());
+        }
+
+        /// <summary>
+        /// Scale the images in a row to fit a new row width
+        /// </summary>
+        /// <param name="list">The list of images in the row</param>
+        /// <param name="width">The new row width</param>
+        /// <returns>The newly scaled row height</returns>
+        private static int ScaleRow(List<ImageData> list, int width) {
+
+            int rowHeight = 0;
+            int rowWidth = 0;
+            int maxImageHeight = list.Max(img => img.OriginalSize.Height);
+            double factor;
+            var first = list.First();
+
+            // Scale all images to the maximum image height and determine the row width
+            foreach (ImageData data in list) {
+                factor = 1.0;
+                if (data.OriginalSize.Height < maxImageHeight) {
+                    factor = data.ScaleToHeight(maxImageHeight);
+                }
+                rowWidth += (int)Math.Round(data.OriginalSize.Width * factor);
+            }
+
+            // Calculate the row height based on the factor needed to scale the row to the sheet width
+            rowHeight = (int)Math.Round(maxImageHeight * (width / (double)rowWidth));
+
+            // Scale images to calculated height
+            list.ForEach(img => img.ScaleToHeight(rowHeight));
+
+            if (list.Count > 1) {
+                // Set image locations
+                var pairs = list.Skip(1).Select((image, index) => (image, prev: list.ElementAt(index)));
+                foreach (var (image, prev) in pairs) {
+                    image.X = prev.Right;
+                    image.Y = first.Y;
+                }
+            }
+
+            return rowHeight;
+        }
+
+        /// <summary>
+        /// Get the minimum dimensions of the images in a row
+        /// </summary>
+        /// <param name="row">The list of images in a row</param>
+        /// <returns>A <see cref="Size"/> containing the calculated minimum Height and Width</returns>
+        private static Size MinDims(List<ImageData> row) {
+            return row.Any() ? new Size(row.Min(img => img.Width), row.Min(img => img.Height)) : new Size();
+        }
+
+        #endregion
+
+        #region Drawing Methods
+
+        /// <summary>
+        /// Draws the contact sheet image based on previous analyses
+        /// </summary>
+        /// <returns>The contact sheet image</returns>
         public async Task<Image> Draw() {
             // Create the output image
             var sheetImage = new Image<Rgba32>(SheetWidth, SheetHeight);
@@ -726,78 +811,6 @@ namespace csm.Business.Logic {
         }
 
         /// <summary>
-        /// Shift a thumbnail image from an end of one row to another on the contact sheet
-        /// </summary>
-        /// <param name="fromRow">The index of the source row</param>
-        /// <param name="toRow">The index of the target row</param>
-        private void ShiftImage(int fromRow, int toRow) {
-            if (RowLayout.Count <= toRow) {
-                RowLayout.Add(new List<ImageData>());
-            }
-            ShiftImage(RowLayout[fromRow], RowLayout[toRow]);
-        }
-
-        /// <summary>
-        /// Shift a thumbnail image from an end of one row to another on the contact sheet
-        /// </summary>
-        /// <param name="fromRow">The source row</param>
-        /// <param name="toRow">The target row</param>
-        private static void ShiftImage(List<ImageData> fromRow, List<ImageData> toRow) {
-            toRow.Insert(0, fromRow.Last());
-            fromRow.Remove(fromRow.Last());
-        }
-
-        /// <summary>
-        /// Scale the images in a row to fit a new row width
-        /// </summary>
-        /// <param name="list">The list of images in the row</param>
-        /// <param name="width">The new row width</param>
-        /// <returns>The newly scaled row height</returns>
-        private static int ScaleRow(List<ImageData> list, int width) {
-
-            int rowHeight = 0;
-            int rowWidth = 0;
-            int maxImageHeight = list.Max(img => img.OriginalSize.Height);
-            double factor;
-            var first = list.First();
-
-            // Scale all images to the maximum image height and determine the row width
-            foreach (ImageData data in list) {
-                factor = 1.0;
-                if (data.OriginalSize.Height < maxImageHeight) {
-                    factor = data.ScaleToHeight(maxImageHeight);
-                }
-                rowWidth += (int)Math.Round(data.OriginalSize.Width * factor);
-            }
-
-            // Calculate the row height based on the factor needed to scale the row to the sheet width
-            rowHeight = (int)Math.Round(maxImageHeight * (width / (double)rowWidth));
-
-            // Scale images to calculated height
-            list.ForEach(img => img.ScaleToHeight(rowHeight));
-
-            if (list.Count > 1) {
-                // Set image locations
-                var pairs = list.Skip(1).Select((image, index) => (image, prev: list.ElementAt(index)));
-                foreach (var (image, prev) in pairs) {
-                    image.X = prev.Right;
-                    image.Y = first.Y;
-                }
-            }
-
-            return rowHeight;
-        }
-
-        /// <summary>
-        /// Get the minimum dimensions of the images in a row
-        /// </summary>
-        /// <param name="row">The list of images in a row</param>
-        /// <returns>A <see cref="Size"/> containing the calculated minimum Height and Width</returns>
-        private static Size MinDims(List<ImageData> row) {
-            return row.Any() ? new Size(row.Min(img => img.Width), row.Min(img => img.Height)) : new Size();
-        }
-
-        /// <summary>
         /// Build a path collection containing cutouts for rounded label corners
         /// </summary>
         /// <param name="imageWidth">The width of the image</param>
@@ -811,8 +824,14 @@ namespace csm.Business.Logic {
             return new PathCollection(cornerTopLeft, cornerTopRight);
         }
 
+        #endregion
+
+        #region IDisposable
+
         public void Dispose() {
             _isDisposed = true;
         }
+
+        #endregion
     }
 }
