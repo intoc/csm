@@ -13,7 +13,6 @@ namespace csm.Business.Logic {
 
         #region Public Sheet Parameters
 
-
         public bool DrawCover { get; set; }
         public bool DrawHeader { get; set; }
         public bool DrawHeaderStats { get; set; }
@@ -89,11 +88,10 @@ namespace csm.Business.Logic {
                 return false;
             }
 
-            int rowIndex = 0;
+            var maxImageWidth = images.Max(i => i.Width);
             int maxRowHeight = 0;
             int rowHeight;
             RowLayout.Clear();
-            RowLayout.Add(new List<ImageData>());
 
             #region Cover Setup
 
@@ -128,198 +126,7 @@ namespace csm.Business.Logic {
 
             #endregion
 
-            #region Analysis Pass 1 - Build initial rows scaled to width
-
-            // Begin image analysis
-            _logger.Debug("Pass 1: Analyzing {0} images", imageCount);
-
-            var maxWidth = images.Max(i => i.Width);
-
-            // First pass, add the same number of images to each row,
-            // scale to width, record maximum row height
-            foreach (ImageData data in images) {
-                // Add image to row
-                RowLayout[rowIndex].Add(data);
-
-                // Check for any images that didn't get dimensions during the initial loading process
-                // We'll show a placeholder later if it still fails to load
-                if (data.Width == 0) {
-                    data.InitSize(new Size(maxWidth, maxWidth));
-                }
-
-                if (RowLayout[rowIndex].Count == MaxImagesPerRow) {
-
-                    // Scale the row to fit the sheetwidth
-                    rowHeight = ScaleRow(RowLayout[rowIndex], SheetWidth);
-
-                    // Record max row height (scaled)
-                    maxRowHeight = Math.Max(maxRowHeight, rowHeight);
-
-                    ++rowIndex;
-                    RowLayout.Add(new List<ImageData>());
-                }
-            }
-            if (RowLayout.Count == 1) {
-                maxRowHeight = ScaleRow(RowLayout.Single(), SheetWidth);
-            }
-
-            _logger.Debug("Added {0} rows, maxRowHeight: {1}", RowLayout.Count, maxRowHeight);
-
-            #endregion
-
-            #region Analysis Pass 2 - Scale and Shift
-
-            _logger.Debug("Pass 2: Analyzing {0} Rows to normalize row height", RowLayout.Count);
-
-            // Second pass tries to make all rows of similar height by
-            // shifting images and rescaling rows.
-            Size minRowDims;
-            int rowWidth;
-            Point curPoint = new(0, 0);
-            bool inGap = FillGap;
-
-
-
-            for (rowIndex = 0; rowIndex < RowLayout.Count; ++rowIndex) {
-
-                if (inGap && _coverImageData != null) {
-                    // Row space = cover gap
-                    rowWidth = SheetWidth - _coverImageData.Width;
-                    curPoint.X = _coverImageData.Width;
-                } else {
-                    // Row space = sheet width
-                    rowWidth = SheetWidth;
-                    curPoint.X = 0;
-                }
-
-                // Set the first image's location
-                // Succeeding row images will follow horizontally
-                RowLayout[rowIndex].First().MoveTo(curPoint);
-
-                // Do the scaling/shifting to give the row a similar
-                // height to the rest, with each image's dimensions
-                // greater than or equal to the minimum dimension param.
-                rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);
-                minRowDims = MinDims(RowLayout[rowIndex]);
-                while (RowLayout[rowIndex].Count > 1 &&
-                        (rowHeight < maxRowHeight * (1 - ShiftBufferFactor) ||
-                         minRowDims.Width < MinThumbDim || minRowDims.Height < MinThumbDim ||
-                         RowLayout[rowIndex].Count > MaxImagesPerRow)) {
-                    ShiftImage(rowIndex, rowIndex + 1);
-                    rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);
-                    minRowDims = MinDims(RowLayout[rowIndex]);
-                }
-
-                // Process at the end of the cover gap
-                // Or at the end of the imagelist
-                int overFlow = curPoint.Y + rowHeight - _coverImageData?.Height ?? 0;
-                if (inGap && _coverImageData != null && (overFlow > 0 || rowIndex + 1 == RowLayout.Count || RowLayout[rowIndex + 1].Count == 0)) {
-                    if (overFlow > rowHeight / 3) {
-                        // This row is too tall to fit in the gap.
-                        // Move all images in the row to the next one
-                        while (RowLayout[rowIndex].Any()) {
-                            ShiftImage(rowIndex, rowIndex + 1);
-                        }
-                        // Remove this empty row
-                        _logger.Debug("Removing row " + rowIndex);
-                        RowLayout.Remove(RowLayout[rowIndex]);
-
-                        // Since we removed a row, the next row is now this one.
-                        // Make sure to process it
-                        --rowIndex;
-                    }
-
-                    // If we just moved the first row down, then there's no point in
-                    // resizing the gap images (there aren't any).
-                    if (rowIndex >= 0) {
-
-                        // Scale the cover and the gap images so they are the same height
-                        double h1 = _coverImageData.Height;
-                        double w1 = _coverImageData.Width;
-                        double h2 = RowLayout[rowIndex].First().Bottom;
-                        double w2 = rowWidth;
-
-                        double f1 = h2 * SheetWidth / (h1 * w2 + h2 * w1);
-
-                        _coverImageData.Scale(f1);
-
-                        curPoint.Y = 0;
-                        for (int i = 0; i <= rowIndex; ++i) {
-                            // Move images to the start of the new gap
-                            RowLayout[i].First().X = _coverImageData.Width;
-                            RowLayout[i].First().Y = curPoint.Y;
-                            // Scale row width to the new gap
-                            rowHeight = ScaleRow(RowLayout[i], SheetWidth - _coverImageData.Width);
-                            _logger.Debug("In Gap, Final Scaling, Row {0}", i);
-                            // Next row
-                            curPoint.Y += rowHeight;
-                        }
-                    } else {
-                        // No gap images. Display the cover normally.
-                        _coverImageData.X = SheetWidth / 2 - _coverImageData.Width / 2;
-                        FillGap = false;
-                        ErrorOccurred?.Invoke("Cover gap fill failed, image is too small. Centering.", false);
-                    }
-                    // We're done with the gap
-                    inGap = false;
-                } else {
-                    curPoint.Y += rowHeight;
-                }
-
-                if (rowIndex >= 0) {
-                    _logger.Debug("Row {0}: {1} Images. Height: {2}px. Y: {3}", rowIndex, RowLayout[rowIndex].Count, rowHeight, RowLayout[rowIndex].First().Y);
-                }
-            }
-
-            #endregion
-
-            #region Analysis Pass 3 - Remove empty rows
-
-            // Remove empty rows
-            _logger.Debug("Pass 3: Removing empty rows");
-            for (int i = 0; i < RowLayout.Count; ++i) {
-                if (!RowLayout[i].Any()) {
-                    _logger.Debug("Removing row {0}", i);
-                    RowLayout.RemoveAt(i);
-                }
-            }
-
-            #endregion
-
-            #region Analysis Pass 4 - Even out rows in reverse
-
-            // Determine if this is a single row sheet (outside of the cover gap)
-            bool isSingleRow = RowLayout.Count(r => !RowInGap(r)) == 1;
-
-            // Adjust the last rows to account for distortion
-            if (!isSingleRow) {
-                _logger.Debug("Pass 4: Even out row heights in reverse to reduce massive images at the end");
-                ShiftFromLastRowRecursive(RowLayout.Last(), maxRowHeight * (1 + ShiftBufferFactor));
-            } else {
-                _logger.Debug("Skipping Pass 4 (Single Row Sheet)");
-            }
-
-            #endregion
-
-            #region Pass 5 - Remove row gaps and overlaps
-
-            // Make sure rows don't overlap or have gaps between them
-            _logger.Debug("Pass 5: Removing row gaps and overlaps");
-            curPoint.Y = RowLayout.First().First().Y;
-            foreach (List<ImageData> row in RowLayout) {
-                int gap = row.First().Y - curPoint.Y;
-                if (gap != 0) {
-                    _logger.Debug("Removing {0} at row {1}: {2}px", gap > 0 ? "gap" : "overlap", RowIndex(row), gap);
-                    foreach (ImageData im in row) {
-                        im.Y = curPoint.Y;
-                    }
-                }
-                curPoint.Y = row.First().Bottom;
-            }
-
-            #endregion
-
-            #region Build Header Image
+            #region Header Setup
 
             // Draw the header image first since we can't extend the canvas during drawing
 
@@ -356,10 +163,8 @@ namespace csm.Business.Logic {
                         };
 
                         // Determine largest image
-                        var maxSize = RowLayout
-                            .Where(x => x.Count > 0)
-                            .MaxBy(row => row.Max(img => img.OriginalSize.Height))?
-                            .MaxBy(img => img.OriginalSize.Height)?.OriginalSize ?? default;
+                        var maxSize = images
+                            .MaxBy(img => img.OriginalSize.Height + img.OriginalSize.Width)?.OriginalSize ?? default;
 
                         // Determine how much space the stats will take up in the header
                         string stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px.";
@@ -386,32 +191,221 @@ namespace csm.Business.Logic {
 
             #endregion
 
-            #region Adjust Y values
+            #region Pass 1 - Build initial rows scaled to width
 
-            // Determine where we should start drawing images vertically
-            int newTop = _headerImage?.Height ?? 0;
-            if (newTop > 0) {
-                newTop -= BorderWidth;
+            // Begin image analysis
+            _logger.Debug("Pass 1: Analyzing {0} images", imageCount);
 
-                // Adjust cover Y position
-                if (_coverImageData != null) {
-                    _coverImageData.Y = newTop;
+            // First pass, add the same number of images to each row,
+            // scale to width, record maximum row height
+            var newRow = new List<ImageData>();
+            foreach (ImageData image in images) {
+                // Add image to row
+                newRow.Add(image);
+
+                // Check for any images that didn't get dimensions during the initial loading process
+                // We'll show a placeholder later if it still fails to load
+                if (image.Width == 0) {
+                    image.InitSize(new Size(maxImageWidth, maxImageWidth));
+                }
+                if (newRow.Count == MaxImagesPerRow) {
+                    ScaleRow(newRow, SheetWidth);
+                    RowLayout.Add(newRow);
                 }
             }
+            // The last row wasn't added if it didn't have enough images
+            if (!RowLayout.Contains(newRow)) {
+                ScaleRow(newRow, SheetWidth);
+                RowLayout.Add(newRow);
+            }
 
-            // Adjust image Y positions
-            foreach (var image in images) {
-                image.Y += newTop;
-                if (!FillGap && _coverImageData != null) {
-                    image.Y += _coverImageData.Height;
+            maxRowHeight = RowLayout.Max(r => r.First().Height);
+            _logger.Debug("Added {0} rows, maxRowHeight: {1}", RowLayout.Count, maxRowHeight);
+
+            #endregion
+
+            #region Pass 2 - Scale and Shift
+
+            _logger.Debug("Pass 2: Analyzing {0} Rows to normalize row height", RowLayout.Count);
+
+            // Second pass tries to make all rows of similar height by
+            // shifting images and rescaling rows.
+            Size minRowDims;
+            int rowWidth;
+            Point curPoint = new(0, 0);
+            bool inGap = FillGap;
+
+            // We have to use a traditional for loop because the collection
+            // will likely expand during the loop
+            for (int rowIndex = 0; rowIndex < RowLayout.Count && rowIndex >= 0; ++rowIndex) {
+
+                var row = RowLayout[rowIndex];
+
+                if (inGap && _coverImageData != null) {
+                    // Row space = cover gap
+                    rowWidth = SheetWidth - _coverImageData.Width;
+                    curPoint.X = _coverImageData.Width;
+                } else {
+                    // Row space = sheet width
+                    rowWidth = SheetWidth;
+                    curPoint.X = 0;
+                }
+
+                // Set the first image's location
+                // Succeeding row images will follow horizontally
+                row.First().MoveTo(curPoint);
+
+                // Do the scaling/shifting to give the row a similar
+                // height to the rest, with each image's dimensions
+                // greater than or equal to the minimum dimension param.
+                rowHeight = ScaleRow(row, rowWidth);
+                minRowDims = MinDims(row);
+                while (row.Count > 1 &&
+                        (rowHeight < maxRowHeight * (1 - ShiftBufferFactor) ||
+                         minRowDims.Width < MinThumbDim || minRowDims.Height < MinThumbDim ||
+                         row.Count > MaxImagesPerRow)) {
+                    ShiftImage(rowIndex, rowIndex + 1);
+                    rowHeight = ScaleRow(row, rowWidth);
+                    minRowDims = MinDims(row);
+                }
+
+                // Process at the end of the cover gap
+                // Or at the end of the imagelist
+                int overFlow = curPoint.Y + rowHeight - _coverImageData?.Height ?? 0;
+                if (inGap && _coverImageData != null && (overFlow > 0 || rowIndex + 1 == RowLayout.Count || !row.Any())) {
+                    if (overFlow > rowHeight / 3) {
+                        // This row is too tall to fit in the gap.
+                        // Move all images in the row to the next one
+                        while (row.Any()) {
+                            ShiftImage(rowIndex, rowIndex + 1);
+                        }
+                        // Remove this empty row
+                        _logger.Debug("Removing empty row {0} from cover gap", rowIndex);
+                        RowLayout.Remove(row);
+
+                        // Since we removed a row, the next row is now this one.
+                        // Make sure to process it
+                        --rowIndex;
+                    }
+
+                    // If we just moved the first row down, then there's no point in
+                    // resizing the gap images (there aren't any).
+                    if (rowIndex >= 0) {
+
+                        // Scale the cover and the gap images so they are the same height
+                        row = RowLayout[rowIndex];
+                        double h1 = _coverImageData.Height;
+                        double w1 = _coverImageData.Width;
+                        double h2 = row.First().Bottom;
+                        double w2 = rowWidth;
+
+                        double f1 = h2 * SheetWidth / (h1 * w2 + h2 * w1);
+
+                        _coverImageData.Scale(f1);
+
+                        curPoint.Y = 0;
+                        for (int i = 0; i <= rowIndex; ++i) {
+                            // Move images to the start of the new gap
+                            RowLayout[i].First().X = _coverImageData.Width;
+                            RowLayout[i].First().Y = curPoint.Y;
+                            // Scale row width to the new gap
+                            rowHeight = ScaleRow(RowLayout[i], SheetWidth - _coverImageData.Width);
+                            _logger.Debug("In Gap, Final Scaling, Row {0}", i);
+                            // Next row
+                            curPoint.Y += rowHeight;
+                        }
+                    } else {
+                        // No gap images. Display the cover normally.
+                        _coverImageData.X = SheetWidth / 2 - _coverImageData.Width / 2;
+                        FillGap = false;
+                        ErrorOccurred?.Invoke("Cover gap fill failed, image is too small. Centering.", false);
+                    }
+                    // We're done with the gap
+                    inGap = false;
+                } else {
+                    curPoint.Y += rowHeight;
+                }
+
+                if (rowIndex >= 0) {
+                    _logger.Debug("Row {0}: {1} Images. Height: {2}px. Y: {3}", rowIndex, RowLayout[rowIndex].Count, rowHeight, RowLayout[rowIndex].First().Y);
                 }
             }
 
             #endregion
 
-            #region Pass 6 - Calculate Borders
+            #region Pass 3 - Remove empty rows
 
-            _logger.Debug("Pass 6: Calculating borders (Width {0}px) and accounting for rounding error", BorderWidth);
+            // Remove empty rows
+            _logger.Debug("Pass 3: Removing empty rows");
+            for (int i = 0; i < RowLayout.Count; ++i) {
+                if (!RowLayout[i].Any()) {
+                    _logger.Debug("Removing row {0}", i);
+                    RowLayout.RemoveAt(i);
+                }
+            }
+
+            #endregion
+
+            #region Pass 4 - Even out rows in reverse
+
+            // Determine if this is a single row sheet (outside of the cover gap)
+            bool isSingleRow = RowLayout.Count(r => !RowInGap(r)) == 1;
+
+            // Adjust the last rows to account for distortion
+            if (!isSingleRow) {
+                _logger.Debug("Pass 4: Even out row heights in reverse to reduce massive images at the end");
+                ShiftFromLastRowRecursive(RowLayout.Last(), maxRowHeight * (1 + ShiftBufferFactor));
+            } else {
+                _logger.Debug("Skipping Pass 4 (Single Row Sheet)");
+            }
+
+            #endregion
+
+            #region Pass 5 - Remove gaps and overlaps
+
+            // Make sure rows don't overlap or have gaps between them
+            _logger.Debug("Pass 5: Removing gaps and overlaps");
+            curPoint.Y = RowLayout.First().First().Y;
+            foreach (List<ImageData> row in RowLayout) {
+                int gap = row.First().Y - curPoint.Y;
+                if (gap != 0) {
+                    _logger.Debug("Removing {0} at row {1}: {2}px", gap > 0 ? "gap" : "overlap", RowIndex(row), gap);
+                    foreach (ImageData im in row) {
+                        im.Y = curPoint.Y;
+                    }
+                }
+                curPoint.Y = row.First().Bottom;
+            }
+
+            // Determine where we should start drawing images vertically
+            int newTop = _headerImage?.Height ?? 0;
+
+            // Adjust cover Y position
+            if (_coverImageData != null) {
+                _coverImageData.Y = newTop;
+            }
+            if (!FillGap && _coverImageData != null) {
+                newTop += _coverImageData.Height;
+            }
+            if (newTop > 0) {
+                if (_headerImage != null) {
+                    newTop -= BorderWidth;
+                    if (_coverImageData != null) {
+                        _coverImageData.Y -= BorderWidth;
+                    }
+                }
+                // Adjust image Y positions
+                _logger.Debug("Pushing all images down by {0}px to fit the header {1}", newTop, (!FillGap && _coverImageData != null) ? "and cover" : string.Empty);
+                foreach (var image in images) {
+                    image.Y += newTop;
+                }
+            }
+
+            #endregion
+
+            #region Pass 6 - Create Borders
+
+            _logger.Debug("Pass 6: Creating borders (Width {0}px) and accounting for rounding error", BorderWidth);
 
             // Calculate row height scale factor
             ImageData last = RowLayout.Last().First();
