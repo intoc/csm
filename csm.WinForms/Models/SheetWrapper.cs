@@ -25,20 +25,20 @@ namespace csm.WinForms.Models {
                 if (Failed) {
                     return SheetState.Failed;
                 }
-                if (Queued) {
-                    return SheetState.Queued;
-                }
-                if (!_drawingStarted && _sheet.LoadProgress < 1) {
+                if (_sheet.LoadProgress < 1) {
                     return SheetState.Loading;
                 }
-                if (_drawingStarted && _sheet.DrawProgress < 1) {
+                if (!_drawingStarted) {
+                    return SheetState.Queued;
+                }
+                if (_sheet.DrawProgress < 1) {
                     return SheetState.Drawing;
                 }
                 return SheetState.Completed;
             }
         }
 
-        public bool Queued => !_drawingStarted && LoadProgress == 1;
+        public bool Queued => State == SheetState.Queued;
         public bool Failed { get; set; }
 
         public string? ErrorText => Errors.Any() ? string.Join(@"\n", Errors) : null;
@@ -56,13 +56,15 @@ namespace csm.WinForms.Models {
         public SheetWrapper(SheetLoader sheet, string sourcePath) {
             _sheet = sheet;
             _sourcePath = sourcePath;
-            _sheet.ErrorOccurred += (msg, isFatal, ex) => {
-                Log.Error(ex, "{0}: {1} {2}", sourcePath, msg, isFatal ? "[FATAL]" : string.Empty);
-                if (isFatal) {
-                    Failed = true;
-                }
-                Errors.Add(msg);
-            };
+            _sheet.ErrorOccurred += HandleError;
+        }
+
+        private void HandleError(string msg, bool isFatal, Exception? ex) {
+            Log.Error(ex, "{0}: {1} {2}", _sourcePath, msg, isFatal ? "[FATAL]" : string.Empty);
+            if (isFatal) {
+                Failed = true;
+            }
+            Errors.Add(msg);
         }
 
         public async Task Load() {

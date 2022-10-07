@@ -33,6 +33,8 @@ namespace csm.Business.Logic {
         public bool PreviewOnly { get; set; }
         public FontFamily FontFamily { get; set; }
 
+        public float ShiftFactor { get; set; } = 0.85f; // TODO: AppSetting?
+
         #endregion
 
         #region Public Output Parameters
@@ -79,7 +81,7 @@ namespace csm.Business.Logic {
 
             if (imageCount == 0) {
                 ErrorOccurred?.Invoke($"No valid/selected Images in {ImageSet.Source.Name}!", true);
-                return false; // Don't exit the GUI
+                return false;
             }
 
             int rowIndex = 0;
@@ -167,12 +169,13 @@ namespace csm.Business.Logic {
             // Second pass tries to make all rows of similar height by
             // shifting images and rescaling rows.
             Size minRowDims;
-            bool done = false;
             int rowWidth;
             Point curPoint = new(0, 0);
             bool inGap = FillGap;
 
-            for (rowIndex = 0; !done && rowIndex < RowLayout.Count; ++rowIndex) {
+
+
+            for (rowIndex = 0; rowIndex < RowLayout.Count; ++rowIndex) {
 
                 if (inGap && _coverImageData != null) {
                     // Row space = cover gap
@@ -194,7 +197,7 @@ namespace csm.Business.Logic {
                 rowHeight = ScaleRow(RowLayout[rowIndex], rowWidth);
                 minRowDims = MinDims(RowLayout[rowIndex]);
                 while (RowLayout[rowIndex].Count > 1 &&
-                        (rowHeight < maxRowHeight ||
+                        (rowHeight < maxRowHeight * ShiftFactor ||
                          minRowDims.Width < MinThumbDim || minRowDims.Height < MinThumbDim ||
                          RowLayout[rowIndex].Count > MaxImagesPerRow)) {
                     ShiftImage(rowIndex, rowIndex + 1);
@@ -258,80 +261,53 @@ namespace csm.Business.Logic {
                     curPoint.Y += rowHeight;
                 }
 
-                // Determine if this is a single row sheet (outside of the cover gap)
-                var rowInGap = (List<ImageData> row) => row.First().Y <= (_coverImageData?.Height ?? 0);
-                var index = (List<ImageData> row) => RowLayout.IndexOf(row);
-                var prevRow = (List<ImageData> row) => {
-                    while (index(row) > 0 && !RowLayout[index(row) - 1].Any()) {
-                        RowLayout.RemoveAt(index(row) - 1);
-                    }
-                    if (index(row) == 0) {
-                        return null;
-                    }
-                    return RowLayout[index(row) - 1];
-                };
-                bool isSingleRow = RowLayout.Count(r => r.Any() && !rowInGap(r)) == 1;
-
-                // Adjust the last rows to account for distortion
-                if (!isSingleRow && (rowIndex + 1 == RowLayout.Count || !RowLayout[rowIndex + 1].Any())) {
-
-                    var shiftTo = RowLayout[rowIndex];
-                    var prev = () => prevRow(shiftTo);
-
-                    // Attempt to even out the rows so there aren't any massive images at the end
-                    // Don't adjust if the last row was in the cover gap
-                    while (prev() != null && !rowInGap(prev()) && index(shiftTo) > 0 ) {
-                        int lastRowHeight;
-                        while (prev() != null && rowHeight > maxRowHeight * 1.5) {
-                            _logger.Debug("Row {0} too tall. Shifting from row {1}.", index(shiftTo), index(prev()));
-                            ShiftImage(prev(), shiftTo);
-                            if (!prev().Any()) {
-                                _logger.Debug("Row {0} exhausted. Removing.", index(prev()));
-                                RowLayout.Remove(prev());
-                                --rowIndex;
-                            }
-                            shiftTo.First().X = 0;
-                            rowHeight = ScaleRow(shiftTo, SheetWidth);
-                        }
-                        if (prev() == null) {
-                            break;
-                        }
-
-                        // Check the row previous to the one we've fixed
-                        lastRowHeight = ScaleRow(prev(), SheetWidth);
-                        _logger.Debug("Row {0} Rescaled, {1} Images. Height: {2}px", index(prev()), prev().Count, lastRowHeight);
-                        if (lastRowHeight > maxRowHeight * 1.5) {
-                            // Go up and repeat the shifting and scaling process
-                            shiftTo = RowLayout[index(shiftTo) - 1];
-                            rowHeight = shiftTo.First().Height;
-                            if (prev() == null) {
-                                _logger.Debug("Row {0} too tall, but there are no more rows to shift.", index(shiftTo));
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                    done = true;
-                }
-
                 if (rowIndex >= 0) {
                     _logger.Debug("Row {0}: {1} Images. Height: {2}px. Y: {3}", rowIndex, RowLayout[rowIndex].Count, rowHeight, RowLayout[rowIndex].First().Y);
                 }
             }
 
+            #endregion
+
+            #region Analysis Pass 3 - Remove empty rows
+
             // Remove empty rows
+            _logger.Debug("Pass 3: Removing empty rows");
             for (int i = 0; i < RowLayout.Count; ++i) {
                 if (!RowLayout[i].Any()) {
+                    _logger.Debug("Removing row {0}", i);
                     RowLayout.RemoveAt(i);
                 }
             }
 
+            #endregion
+
+            #region Analysis Pass 4 - Even out rows in reverse
+
+            // Determine if this is a single row sheet (outside of the cover gap)
+            bool isSingleRow = RowLayout.Count(r => !RowInGap(r)) == 1;
+
+            // Adjust the last rows to account for distortion
+            if (!isSingleRow) {
+                _logger.Debug("Pass 4: Even out row heights in reverse to reduce massive images at the end");
+                ShiftFromLastRowRecursive(RowLayout.Last(), maxRowHeight, ShiftFactor);
+            } else {
+                _logger.Debug("Skipping Pass 4 (Single Row Sheet)");
+            }
+
+            #endregion
+
+            #region Pass 5 - Remove row gaps and overlaps
+
             // Make sure rows don't overlap or have gaps between them
+            _logger.Debug("Pass 5: Removing row gaps and overlaps");
             curPoint.Y = RowLayout.First().First().Y;
             foreach (List<ImageData> row in RowLayout) {
-                foreach (ImageData im in row) {
-                    im.Y = curPoint.Y;
+                int gap = row.First().Y - curPoint.Y;
+                if (gap != 0) {
+                    _logger.Debug("Removing {0} at row {1}: {2}px", gap > 0 ? "gap" : "overlap", RowIndex(row), gap);
+                    foreach (ImageData im in row) {
+                        im.Y = curPoint.Y;
+                    }
                 }
                 curPoint.Y = row.First().Bottom;
             }
@@ -428,9 +404,9 @@ namespace csm.Business.Logic {
 
             #endregion
 
-            #region Calculate Borders
+            #region Pass 6 - Calculate Borders
 
-            _logger.Debug("Pass 3: Calculating borders (Width {0}px) and accounting for rounding error", BorderWidth);
+            _logger.Debug("Pass 6: Calculating borders (Width {0}px) and accounting for rounding error", BorderWidth);
 
             // Calculate row height scale factor
             ImageData last = RowLayout.Last().First();
@@ -497,6 +473,63 @@ namespace csm.Business.Logic {
             #endregion
 
             return true;
+        }
+
+        /// <summary>
+        /// Get whether <paramref name="row"/> is in the cover gap region
+        /// </summary>
+        /// <param name="row">The row</param>
+        /// <returns>Whether the row is in the cover gap region</returns>
+        private bool RowInGap(List<ImageData> row) => row.First().Y < (_coverImageData?.Height ?? 0);
+
+        /// <summary>
+        /// Get the index of <paramref name="row"/>
+        /// </summary>
+        /// <param name="row">The row</param>
+        /// <returns>The row index</returns>
+        private int RowIndex(List<ImageData> row) => RowLayout.IndexOf(row);
+
+        /// <summary>
+        /// Get the row previous to <paramref name="row"/>
+        /// </summary>
+        /// <param name="row">The row</param>
+        /// <returns>The previous row</returns>
+        private List<ImageData> PrevRow(List<ImageData> row) {
+            while (RowIndex(row) > 0 && !RowLayout[RowIndex(row) - 1].Any()) {
+                _logger.Debug("Row {0} exhausted. Removing.", RowIndex(row) - 1);
+                RowLayout.RemoveAt(RowIndex(row) - 1);
+            }
+            if (RowIndex(row) == 0 || RowInGap(RowLayout[RowIndex(row) - 1])) {
+                return Enumerable.Empty<ImageData>().ToList();
+            }
+            return RowLayout[RowIndex(row) - 1];
+        }
+
+        /// <summary>
+        /// Shifts images from the row previous to <paramref name="row"/> until <paramref name="row"/>
+        /// has a satisfactory height
+        /// </summary>
+        /// <param name="row">The row to shift images into</param>
+        /// <param name="maxRowHeight">The initial maximum row height</param>
+        /// <param name="shiftFactor">The factor to use when calculating how close to <paramref name="maxRowHeight"/> the row height should be</param>
+        private void ShiftFromLastRowRecursive(List<ImageData> row, int maxRowHeight, float shiftFactor) {
+            // Be sure to scale the row first, it might be the last one
+            int height = ScaleRow(row, SheetWidth);
+            if (!PrevRow(row).Any()) {
+                return;
+            }
+            bool scaled = false;
+            while (PrevRow(row).Any() && height > (maxRowHeight / shiftFactor) && row.Count < MaxImagesPerRow) {
+                _logger.Debug("Row {0} Too Tall ({1} at {2}px) Shifting from row {3} ({4} left)", RowIndex(row), row.Count, height, RowIndex(PrevRow(row)), PrevRow(row).Count);
+                ShiftImage(PrevRow(row), row);
+                row.First().X = 0;
+                height = ScaleRow(row, SheetWidth);
+                scaled = true;
+            }
+            if (scaled) {
+                _logger.Debug("Row {0} Rescaled ({1} at {2}px)", RowIndex(row), row.Count, height);
+                ShiftFromLastRowRecursive(PrevRow(row), maxRowHeight, shiftFactor);
+            }
         }
 
         public async Task<Image> Draw() {
