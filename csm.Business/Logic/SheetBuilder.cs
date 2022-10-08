@@ -167,9 +167,9 @@ namespace csm.Business.Logic {
                             .MaxBy(img => img.OriginalSize.Height + img.OriginalSize.Width)?.OriginalSize ?? default;
 
                         // Determine how much space the stats will take up in the header
-                        string stats = $"{imageCount} images. Maximum dimensions {maxSize.Width}x{maxSize.Height}px.";
+                        string stats = $"{imageCount} images | Maximum dimensions {maxSize.Width}x{maxSize.Height}px";
                         if (ImageSet.Source != null) {
-                            stats += $" {ImageSet.Source.Size}";
+                            stats += $" | {ImageSet.Source.Size}";
                         }
                         var statsFontSize = TextMeasurer.Measure(stats, statsTextOptions);
                         int statsHeight = (int)statsFontSize.Height + 10;
@@ -180,7 +180,7 @@ namespace csm.Business.Logic {
                         int statsTop = (int)headerFontRect.Height + padding;
                         headerImageContext
                             .DrawLines(new Pen(Color.DarkSlateGray, 1), new PointF(padding, statsTop), new PointF(SheetWidth - padding, statsTop))
-                            .DrawText(statsTextOptions, stats, Color.White);
+                            .DrawText(statsTextOptions, stats, Color.SlateGray);
                     }
 
                     // Get rid of extra height
@@ -208,18 +208,18 @@ namespace csm.Business.Logic {
                 if (image.Width == 0) {
                     image.InitSize(new Size(maxImageWidth, maxImageWidth));
                 }
-                if (newRow.Count == MaxImagesPerRow) {
+                if (newRow.Count == MaxImagesPerRow || image == images.Last()) {
+                    newRow.First().X = 0;
                     ScaleRow(newRow, SheetWidth);
                     RowLayout.Add(newRow);
+                    _logger.Debug("Row {0}: {1} Images. Height: {2}px. Y: {3}", RowIndex(newRow), newRow.Count, newRow.First().Height, newRow.First().Y);
+                    if (image != images.Last()) {
+                        maxRowHeight = Math.Max(maxRowHeight, image.Height);
+                    }
+                    newRow = new List<ImageData>();
                 }
             }
-            // The last row wasn't added if it didn't have enough images
-            if (!RowLayout.Contains(newRow)) {
-                ScaleRow(newRow, SheetWidth);
-                RowLayout.Add(newRow);
-            }
 
-            maxRowHeight = RowLayout.Max(r => r.First().Height);
             _logger.Debug("Added {0} rows, maxRowHeight: {1}", RowLayout.Count, maxRowHeight);
 
             #endregion
@@ -350,12 +350,12 @@ namespace csm.Business.Logic {
             #region Pass 4 - Even out rows in reverse
 
             // Determine if this is a single row sheet (outside of the cover gap)
-            bool isSingleRow = RowLayout.Count(r => !RowInGap(r)) == 1;
+            bool isSingleRow = RowLayout.Count(r => !RowInGap(r)) <= 1;
 
             // Adjust the last rows to account for distortion
             if (!isSingleRow) {
-                _logger.Debug("Pass 4: Even out row heights in reverse to reduce massive images at the end");
-                ShiftFromLastRowRecursive(RowLayout.Last(), maxRowHeight * (1 + ShiftBufferFactor));
+                _logger.Debug("Pass 4: Even out rows recursively to reduce massively different heights");
+                ShiftRecursive(RowLayout.Last(), PrevRow, NextRow, maxRowHeight);
             } else {
                 _logger.Debug("Skipping Pass 4 (Single Row Sheet)");
             }
@@ -480,7 +480,7 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="row">The row</param>
         /// <returns>Whether the row is in the cover gap region</returns>
-        private bool RowInGap(List<ImageData> row) => row.First().Y < (_coverImageData?.Height ?? 0);
+        private bool RowInGap(List<ImageData> row) => (row.First().Y + row.First().Height / 2f) < (_coverImageData?.Height ?? 0);
 
         /// <summary>
         /// Get the index of <paramref name="row"/>
@@ -506,41 +506,82 @@ namespace csm.Business.Logic {
         }
 
         /// <summary>
-        /// Shifts images from the row previous to <paramref name="row"/> until <paramref name="row"/>
+        /// Get the row after <paramref name="row"/>, or an empty row if there isn't one
+        /// </summary>
+        /// <param name="row">The row</param>
+        /// <returns>The next row</returns>
+        private List<ImageData> NextRow(List<ImageData> row) {
+            while (RowIndex(row) < RowLayout.Count - 1 && !RowLayout[RowIndex(row) + 1].Any()) {
+                _logger.Debug("Row {0} exhausted. Removing.", RowIndex(row) + 1);
+                RowLayout.RemoveAt(RowIndex(row) + 1);
+            }
+            if (RowIndex(row) == RowLayout.Count - 1) {
+                return Enumerable.Empty<ImageData>().ToList();
+            }
+            return RowLayout[RowIndex(row) + 1];
+        }
+
+        /// <summary>
+        /// Shifts images from an adjecent row to <paramref name="row"/> until <paramref name="row"/>
         /// has a satisfactory height
         /// </summary>
         /// <param name="row">The row to shift images into</param>
-        /// <param name="minRowHeight">The shift-factored minimum row height</param>
-        private void ShiftFromLastRowRecursive(List<ImageData> row, float minRowHeight) {
-            // Be sure to scale the row first, it might be the last one
-            int height = ScaleRow(row, SheetWidth);
-            if (!PrevRow(row).Any()) {
+        /// <param name="maxRowHeight">The initially calulated maximum row height</param>
+        private void ShiftRecursive(List<ImageData> row, Func<List<ImageData>, List<ImageData>> getFromRow, Func<List<ImageData>, List<ImageData>> getFromRowReverse, float maxRowHeight) {
+            if (!getFromRow(row).Any()) {
+                float newMaxHeight = maxRowHeight * (1 + ShiftBufferFactor);
+                _logger.Debug("Row {0} Reached the end, reversing", RowIndex(row));
+                ShiftRecursive(row, getFromRowReverse, getFromRow, newMaxHeight);
                 return;
             }
-            bool scaled = false;
-            while (PrevRow(row).Any() && height > minRowHeight && row.Count < MaxImagesPerRow) {
-                _logger.Debug("Row {0} Too Tall ({1} at {2}px) Shifting from row {3} ({4} left)", RowIndex(row), row.Count, height, RowIndex(PrevRow(row)), PrevRow(row).Count);
-                ShiftImage(PrevRow(row), row);
+            int height = row.First().Height;
+            float maxHeight = maxRowHeight * (1 + ShiftBufferFactor);
+            var fromRow = getFromRow(row);
+            _logger.Debug("Row {0} Shifting from Row {1} - Max Height {2}px", RowIndex(row), RowIndex(fromRow), maxHeight);
+            while (height > maxHeight && getFromRow(row).Any() && row.Count < MaxImagesPerRow) {
+                // Shift and rescale
+                int beforeCount = row.Count;
+                int beforeHeight = height;
+                ShiftImage(fromRow, row);
                 row.First().X = 0;
                 height = ScaleRow(row, SheetWidth);
-                scaled = true;
+                // Rescale the row we shifted from
+                fromRow = getFromRow(row);
+                fromRow.First().X = 0;
+                ScaleRow(fromRow, SheetWidth);
+                _logger.Debug("Row {0} Rescaled ({1} at {2}px) to ({3} at {4}px), {6} left in source {7}", 
+                    RowIndex(row), beforeCount, beforeHeight, row.Count, height, RowIndex(fromRow), fromRow.Count,
+                    row.Count == MaxImagesPerRow ? "(reached max images per row)" : string.Empty);
             }
-            if (scaled) {
-                _logger.Debug("Row {0} Rescaled ({1} at {2}px)", RowIndex(row), row.Count, height);
-                ShiftFromLastRowRecursive(PrevRow(row), minRowHeight);
+            if (fromRow.Any() && fromRow.First().Height > maxHeight) {
+                ShiftRecursive(fromRow, getFromRow, getFromRowReverse, maxRowHeight);
+            } else {
+                if (fromRow.Any()) {
+                    _logger.Debug("Row {0} is {1}px (halt)", RowIndex(fromRow), fromRow.First().Height);
+                } else {
+                    _logger.Debug("Source row not available (halt)");
+                }
             }
         }
 
         /// <summary>
         /// Shift a thumbnail image from an end of one row to another on the contact sheet
         /// </summary>
-        /// <param name="fromRow">The index of the source row</param>
-        /// <param name="toRow">The index of the target row</param>
-        private void ShiftImage(int fromRow, int toRow) {
-            if (RowLayout.Count <= toRow) {
+        /// <param name="fromIndex">The index of the source row</param>
+        /// <param name="toIndex">The index of the target row</param>
+        private void ShiftImage(int fromIndex, int toIndex) {
+            var fromRow = RowLayout[fromIndex];
+            if (RowLayout.Count <= toIndex) {
                 RowLayout.Add(new List<ImageData>());
             }
-            ShiftImage(RowLayout[fromRow], RowLayout[toRow]);
+            var toRow = RowLayout[toIndex];
+            if (fromIndex < toIndex) {
+                toRow.Insert(0, fromRow.Last());
+                fromRow.Remove(fromRow.Last());
+            } else {
+                toRow.Add(fromRow.First());
+                fromRow.RemoveAt(0);
+            }
         }
 
         /// <summary>
@@ -548,9 +589,8 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="fromRow">The source row</param>
         /// <param name="toRow">The target row</param>
-        private static void ShiftImage(List<ImageData> fromRow, List<ImageData> toRow) {
-            toRow.Insert(0, fromRow.Last());
-            fromRow.Remove(fromRow.Last());
+        private void ShiftImage(List<ImageData> fromRow, List<ImageData> toRow) {
+            ShiftImage(RowIndex(fromRow), RowIndex(toRow));
         }
 
         /// <summary>
@@ -717,6 +757,7 @@ namespace csm.Business.Logic {
                                 new Point(rect.Left, rect.Bottom))
                             .Draw(pen, rect);
                     });
+                    ErrorOccurred?.Invoke($"Failed to load {data.Image.FileName}", false);
                     _logger.Error("{0} Image load failed, drawing placeholder.", data.Image.FileName);
                 }
             }
