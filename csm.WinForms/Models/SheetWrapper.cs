@@ -41,7 +41,7 @@ namespace csm.WinForms.Models {
         public bool Queued => State == SheetState.Queued;
         public bool Failed { get; set; }
 
-        public string? ErrorText => Errors.Any() ? string.Join(@"\n", Errors) : null;
+        public string? ErrorText => Errors.Any() ? string.Join(@" | ", Errors) : null;
 
         public IList<string> Errors { get; } = new List<string>();
 

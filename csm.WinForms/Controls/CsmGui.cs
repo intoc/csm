@@ -65,8 +65,10 @@ internal partial class CsmGui : Form {
     }
 
     void ExceptionOccurred(string message, bool isFatal, Exception? e) {
-        MessageBox.Show($"{(isFatal ? "FATAL: " : string.Empty)}{message}\n\n{(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!",
-            MessageBoxButtons.OK, MessageBoxIcon.Error);
+        if (isFatal) {
+            MessageBox.Show($"FATAL: {message}\n\n{(e?.Message == null ? string.Empty : $"Exception: {e.Message}")}", "Error!",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     void DrawProgressChanged(SheetLoader source, ProgressEventArgs args) {
