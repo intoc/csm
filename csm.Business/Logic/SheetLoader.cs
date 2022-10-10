@@ -162,6 +162,7 @@ public sealed class SheetLoader : IDisposable {
     private readonly IntParam headerFontSize;
     private readonly IntParam labelFontSize;
     private readonly IntParam maxCoverWidthPercent;
+    private readonly IntParam maxRandomImages;
     private readonly IntParam minDimThumbnail;
     private readonly IntParam minDimInput;
     private readonly IntParam quality;
@@ -241,6 +242,10 @@ public sealed class SheetLoader : IDisposable {
             IsSmall = true
         };
 
+        maxRandomImages = new IntParam("-maxrand", 0) {
+            IsSmall = true
+        };
+
         preview = new BoolParam("-preview", false);
         exitOnComplete = new BoolParam("-exit", false);
 
@@ -258,6 +263,7 @@ public sealed class SheetLoader : IDisposable {
         generalParams.AddSubParam(borders);
         generalParams.AddSubParam(shiftBuffer);
         generalParams.AddSubParam(quality);
+        generalParams.AddSubParam(maxRandomImages);
         generalParams.AddSubParam(exitOnComplete);
         generalParams.AddSubParam(openOutputDirectoryOnComplete);
         generalParams.AddSubParam(preview);
@@ -340,6 +346,7 @@ public sealed class SheetLoader : IDisposable {
         coverFile.ParamChanged += RefreshImageList;
         minDimInput.ParamChanged += RefreshImageList;
         outputFilePath.ParamChanged += RefreshImageList;
+        maxRandomImages.ParamChanged += RefreshImageList;
 
         cover.ParamChanged += async (p) => await HandleShowCoverChanged();
         coverPattern.ParamChanged += async (p) => await HandleCoverPatternChanged();
@@ -546,6 +553,16 @@ public sealed class SheetLoader : IDisposable {
             _logger.Debug("Refreshing image list due to change in {0}", p.Desc);
         }
         _imageSet.RefreshImageList(minDimInput.IntValue, Path.GetFileName(OutFilePath()), cover.BoolValue ? coverFile.FileName : null);
+
+        // Set random selection if specified
+        if (maxRandomImages.IntValue > 0) {
+            Random rand = new();
+            int includedCount = 0;
+            while ((includedCount = _imageSet.Images.Count(i => i.Include)) > maxRandomImages.IntValue) {
+                _imageSet.Images.Where(i => i.Include).ElementAt(rand.Next(includedCount)).Include = false;
+            }
+        }
+
         ImageListChanged?.Invoke(this, false);
     }
 

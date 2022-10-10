@@ -358,6 +358,24 @@ namespace csm.Business {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Max Random Images.
+        /// </summary>
+        internal static string maxrand_desc {
+            get {
+                return ResourceManager.GetString("maxrand_desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to If more than 0, only up to this many images (randomly selected) will be included in the output..
+        /// </summary>
+        internal static string maxrand_note {
+            get {
+                return ResourceManager.GetString("maxrand_note", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Minimum Thumbnail Dimension (Height and Width).
         /// </summary>
         internal static string mindim_desc {

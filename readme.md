@@ -66,6 +66,7 @@ Open it in a text editor before trying to use it.
 | -border | Image Border Width | px | 0 | The border width around an image. The border will be black.  |
 | -shiftbuffer | Row Shift Buffer | % | 5 | The percentage of the "max row height" to consider as a buffer for determining if an outlier row height is too tall and requires adjustment. Smaller values will result in more uniform row heights, but large values may result in more interesting row layouts.  |
 | -qual | Image Quality | % | 90 | The Jpeg compression quality of the output image.  |
+| -maxrand | Max Random Images | Number | 0 | If more than 0, only up to this many images (randomly selected) will be included in the output.  |
 | -exit | Exit on Complete | true/false | false | Close the GUI when the sheet is finished. Doesn't apply to the command-line.  |
 | -openoutdir | Open Output Directory on Complete | true/false | true | Open the output directory in Windows Explorer when completed (GUI mode only).  |
 | -preview | Preview Layout Only | true/false | false | Only draw the layout, not the images. Near instantaneous.  |

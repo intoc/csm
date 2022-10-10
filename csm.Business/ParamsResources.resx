@@ -216,6 +216,12 @@
   <data name="lsize_note" xml:space="preserve">
     <value>The font size of the image label text.</value>
   </data>
+  <data name="maxrand_desc" xml:space="preserve">
+    <value>Max Random Images</value>
+  </data>
+  <data name="maxrand_note" xml:space="preserve">
+    <value>If more than 0, only up to this many images (randomly selected) will be included in the output.</value>
+  </data>
   <data name="mindiminput_desc" xml:space="preserve">
     <value>Minimum Input Dimension (Height and Width)</value>
   </data>
