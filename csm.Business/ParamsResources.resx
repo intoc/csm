@@ -204,12 +204,6 @@
   <data name="htstats_note" xml:space="preserve">
     <value>The image count and maximum image dimensions.</value>
   </data>
-  <data name="interp_desc" xml:space="preserve">
-    <value>Use High Quality Interpolation</value>
-  </data>
-  <data name="interp_note" xml:space="preserve">
-    <value>Nicer looking thumbnails, but more taxing on processing. May be slow.</value>
-  </data>
   <data name="labels_desc" xml:space="preserve">
     <value>Show Image Labels</value>
   </data>
@@ -269,18 +263,6 @@
   </data>
   <data name="shiftbuffer_note" xml:space="preserve">
     <value>The percentage of the "max row height" to consider as a buffer for determining if an outlier row height is too tall and requires adjustment. Smaller values will result in more uniform row heights, but large values may result in more interesting row layouts.</value>
-  </data>
-  <data name="thread_desc" xml:space="preserve">
-    <value>Use Multi-Threading</value>
-  </data>
-  <data name="thread_note" xml:space="preserve">
-    <value>Decreases draw time, may cause unresponsiveness.</value>
-  </data>
-  <data name="tmax_desc" xml:space="preserve">
-    <value>Maximum Threads</value>
-  </data>
-  <data name="tmax_note" xml:space="preserve">
-    <value>The maximum number of concurrent thumbnail-drawing threads. Decrease if multi-threading is locking up your system, increase if it isn't and you want to go faster.</value>
   </data>
   <data name="width_desc" xml:space="preserve">
     <value>Width of Contact Sheet</value>

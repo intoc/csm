@@ -322,24 +322,6 @@ namespace csm.Business {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Use High Quality Interpolation.
-        /// </summary>
-        internal static string interp_desc {
-            get {
-                return ResourceManager.GetString("interp_desc", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Nicer looking thumbnails, but more taxing on processing. May be slow..
-        /// </summary>
-        internal static string interp_note {
-            get {
-                return ResourceManager.GetString("interp_note", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Show Image Labels.
         /// </summary>
         internal static string labels_desc {
@@ -516,42 +498,6 @@ namespace csm.Business {
         internal static string shiftbuffer_note {
             get {
                 return ResourceManager.GetString("shiftbuffer_note", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use Multi-Threading.
-        /// </summary>
-        internal static string thread_desc {
-            get {
-                return ResourceManager.GetString("thread_desc", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Decreases draw time, may cause unresponsiveness..
-        /// </summary>
-        internal static string thread_note {
-            get {
-                return ResourceManager.GetString("thread_note", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Maximum Threads.
-        /// </summary>
-        internal static string tmax_desc {
-            get {
-                return ResourceManager.GetString("tmax_desc", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The maximum number of concurrent thumbnail-drawing threads. Decrease if multi-threading is locking up your system, increase if it isn&apos;t and you want to go faster..
-        /// </summary>
-        internal static string tmax_note {
-            get {
-                return ResourceManager.GetString("tmax_note", resourceCulture);
             }
         }
         

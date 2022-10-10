@@ -80,7 +80,7 @@ public sealed class SheetLoader : IDisposable {
                     LoadProgress = e.Percentage;
                     LoadProgressChanged(this, e);
                 };
-                _imageSet.LoadCompleted += (e) => LoadCompleted(this, e);
+                _imageSet.LoadCompleted += (e) => InternalLoadCompleted(this, e);
             } else {
                 await _imageSet.SetSource(fileSource);
             }
@@ -115,7 +115,7 @@ public sealed class SheetLoader : IDisposable {
     public event Action<SettingsChangedEventArgs> SettingsChanged = delegate { };
 
     /// <summary>
-    /// Fired when the source directory is changed
+    /// Fired when source is fully loaded
     /// </summary>
     public event Action<SheetLoader, IFileSource> LoadCompleted = delegate { };
 
@@ -124,12 +124,20 @@ public sealed class SheetLoader : IDisposable {
     /// </summary>
     public event Action<SheetLoader, ProgressEventArgs> LoadProgressChanged = delegate { };
 
-
     /// <summary>
     /// Fired when an exception occurred
     /// </summary>
     public event ExceptionEventHandler ErrorOccurred = delegate { };
     public delegate void ExceptionEventHandler(string message, bool isFatal, Exception? e = null);
+
+    #endregion
+
+    #region Private Events
+
+    /// <summary>
+    /// Fired when the source image set is loaded
+    /// </summary>
+    private event Action<SheetLoader, IFileSource> InternalLoadCompleted = delegate { };
 
     #endregion
 
@@ -314,7 +322,7 @@ public sealed class SheetLoader : IDisposable {
 
         // Setup all instances where a file list reload is required
         filePattern.ParamChanged += async (path) => await LoadFileList(path);
-        LoadCompleted += async (sheet, source) => {
+        InternalLoadCompleted += async (sheet, source) => {
             headerTitle.ParseVal(_imageSet?.Source.Name);
             _logger = _logger.ForContext("Context", headerTitle.Value);
             _logger.Debug("Source set to {0}", sheet.Source);
@@ -325,6 +333,7 @@ public sealed class SheetLoader : IDisposable {
             }
             // First loading has finished, stop blocking DrawAndSave
             _firstLoadIncomplete = false;
+            LoadCompleted.Invoke(this, source);
         };
 
         // Setup all instances where a image list refresh is required without a full reload
@@ -569,7 +578,7 @@ public sealed class SheetLoader : IDisposable {
             if (_imageSet.Loaded && !_firstLoadIncomplete) {
                 notLoaded = false;
             }
-            _logger.Debug("DrawAndSave waiting for images to be ready...");
+            _logger.Debug("DrawAndSave waiting for images to be ready... ({0} {1})", _imageSet.Loaded, !_firstLoadIncomplete);
             Thread.Sleep(250);
             if (_isDisposed) {
                 return false;

@@ -37,7 +37,7 @@ internal partial class CsmGui : Form {
         cs.ErrorOccurred += ExceptionOccurred;
         cs.LoadCompleted += (sheet, source) => Invoke(() => {
             Invoke(() => directoryLabel.Text = directoryLabelText(source.FullPath));
-            Invoke(() => SetButtonsEnabled(true, true));
+            Invoke(SetButtonsEnabledIfFilesLoaded);
         });
         cs.LoadProgressChanged += UpdateLoadProgress;
 

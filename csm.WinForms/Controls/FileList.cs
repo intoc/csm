@@ -1,6 +1,5 @@
 ﻿using csm.Business.Logic;
 using csm.Business.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -12,17 +11,12 @@ public partial class FileList : Form {
     readonly SheetLoader cs;
 
     private readonly IDictionary<string, bool> PinnedImages = new Dictionary<string, bool>();
-    private readonly FileSystemWatcher fileWatcher = new();
-    private ILogger _logger;
 
     public FileList(SheetLoader sheet) {
         InitializeComponent();
         cs = sheet;
-        _logger = Program.Services.GetRequiredService<ILogger>().ForContext("Context", "FileList");
         if (cs.Source != null) {
             if (Directory.Exists(cs.Source)) {
-                fileWatcher.Path = cs.Source;
-                fileWatcher.EnableRaisingEvents = true;
                 Text = Path.GetDirectoryName(cs.Source);
             } else if (File.Exists(cs.Source)) {
                 Text = Path.GetFileName(cs.Source);
@@ -43,12 +37,6 @@ public partial class FileList : Form {
         Rectangle bounds = Owner.Bounds;
         Bounds = new Rectangle(bounds.X + bounds.Width, bounds.Y, Width, bounds.Height);
         cs.LoadCompleted += SourceChanged;
-        fileWatcher.NotifyFilter = NotifyFilters.FileName;
-        fileWatcher.Changed += ReloadFiles;
-        fileWatcher.Deleted += ReloadFiles;
-        fileWatcher.Created += ReloadFiles;
-        fileWatcher.Renamed += ReloadFiles;
-        fileWatcher.IncludeSubdirectories = true;
         UpdateList(cs, false);
     }
 
@@ -58,13 +46,7 @@ public partial class FileList : Form {
     /// <param name="path"></param>
     void SourceChanged(SheetLoader sheet, IFileSource source) {
         Log.Debug("FileList-SourceChanged");
-        if (Directory.Exists(source.ImageFileDirectoryPath)) {
-            fileWatcher.Path = source.ImageFileDirectoryPath;
-            fileWatcher.EnableRaisingEvents = true;
-        } else {
-            fileWatcher.EnableRaisingEvents = false;
-        }
-        Text = sheet.Source?.Split('\\').Last() ?? "No Source Selected";
+        Invoke(() => Text = sheet.Source?.Split('\\').Last() ?? "No Source Selected");
         PinnedImages.Clear();
     }
 

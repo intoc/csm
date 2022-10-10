@@ -105,14 +105,14 @@ namespace csm.Business.Logic {
         /// <param name="outFileName">Output file name to ignore</param>
         /// <param name="coverFileName">Cover file name to ignore</param>
         public void RefreshImageList(int minDim, string? outFileName, string? coverFileName) {
-            lock (Images) {
+           lock (Images) {
                 foreach (ImageData image in _images) {
                     if (!image.InclusionPinned) {
                         image.Include = !(IsImageTooSmall(image, minDim) || IsOldSheet(image, outFileName) || IsCover(image, coverFileName));
                     }
                 }
                 Loaded = true;
-            }
+           }
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace csm.Business.Logic {
                         param.Path = match.Path;
                         _logger.Information("Matched {0} on {1}", param.Desc, param.FileName);
                     } else {
-                        _logger.Debug("Matched on the same cover file as before");
+                        _logger.Debug("{0} matched on the same file as before", param.Desc);
                     }
                     return changed;
                 }
@@ -151,9 +151,9 @@ namespace csm.Business.Logic {
                 var allFiles = await _imageSource.GetFilesAsync(listPattern);
                 param.Path = allFiles.FirstOrDefault()?.Path;
             } catch (RegexParseException ex) {
-                _logger.Error("Error occurred during cover file pattern matching: {0}", ex.Message);
+                _logger.Error("Error occurred during file pattern matching for {0}: {1}", param.Desc, ex.Message);
             } catch (Exception ex) {
-                _logger.Error(ex, "Error occurred while guessing cover.");
+                _logger.Error(ex, "Error occurred while guessing {0}.", param.Desc);
             }
 
             return origPath != param.Path;
