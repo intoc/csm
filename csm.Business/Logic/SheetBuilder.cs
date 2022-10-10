@@ -20,7 +20,7 @@ namespace csm.Business.Logic {
         public bool FillGap { get; set; }
         public bool IsHeaderTitleBold { get; set; }
         public bool PreviewOnly { get; set; }
-        public float ShiftBufferFactor { get; set; } = 0.15f; // TODO: AppSetting?
+        public float ShiftBufferFactor { get; set; }
         public FontFamily FontFamily { get; set; }
         public int BorderWidth { get; set; }
         public int HeaderTitleFontSize { get; set; }
@@ -209,7 +209,6 @@ namespace csm.Business.Logic {
                     image.InitSize(new Size(maxImageWidth, maxImageWidth));
                 }
                 if (newRow.Count == MaxImagesPerRow || image == images.Last()) {
-                    newRow.First().X = 0;
                     ScaleRow(newRow, SheetWidth);
                     RowLayout.Add(newRow);
                     _logger.Debug("Row {0}: {1} Images. Height: {2}px. Y: {3}", RowIndex(newRow), newRow.Count, newRow.First().Height, newRow.First().Y);
@@ -253,12 +252,12 @@ namespace csm.Business.Logic {
 
                 // Set the first image's location
                 // Succeeding row images will follow horizontally
-                row.First().MoveTo(curPoint);
+                row.First().Y = curPoint.Y;
 
                 // Do the scaling/shifting to give the row a similar
                 // height to the rest, with each image's dimensions
                 // greater than or equal to the minimum dimension param.
-                rowHeight = ScaleRow(row, rowWidth);
+                rowHeight = ScaleRow(row, rowWidth, curPoint.X);
                 minRowDims = MinDims(row);
                 while (row.Count > 1 &&
                         (rowHeight < maxRowHeight * (1 - ShiftBufferFactor) ||
@@ -307,10 +306,9 @@ namespace csm.Business.Logic {
                         for (int i = 0; i <= rowIndex; ++i) {
                             var gapRow = RowLayout[i];
                             // Move images to the start of the new gap
-                            gapRow.First().X = _coverImageData.Width;
                             gapRow.First().Y = curPoint.Y;
                             // Scale row width to the new gap
-                            rowHeight = ScaleRow(gapRow, SheetWidth - _coverImageData.Width);
+                            rowHeight = ScaleRow(gapRow, SheetWidth - _coverImageData.Width, _coverImageData.Width);
                             _logger.Debug("In Gap, Final Scaling, Row {0}", i);
                             // Next row
                             curPoint.Y += rowHeight;
@@ -347,7 +345,7 @@ namespace csm.Business.Logic {
 
             #endregion
 
-            #region Pass 4 - Even out rows in reverse
+            #region Pass 4 - Even out rows recursively
 
             // Determine if this is a single row sheet (outside of the cover gap)
             bool isSingleRow = RowLayout.Count(r => !RowInGap(r)) <= 1;
@@ -480,7 +478,7 @@ namespace csm.Business.Logic {
         /// </summary>
         /// <param name="row">The row</param>
         /// <returns>Whether the row is in the cover gap region</returns>
-        private bool RowInGap(List<ImageData> row) => (row.First().Y + row.First().Height / 2f) < (_coverImageData?.Height ?? 0);
+        private bool RowInGap(List<ImageData> row) => FillGap && (row.First().Y + row.First().Height / 2f) < (_coverImageData?.Height ?? 0);
 
         /// <summary>
         /// Get the index of <paramref name="row"/>
@@ -543,11 +541,9 @@ namespace csm.Business.Logic {
                 int beforeCount = row.Count;
                 int beforeHeight = height;
                 ShiftImage(fromRow, row);
-                row.First().X = 0;
                 height = ScaleRow(row, SheetWidth);
                 // Rescale the row we shifted from
                 fromRow = getFromRow(row);
-                fromRow.First().X = 0;
                 ScaleRow(fromRow, SheetWidth);
                 _logger.Debug("Row {0} Rescaled ({1} at {2}px) to ({3} at {4}px), {6} left in source {7}", 
                     RowIndex(row), beforeCount, beforeHeight, row.Count, height, RowIndex(fromRow), fromRow.Count,
@@ -597,9 +593,10 @@ namespace csm.Business.Logic {
         /// Scale the images in a row to fit a new row width
         /// </summary>
         /// <param name="list">The list of images in the row</param>
-        /// <param name="width">The new row width</param>
+        /// <param name="width">The new row width</param>'
+        /// <param name="left">The X value of the left edge of this row</param>
         /// <returns>The newly scaled row height</returns>
-        private static int ScaleRow(List<ImageData> list, int width) {
+        private static int ScaleRow(List<ImageData> list, int width, int left = 0) {
 
             int rowHeight = 0;
             int rowWidth = 0;
@@ -622,6 +619,7 @@ namespace csm.Business.Logic {
             // Scale images to calculated height
             list.ForEach(img => img.ScaleToHeight(rowHeight));
 
+            first.X = left;
             if (list.Count > 1) {
                 // Set image locations
                 var pairs = list.Skip(1).Select((image, index) => (image, prev: list.ElementAt(index)));

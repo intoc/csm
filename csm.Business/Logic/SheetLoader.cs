@@ -158,6 +158,7 @@ public sealed class SheetLoader : IDisposable {
     private readonly IntParam minDimInput;
     private readonly IntParam quality;
     private readonly IntParam sheetWidth;
+    private readonly IntParam shiftBuffer;
     private readonly StringParam coverPattern;
     private readonly StringParam filePattern;
     private readonly StringParam headerTitle;
@@ -202,7 +203,12 @@ public sealed class SheetLoader : IDisposable {
             MinVal = 1,
             MaxVal = 50,
             IsSmall = true
+        };
 
+        shiftBuffer = new IntParam("-shiftbuffer", 5, "%") {
+            MinVal = 1,
+            MaxVal = 100,
+            IsSmall = true
         };
 
         sheetWidth = new IntParam("-width", DEFAULT_WIDTH, "px") {
@@ -242,6 +248,7 @@ public sealed class SheetLoader : IDisposable {
         generalParams.AddSubParam(columns);
         generalParams.AddSubParam(minDimThumbnail);
         generalParams.AddSubParam(borders);
+        generalParams.AddSubParam(shiftBuffer);
         generalParams.AddSubParam(quality);
         generalParams.AddSubParam(exitOnComplete);
         generalParams.AddSubParam(openOutputDirectoryOnComplete);
@@ -586,7 +593,8 @@ public sealed class SheetLoader : IDisposable {
             MaxImagesPerRow = columns.IntValue,
             MinThumbDim = minDimThumbnail.IntValue,
             PreviewOnly = preview.BoolValue,
-            SheetWidth = sheetWidth.IntValue
+            SheetWidth = sheetWidth.IntValue,
+            ShiftBufferFactor = shiftBuffer.IntValue / 100f
         };
 
         sheet.DrawProgressChanged += (args) => {
@@ -681,9 +689,9 @@ public sealed class SheetLoader : IDisposable {
                 }
             }
 
-            string sfile = markDown ? "| `-sfile` |" : "-sfile:";
+            string sfile = markDown ? "| -sfile |" : "-sfile:";
             Console.WriteLine(@"{0} Settings file path {1}", sfile, markDown ? "| File Path | default.aspx | The path to a settings file. Can be absolute or relative. |" : string.Empty);
-            string help = markDown ? "| `-help` |" : "-help:";
+            string help = markDown ? "| -help |" : "-help:";
             Console.WriteLine("{0} View help message (no value required) {1}", help, markDown ? "| None | N/A | Show a help message on the command line with parameter documentation. |" : string.Empty);
 
             return true;

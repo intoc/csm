@@ -264,6 +264,12 @@
   <data name="qual_note" xml:space="preserve">
     <value>The Jpeg compression quality of the output image.</value>
   </data>
+  <data name="shiftbuffer_desc" xml:space="preserve">
+    <value>Row Shift Buffer</value>
+  </data>
+  <data name="shiftbuffer_note" xml:space="preserve">
+    <value>The percentage of the "max row height" to consider as a buffer for determining if an outlier row height is too tall and requires adjustment. Smaller values will result in more uniform row heights, but large values may result in more interesting row layouts.</value>
+  </data>
   <data name="thread_desc" xml:space="preserve">
     <value>Use Multi-Threading</value>
   </data>

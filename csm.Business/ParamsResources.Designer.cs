@@ -502,6 +502,24 @@ namespace csm.Business {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Row Shift Buffer.
+        /// </summary>
+        internal static string shiftbuffer_desc {
+            get {
+                return ResourceManager.GetString("shiftbuffer_desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The percentage of the &quot;max row height&quot; to consider as a buffer for determining if an outlier row height is too tall and requires adjustment. Smaller values will result in more uniform row heights, but large values may result in more interesting row layouts..
+        /// </summary>
+        internal static string shiftbuffer_note {
+            get {
+                return ResourceManager.GetString("shiftbuffer_note", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Use Multi-Threading.
         /// </summary>
         internal static string thread_desc {
