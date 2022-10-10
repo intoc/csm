@@ -597,6 +597,9 @@ namespace csm.Business.Logic {
         /// <param name="left">The X value of the left edge of this row</param>
         /// <returns>The newly scaled row height</returns>
         private static int ScaleRow(List<ImageData> list, int width, int left = 0) {
+            if (!list.Any()) {
+                return 0;
+            }
 
             int rowHeight = 0;
             int rowWidth = 0;

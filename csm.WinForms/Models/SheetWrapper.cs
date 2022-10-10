@@ -60,7 +60,8 @@ namespace csm.WinForms.Models {
         }
 
         private void HandleError(string msg, bool isFatal, Exception? ex) {
-            Log.Error(ex, "{0}: {1} {2}", _sourcePath, msg, isFatal ? "[FATAL]" : string.Empty);
+            var logger = Log.ForContext("Context", _sourcePath);
+            logger.Error(ex, "{1} {2}", msg, isFatal ? "[FATAL]" : string.Empty);
             if (isFatal) {
                 Failed = true;
             }
@@ -73,7 +74,13 @@ namespace csm.WinForms.Models {
 
         public async Task Draw() {
             _drawingStarted = true;
-            await Task.Factory.StartNew(async () => await _sheet.DrawAndSave());
+            await Task.Factory.StartNew(async () => {
+                try {
+                    await _sheet.DrawAndSave();
+                } catch (Exception ex) {
+                    HandleError("Fatal Error (See Console)", true, ex);
+                }
+            });
         }
 
         public void Dispose() {
