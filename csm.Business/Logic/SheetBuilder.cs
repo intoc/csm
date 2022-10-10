@@ -144,7 +144,7 @@ namespace csm.Business.Logic {
                     Origin = new(padding, 0)
                 };
                 FontRectangle headerFontRect = TextMeasurer.Measure(HeaderTitle, titleTextOptions);
-                int headerHeight = (int)Math.Ceiling(headerFontRect.Height + padding * 2);
+                int headerHeight = (int)Math.Ceiling(headerFontRect.Height + padding);
 
                 _headerImage.Mutate(headerImageContext => {
 
@@ -155,11 +155,15 @@ namespace csm.Business.Logic {
 
                     // Stats
                     if (DrawHeaderStats) {
+
+                        // Add some more space after the title text
+                        headerHeight += padding;
+
                         // Build stats font
                         Font statsFont = FontFamily.CreateFont(14, FontStyle.Regular);
                         TextOptions statsTextOptions = new(statsFont) {
                             WrappingLength = headerWidth,
-                            Origin = new(padding, headerFontRect.Height + 10)
+                            Origin = new(padding, headerHeight)
                         };
 
                         // Determine largest image
