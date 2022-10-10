@@ -630,7 +630,7 @@ public sealed class SheetLoader : IDisposable {
             _logger.Information("---------------------------------------------------------------------------");
             _logger.Information("Completed {0}! It took {1}", Source, sw.Elapsed);
             _logger.Information("Sheet Size: {0} images, {1} rows, {2}x{3}px", sheet.RowLayout.Sum(r => r.Count), sheet.RowLayout.Count, sheetImage.Width, sheetImage.Height);
-            _logger.Information("Min/Max Images per Row: {0}/{1}", sheet.RowLayout.Max(r => r.Count), sheet.RowLayout.Min(r => r.Count));
+            _logger.Information("Min/Max Images per Row: {0}/{1}", sheet.RowLayout.Min(r => r.Count), sheet.RowLayout.Max(r => r.Count));
             _logger.Information("Output Quality: {0}%", quality.IntValue);
 
             try {
