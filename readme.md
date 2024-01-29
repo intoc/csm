@@ -58,7 +58,7 @@ Open it in a text editor before trying to use it.
 | Parameter | Name | Type | Default | Description |
 | --------- | ---- | ---- | ------- | ----------- |
 | -nogui | Don't Launch GUI | true/false | false | Prevents the GUI (Graphical User Interface) from being launched. (Not loaded from settings) |
-| -fregx | File Name Pattern | Regex | \\.(jpg|jpeg|png)$ | A regular expression used to match on file names to be included from the source.  |
+| -fregx | File Name Pattern | Regex | `\.(jpg\|jpeg\|png)$` | A regular expression used to match on file names to be included from the source.  |
 | -mindiminput | Minimum Input Dimension (Height and Width) | px | 0 | The minimum width and height for input images to be included in the output sheet. (Changing this option reloads the file list).  |
 | -width | Width of Contact Sheet | px | 900 | The width of the contact sheet in pixels.  |
 | -cols | Maximum Images per Row | Number | 6 | The maximum number of images per row. Rows with mixed aspect ratios will probably have fewer images.  |
